@@ -4,10 +4,10 @@ MetricCard — картка метрики для Dashboard.
 MetricCard — Dashboard metric card with a colored left accent bar.
 """
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QColor
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from osah.ui.qt.design.tokens import COLOR, FONT, RADIUS, SPACING
+from osah.ui.qt.design.tokens import FONT, RADIUS, SPACING
 
 
 class MetricCard(QWidget):
@@ -36,7 +36,7 @@ class MetricCard(QWidget):
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(16)
         shadow.setOffset(0, 2)
-        shadow.setColor(__import__("PySide6.QtGui", fromlist=["QColor"]).QColor(0, 0, 0, 18))
+        shadow.setColor(QColor(0, 0, 0, 18))
         card.setGraphicsEffect(shadow)
 
         outer_layout.addWidget(card)
@@ -71,21 +71,21 @@ class MetricCard(QWidget):
 
         # Назва / Title
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 10px; font-weight: bold;")
+        title_label.setProperty("role", "metric_title")
         content_layout.addWidget(title_label)
 
         # Значення / Value
         value_label = QLabel(value)
+        value_label.setProperty("role", "metric_value")
         value_font = QFont(FONT["metric"][0], FONT["metric"][1])
         value_font.setBold(FONT["metric"][2])
         value_label.setFont(value_font)
-        value_label.setStyleSheet(f"color: {COLOR['text_primary']};")
         content_layout.addWidget(value_label)
 
         # Підпис / Subtitle
         sub_label = QLabel(subtitle)
+        sub_label.setProperty("role", "metric_subtitle")
         sub_label.setWordWrap(True)
-        sub_label.setStyleSheet(f"color: {COLOR['accent']}; font-size: 9px;")
         content_layout.addWidget(sub_label)
 
         content_layout.addStretch()

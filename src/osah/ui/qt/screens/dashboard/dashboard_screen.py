@@ -21,8 +21,30 @@ class DashboardScreen(QWidget):
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xxl"], SPACING["xl"], SPACING["xxl"], SPACING["xl"])
-        layout.setSpacing(SPACING["xxl"])
+        layout.setSpacing(SPACING["xl"])
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # 0. Hero блок (Привітання і фокус)
+        hero_layout = QHBoxLayout()
+        hero_layout.setContentsMargins(0, 0, 0, SPACING["md"])
+        
+        greetings = QLabel("Доброго дня, інспектроре!")
+        greetings.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {COLOR['text_primary']};")
+        hero_layout.addWidget(greetings)
+        hero_layout.addStretch()
+
+        system_status = QLabel("Система: Нормальна робота")
+        if snapshot.critical_items > 0:
+            system_status.setText(f"Система: {snapshot.critical_items} критичних проблем!")
+            system_status.setStyleSheet(f"color: {COLOR['critical']}; font-weight: bold; font-size: 14px;")
+        elif snapshot.warning_items > 0:
+            system_status.setText("Система: Потребує уваги")
+            system_status.setStyleSheet(f"color: {COLOR['warning']}; font-weight: bold; font-size: 14px;")
+        else:
+            system_status.setStyleSheet(f"color: {COLOR['success']}; font-weight: bold; font-size: 14px;")
+
+        hero_layout.addWidget(system_status)
+        layout.addLayout(hero_layout)
 
         # 1. Верхній ряд: Метрики (Metrics row)
         metrics_layout = QHBoxLayout()
@@ -73,7 +95,7 @@ class DashboardScreen(QWidget):
         left_col.setSpacing(SPACING["md"])
 
         feed_title = QLabel("Активні сповіщення")
-        feed_title.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {COLOR['text_primary']};")
+        feed_title.setProperty("role", "section_title")
         left_col.addWidget(feed_title)
 
         if snapshot.active_notifications:
@@ -81,7 +103,7 @@ class DashboardScreen(QWidget):
                 left_col.addWidget(AlertCard(n))
         else:
             empty_lbl = QLabel("Немає активних сповіщень. Все добре!")
-            empty_lbl.setStyleSheet(f"color: {COLOR['success']}; padding: 16px;")
+            empty_lbl.setProperty("role", "empty_state")
             left_col.addWidget(empty_lbl)
 
         left_col.addStretch()
@@ -94,16 +116,29 @@ class DashboardScreen(QWidget):
         right_col.setContentsMargins(0, 0, 0, 0)
         right_col.setSpacing(SPACING["md"])
 
-        info_title = QLabel("Фокус дня")
-        info_title.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {COLOR['text_primary']};")
+        info_title = QLabel("Швидкі дії та Фокус")
+        info_title.setProperty("role", "section_title")
         right_col.addWidget(info_title)
 
         info_box = QWidget()
         info_box.setProperty("inset", "true")
-        info_box.setMinimumHeight(200)
         ib_layout = QVBoxLayout(info_box)
-        ib_msg = QLabel("Тут буде зведення або графік виконання плану.")
-        ib_msg.setStyleSheet(f"color: {COLOR['text_muted']};")
+        ib_layout.setSpacing(SPACING["md"])
+        
+        from PySide6.QtWidgets import QPushButton
+        
+        btn1 = QPushButton("📝 Оформити наряд-допуск")
+        btn1.setProperty("variant", "secondary")
+        ib_layout.addWidget(btn1)
+        
+        btn2 = QPushButton("🛡️ Реєстрація інструктажу")
+        btn2.setProperty("variant", "secondary")
+        ib_layout.addWidget(btn2)
+        
+        ib_layout.addSpacing(SPACING["lg"])
+
+        ib_msg = QLabel("Зведення виконання плану...")
+        ib_msg.setProperty("role", "status_muted")
         ib_msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ib_layout.addWidget(ib_msg)
 

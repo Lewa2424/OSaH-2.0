@@ -37,15 +37,15 @@ class SideNav(QWidget):
 
         # ---- Логотип ----
         logo = QLabel("OSaH 2.0 🚀")
+        logo.setProperty("role", "logo")
         logo_font = QFont(FONT["title_xl"][0], 18)
         logo_font.setBold(True)
         logo.setFont(logo_font)
-        logo.setStyleSheet(f"color: {COLOR['accent']};")
         layout.addWidget(logo)
 
         desc = QLabel("Локальний пульт інспектора з охорони праці.")
         desc.setWordWrap(True)
-        desc.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 10px;")
+        desc.setProperty("role", "status_muted")
         layout.addWidget(desc)
 
         layout.addSpacing(SPACING["lg"])
@@ -71,7 +71,7 @@ class SideNav(QWidget):
         # ---- Footer ----
         footer = QLabel("Система працює автономно.")
         footer.setWordWrap(True)
-        footer.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 10px;")
+        footer.setProperty("role", "status_muted")
         layout.addWidget(footer)
 
     def _on_button_clicked(self, section: AppSection) -> None:
@@ -82,3 +82,8 @@ class SideNav(QWidget):
         """Оновлює стан кнопок: підсвічує активну, скидає інші."""
         for section, btn in self._buttons.items():
             btn.set_active(section == active_section)
+
+    def update_alert_levels(self, section_levels: dict[AppSection, NotificationLevel]) -> None:
+        """Оновлює рівні сповіщень для всіх кнопок без перестворення меню."""
+        for section, btn in self._buttons.items():
+            btn.set_alert_level(section_levels.get(section))

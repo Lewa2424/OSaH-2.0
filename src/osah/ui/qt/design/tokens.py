@@ -56,6 +56,28 @@ COLOR: dict[str, str] = {
     "role_card_bg":        "#EFF1F5",
     "role_tag_bg":         "#DBEAFE",
     "role_tag_text":       "#1E40AF",
+
+    # Dashboard специфіка / Dashboard specific
+    "metric_title":        "#6B7280",
+    "news_accent":         "#8B5CF6",
+}
+
+# ──────────────────────────────────────────────────────────────────
+# ТІНІ / SHADOWS
+# ──────────────────────────────────────────────────────────────────
+SHADOW: dict[str, dict] = {
+    "card_sm": {"radius": 8, "offset_y": 1, "alpha": 12},
+    "card_md": {"radius": 16, "offset_y": 2, "alpha": 18},
+    "card_lg": {"radius": 24, "offset_y": 4, "alpha": 24},
+}
+
+# ──────────────────────────────────────────────────────────────────
+# АНІМАЦІЇ / ANIMATIONS (ms)
+# ──────────────────────────────────────────────────────────────────
+ANIMATION: dict[str, int] = {
+    "fast":    150,     # hover, active
+    "normal":  300,     # fade-in
+    "slow":    500,     # screens, heavy transitions
 }
 
 # ──────────────────────────────────────────────────────────────────

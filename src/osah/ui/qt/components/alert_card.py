@@ -90,12 +90,12 @@ class AlertCard(QWidget):
 
         # Заголовок / Title
         title = QLabel(notification.title_text)
-        title.setStyleSheet(f"color: {COLOR['text_primary']}; font-size: 13px; font-weight: bold;")
+        title.setProperty("role", "alert_title")
         v.addWidget(title)
 
         # Текст / Body text
         subject = notification.employee_full_name or notification.employee_personnel_number or "Система"
         body_text = QLabel(f"{subject}: {notification.message_text}")
+        body_text.setProperty("role", "alert_body")
         body_text.setWordWrap(True)
-        body_text.setStyleSheet(f"color: {COLOR['text_secondary']}; font-size: 10px;")
         v.addWidget(body_text)

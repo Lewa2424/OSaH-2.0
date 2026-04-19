@@ -33,14 +33,13 @@ QWidget {{
 
 /* ── Скролбари / Scrollbars ── */
 QScrollBar:vertical {{
-    background: {c["bg_panel"]};
-    width: 8px;
-    border-radius: 4px;
-    margin: 4px 2px 4px 2px;
+    background: transparent;
+    width: 6px;
+    margin: 0px 0px 0px 0px;
 }}
 QScrollBar::handle:vertical {{
     background: {c["border_strong"]};
-    border-radius: 4px;
+    border-radius: 3px;
     min-height: 30px;
 }}
 QScrollBar::handle:vertical:hover {{
@@ -49,6 +48,10 @@ QScrollBar::handle:vertical:hover {{
 QScrollBar::add-line:vertical,
 QScrollBar::sub-line:vertical {{
     height: 0px;
+}}
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {{
+    background: transparent;
 }}
 QScrollBar:horizontal {{
     background: {c["bg_panel"]};
@@ -238,6 +241,67 @@ QWidget[role="sidenav"] {{
 QWidget[role="statusbar"] {{
     background: {c["bg_panel"]};
     border-top: 1px solid {c["border_soft"]};
+}}
+
+/* ── General Elements ── */
+QLabel[role="section_title"] {{
+    color: {c["text_primary"]};
+    font-size: 16px;
+    font-weight: bold;
+}}
+QWidget[role="section_bg"] {{
+    background: {c["bg_app"]};
+}}
+
+/* ── SideNav / Logo ── */
+QLabel[role="logo"] {{
+    color: {c["accent"]};
+}}
+
+/* ── TopCommandBar / StatusStrip ── */
+QLabel[role="title"] {{
+    color: {c["text_primary"]};
+}}
+QLabel[role="subtitle"] {{
+    color: {c["text_muted"]};
+    font-size: 11px;
+}}
+QLabel[role="status_muted"] {{
+    color: {c["text_muted"]};
+    font-size: 9px;
+}}
+QLabel[role="status_success"] {{
+    color: {c["success"]};
+    font-size: 9px;
+}}
+
+/* ── Dashboard / MetricCard ── */
+QLabel[role="metric_title"] {{
+    color: {c["metric_title"]};
+    font-size: 10px;
+    font-weight: bold;
+}}
+QLabel[role="metric_value"] {{
+    color: {c["text_primary"]};
+}}
+QLabel[role="metric_subtitle"] {{
+    color: {c["accent"]};
+    font-size: 9px;
+}}
+
+/* ── AlertCard ── */
+QLabel[role="alert_title"] {{
+    color: {c["text_primary"]};
+    font-size: 13px;
+    font-weight: bold;
+}}
+QLabel[role="alert_body"] {{
+    color: {c["text_secondary"]};
+    font-size: 10px;
+}}
+QLabel[role="empty_state"] {{
+    color: {c["success"]};
+    padding: 16px;
 }}
 
 /* ── ScrollArea viewport ── */

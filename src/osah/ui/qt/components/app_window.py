@@ -8,15 +8,17 @@ from PySide6.QtCore import Qt
 
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
+from osah.application.services.visual.load_visual_alert_state import load_visual_alert_state
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
-from osah.ui.desktop.security.build_available_sections_for_role import build_available_sections_for_role
+from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.side_nav import SideNav
 from osah.ui.qt.components.status_strip import StatusStrip
 from osah.ui.qt.components.top_command_bar import TopCommandBar
 from osah.ui.qt.design.tokens import SIZE
-from osah.ui.qt.screens.dashboard.dashboard_screen import DashboardScreen
+from osah.ui.qt.routing.qt_context import QtContext
+from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
 
 
 class AppWindow(QMainWindow):
@@ -46,9 +48,9 @@ class AppWindow(QMainWindow):
 
         # 1. Ліва панель / Side Nav
         sections = build_available_sections_for_role(access_role)
-        # TODO: Завантажувати візуальний alert state
-        dummy_levels = {}
-        self._nav = SideNav(sections, access_role, dummy_levels)
+        visual_alert_state = load_visual_alert_state(self._app_context.database_path)
+        
+        self._nav = SideNav(sections, access_role, visual_alert_state.section_levels)
         self._nav.section_selected.connect(self._on_section_selected)
         splitter.addWidget(self._nav)
 
@@ -89,14 +91,16 @@ class AppWindow(QMainWindow):
             if widget := item.widget():
                 widget.deleteLater()
 
-        # Роутинг (поки що лише Dashboard)
-        if section == AppSection.DASHBOARD:
-            snapshot = load_dashboard_snapshot_from_path(self._app_context.database_path)
-            screen = DashboardScreen(snapshot)
-            layout.addWidget(screen)
-        else:
-            # Заглушка для неперенесених екранів
-            from PySide6.QtWidgets import QLabel
-            placeholder = QLabel(f"Екран '{section.value}' ще не мігрований на PySide6.")
-            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(placeholder)
+        # Роутинг / Routing
+        context = QtContext(
+            content_container=self._content_container,
+            application_context=self._app_context,
+            selected_section=section,
+            access_role=self._access_role,
+        )
+        screen = build_screen_for_section(context)
+        
+        from osah.ui.qt.components.animations.fade_in import apply_fade_in
+        apply_fade_in(screen)
+        
+        layout.addWidget(screen)

@@ -33,14 +33,14 @@ class TopCommandBar(QWidget):
         text_layout.setSpacing(0)
 
         self._title_label = QLabel()
+        self._title_label.setProperty("role", "title")
         title_font = QFont(FONT["title_xl"][0], FONT["title_xl"][1])
         title_font.setBold(FONT["title_xl"][2])
         self._title_label.setFont(title_font)
-        self._title_label.setStyleSheet(f"color: {COLOR['text_primary']};")
         text_layout.addWidget(self._title_label)
 
         self._subtitle_label = QLabel()
-        self._subtitle_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 11px;")
+        self._subtitle_label.setProperty("role", "subtitle")
         text_layout.addWidget(self._subtitle_label)
 
         layout.addLayout(text_layout)

@@ -21,7 +21,7 @@ class SectionContainer(QScrollArea):
         self.setFrameShape(QScrollArea.Shape.NoFrame)
 
         self._inner = QWidget()
-        self._inner.setStyleSheet(f"background: {COLOR['bg_app']};")
+        self._inner.setProperty("role", "section_bg")
         self._layout = QVBoxLayout(self._inner)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)

@@ -29,23 +29,23 @@ class StatusStrip(QWidget):
 
         # Шлях до БД / DB path
         db_label = QLabel(f"БД: {database_path.name}")
-        db_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 9px;")
+        db_label.setProperty("role", "status_muted")
         layout.addWidget(db_label)
 
         # Розділювач / Separator
         sep = QLabel("·")
-        sep.setStyleSheet(f"color: {COLOR['border_strong']}; font-size: 9px;")
+        sep.setProperty("role", "status_muted")
         layout.addWidget(sep)
 
         # Роль / Role
         role_label = QLabel(f"Роль: {format_access_role_label(access_role)}")
-        role_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 9px;")
+        role_label.setProperty("role", "status_muted")
         layout.addWidget(role_label)
 
         layout.addStretch()
 
         # Статус / Status
         status_label = QLabel("● Локальна БД")
-        status_label.setStyleSheet(f"color: {COLOR['success']}; font-size: 9px;")
+        status_label.setProperty("role", "status_success")
         status_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(status_label)
