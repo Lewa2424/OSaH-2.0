@@ -1,0 +1,9 @@
+[project]
+name = "osah"
+version = "0.1.0"
+description = "Local occupational safety desktop system."
+requires-python = ">=3.12"
+
+[tool.unittest]
+start-directory = "tests"
+
