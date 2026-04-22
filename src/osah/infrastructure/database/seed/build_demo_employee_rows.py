@@ -40,7 +40,7 @@ def build_demo_employee_rows() -> list[tuple[str, str, str, str, str]]:
     )
 
     rows: list[tuple[str, str, str, str, str]] = []
-    employee_count = 20
+    employee_count = 54
     for index in range(employee_count):
         department_name = departments[index % len(departments)]
         position_name = positions[department_name][index % len(positions[department_name])]

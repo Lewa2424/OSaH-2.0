@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QWidget
 from osah.application.services.application_context import ApplicationContext
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
+from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
 
 
 @dataclass(slots=True)
@@ -20,3 +21,4 @@ class QtContext:
     application_context: ApplicationContext
     selected_section: AppSection
     access_role: AccessRole
+    navigation_intent: QtNavigationIntent | None = None

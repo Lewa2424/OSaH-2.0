@@ -17,7 +17,9 @@ from osah.ui.qt.components.side_nav import SideNav
 from osah.ui.qt.components.status_strip import StatusStrip
 from osah.ui.qt.components.top_command_bar import TopCommandBar
 from osah.ui.qt.design.tokens import SIZE
+from osah.ui.qt.routing.map_notification_source_to_problem_key import map_notification_source_to_problem_key
 from osah.ui.qt.routing.qt_context import QtContext
+from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
 from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
 
 
@@ -30,6 +32,7 @@ class AppWindow(QMainWindow):
         super().__init__()
         self._app_context = app_context
         self._access_role = access_role
+        self._pending_navigation_intent: QtNavigationIntent | None = None
 
         self.setWindowTitle("OSaH 2.0")
         self.setMinimumSize(SIZE["window_min_w"], SIZE["window_min_h"])
@@ -97,10 +100,28 @@ class AppWindow(QMainWindow):
             application_context=self._app_context,
             selected_section=section,
             access_role=self._access_role,
+            navigation_intent=self._pending_navigation_intent,
         )
+        self._pending_navigation_intent = None
         screen = build_screen_for_section(context)
+        if hasattr(screen, "employee_attention_requested"):
+            screen.employee_attention_requested.connect(self._open_employee_attention)
         
         from osah.ui.qt.components.animations.fade_in import apply_fade_in
         apply_fade_in(screen)
         
         layout.addWidget(screen)
+
+    # ###### ВІДКРИТТЯ ПРАЦІВНИКА ЗІ СПОВІЩЕННЯ / OPEN EMPLOYEE FROM ALERT ######
+    def _open_employee_attention(self, personnel_number: str, source_module: str) -> None:
+        """Переходить із Dashboard до картки працівника за сигналом проблеми.
+        Navigates from Dashboard to an employee card from a problem signal.
+        """
+
+        problem_key = map_notification_source_to_problem_key(source_module)
+        self._pending_navigation_intent = QtNavigationIntent(
+            target_section=AppSection.EMPLOYEES,
+            employee_personnel_number=personnel_number,
+            problem_key=problem_key,
+        )
+        self._on_section_selected(AppSection.EMPLOYEES)

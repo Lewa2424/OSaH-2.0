@@ -253,6 +253,75 @@ QWidget[role="section_bg"] {{
     background: {c["bg_app"]};
 }}
 
+/* Employees module */
+QLineEdit,
+QComboBox {{
+    background: {c["bg_card"]};
+    border: 1px solid {c["border_soft"]};
+    border-radius: {r["md"]}px;
+    padding: 8px 10px;
+    min-height: 24px;
+}}
+QLineEdit:focus,
+QComboBox:focus {{
+    border: 1px solid {c["accent"]};
+}}
+QCheckBox {{
+    spacing: 6px;
+    color: {c["text_secondary"]};
+    font-weight: 600;
+}}
+QTreeWidget,
+QTableWidget {{
+    background: {c["bg_card"]};
+    alternate-background-color: {c["bg_panel"]};
+    border: 1px solid {c["border_soft"]};
+    border-radius: {r["lg"]}px;
+    gridline-color: {c["border_soft"]};
+    selection-background-color: {c["accent_subtle"]};
+    selection-color: {c["text_primary"]};
+}}
+QHeaderView::section {{
+    background: {c["bg_panel"]};
+    border: none;
+    border-bottom: 1px solid {c["border_soft"]};
+    color: {c["text_secondary"]};
+    font-weight: 800;
+    padding: 8px;
+}}
+QTreeWidget::item,
+QTableWidget::item {{
+    padding: 6px;
+}}
+QTreeWidget::item:hover,
+QTableWidget::item:hover {{
+    background: {c["bg_card_hover"]};
+}}
+QTreeWidget::item:selected,
+QTableWidget::item:selected {{
+    background: {c["accent_subtle"]};
+    color: {c["text_primary"]};
+}}
+QTabWidget::pane {{
+    border: 1px solid {c["border_soft"]};
+    border-radius: {r["lg"]}px;
+    background: {c["bg_card"]};
+}}
+QTabBar::tab {{
+    background: {c["bg_panel"]};
+    border: 1px solid {c["border_soft"]};
+    border-bottom: none;
+    border-top-left-radius: {r["md"]}px;
+    border-top-right-radius: {r["md"]}px;
+    padding: 8px 12px;
+    margin-right: 4px;
+}}
+QTabBar::tab:selected {{
+    background: {c["bg_card"]};
+    color: {c["accent"]};
+    font-weight: 800;
+}}
+
 /* ── SideNav / Logo ── */
 QLabel[role="logo"] {{
     color: {c["accent"]};

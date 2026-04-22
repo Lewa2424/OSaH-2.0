@@ -3,6 +3,7 @@ AlertCard — картка активного сповіщення.
 Відображає level-badge, заголовок і текст з кольоровою лівою смугою.
 AlertCard — active notification card with level badge and colored left bar.
 """
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from osah.domain.entities.notification_item import NotificationItem
@@ -32,8 +33,13 @@ class AlertCard(QWidget):
     Active notification card for the Dashboard screen.
     """
 
+    clicked = Signal()
+
     def __init__(self, notification: NotificationItem) -> None:
         super().__init__()
+        self._notification = notification
+        if notification.employee_personnel_number:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
         bar_color, badge_bg, badge_text = _resolve_level_colors(notification.notification_level)
 
         outer = QVBoxLayout(self)
@@ -99,3 +105,13 @@ class AlertCard(QWidget):
         body_text.setProperty("role", "alert_body")
         body_text.setWordWrap(True)
         v.addWidget(body_text)
+
+    # ###### КЛІК ПО СПОВІЩЕННЮ / NOTIFICATION CLICK ######
+    def mousePressEvent(self, event) -> None:
+        """Передає клік по сповіщенню для переходу до пов'язаної картки.
+        Emits notification click for navigation to the related card.
+        """
+
+        if self._notification.employee_personnel_number:
+            self.clicked.emit()
+        super().mousePressEvent(event)
