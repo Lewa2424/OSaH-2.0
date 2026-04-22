@@ -1,12 +1,12 @@
 from osah.application.services.initialize_application import initialize_application
 from osah.infrastructure.config.application_paths import build_application_paths
-from osah.ui.qt.run_qt_application import run_qt_application
+from osah.ui.qt.run_qt_application_secured import run_qt_application
 
 
 # ###### ГОЛОВНА ТОЧКА ВХОДУ / ГЛАВНАЯ ТОЧКА ВХОДА ######
 def main() -> None:
-    """Запускає ініціалізацію та desktop-інтерфейс застосунку.
-    Запускает инициализацию и desktop-интерфейс приложения.
+    """Запускає ініціалізацію та Qt-інтерфейс застосунку з повним security flow.
+    Запускает инициализацию и Qt-интерфейс приложения с полным security flow.
     """
 
     application_paths = build_application_paths()
