@@ -4,6 +4,7 @@ from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.design.tokens import COLOR, SPACING
 from osah.ui.qt.screens.employees.employee_header_card import EmployeeHeaderCard
 from osah.ui.qt.screens.employees.employee_overview_tab import EmployeeOverviewTab
+from osah.ui.qt.screens.trainings.employee_trainings_tab import EmployeeTrainingsTab
 
 
 class EmployeeDetailsPane(QScrollArea):
@@ -44,7 +45,7 @@ class EmployeeDetailsPane(QScrollArea):
 
         tabs = QTabWidget()
         tabs.addTab(EmployeeOverviewTab(row), "Огляд")
-        tabs.addTab(_stub_tab("Інструктажі", "Повна вкладка буде підключена на наступному етапі."), "Інструктажі")
+        tabs.addTab(EmployeeTrainingsTab(row.training_records), "Інструктажі")
         tabs.addTab(_stub_tab("ЗІЗ", "Read-only зведення вже враховано в огляді."), "ЗІЗ")
         tabs.addTab(_stub_tab("Медицина", "Read-only зведення вже враховано в огляді."), "Медицина")
         tabs.addTab(_stub_tab("Наряди-допуски", "Read-only зведення вже враховано в огляді."), "Наряди-допуски")

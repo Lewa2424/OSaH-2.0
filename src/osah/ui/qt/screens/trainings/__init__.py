@@ -1,0 +1,1 @@
+"""Qt trainings module."""

@@ -19,6 +19,7 @@ class DashboardScreen(QWidget):
     """
 
     employee_attention_requested = Signal(str, str)
+    trainings_attention_requested = Signal(str)
 
     def __init__(self, snapshot: DashboardSnapshot) -> None:
         super().__init__()
@@ -131,6 +132,20 @@ class DashboardScreen(QWidget):
         ib_layout.setSpacing(SPACING["md"])
         
         from PySide6.QtWidgets import QPushButton
+
+        training_critical, training_warning = _count_training_notifications(snapshot)
+        training_status = QLabel(
+            f"Інструктажі: критично {training_critical}, увага {training_warning}"
+        )
+        training_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
+        ib_layout.addWidget(training_status)
+
+        trainings_btn = QPushButton("Відкрити проблемні інструктажі")
+        trainings_btn.setProperty("variant", "secondary")
+        trainings_btn.clicked.connect(
+            lambda: self.trainings_attention_requested.emit("missing" if training_critical else "warning")
+        )
+        ib_layout.addWidget(trainings_btn)
         
         btn1 = QPushButton("📝 Оформити наряд-допуск")
         btn1.setProperty("variant", "secondary")
@@ -167,3 +182,21 @@ class DashboardScreen(QWidget):
                 notification.employee_personnel_number,
                 notification.source_module,
             )
+
+
+# ###### ПІДРАХУНОК СИГНАЛІВ ІНСТРУКТАЖІВ / COUNT TRAINING SIGNALS ######
+def _count_training_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
+    """Рахує критичні та попереджувальні сповіщення модуля інструктажів.
+    Counts critical and warning notifications for the trainings module.
+    """
+
+    critical = 0
+    warning = 0
+    for notification in snapshot.active_notifications:
+        if not notification.source_module.startswith("trainings."):
+            continue
+        if notification.notification_level.value == "critical":
+            critical += 1
+        elif notification.notification_level.value == "warning":
+            warning += 1
+    return critical, warning

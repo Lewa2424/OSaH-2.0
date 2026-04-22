@@ -12,3 +12,4 @@ class QtNavigationIntent:
     target_section: AppSection
     employee_personnel_number: str | None = None
     problem_key: str | None = None
+    training_status_filter: str | None = None

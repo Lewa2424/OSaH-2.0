@@ -29,7 +29,8 @@ def build_employee_workspace_row(
     Builds one employee workspace row without UI logic.
     """
 
-    training_summary, training_problems = _build_training_summary(tuple(training_records))
+    training_records_tuple = tuple(training_records)
+    training_summary, training_problems = _build_training_summary(training_records_tuple)
     ppe_summary, ppe_problems = _build_ppe_summary(tuple(ppe_records))
     medical_summary, medical_problems = _build_medical_summary(tuple(medical_records))
     permit_summary, permit_problems = _build_work_permit_summary(tuple(work_permit_records))
@@ -57,6 +58,7 @@ def build_employee_workspace_row(
         site_name=_infer_site_name(employee.department_name),
         position_name=employee.position_name,
         photo_path=None,
+        training_records=training_records_tuple,
         module_summaries=module_summaries,
         problems=problems,
     )

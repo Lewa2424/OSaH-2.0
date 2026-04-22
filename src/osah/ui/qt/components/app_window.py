@@ -106,6 +106,10 @@ class AppWindow(QMainWindow):
         screen = build_screen_for_section(context)
         if hasattr(screen, "employee_attention_requested"):
             screen.employee_attention_requested.connect(self._open_employee_attention)
+        if hasattr(screen, "trainings_attention_requested"):
+            screen.trainings_attention_requested.connect(self._open_trainings_attention)
+        if hasattr(screen, "employee_open_requested"):
+            screen.employee_open_requested.connect(lambda personnel_number: self._open_employee_attention(personnel_number, "trainings.registry"))
         
         from osah.ui.qt.components.animations.fade_in import apply_fade_in
         apply_fade_in(screen)
@@ -125,3 +129,15 @@ class AppWindow(QMainWindow):
             problem_key=problem_key,
         )
         self._on_section_selected(AppSection.EMPLOYEES)
+
+    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ ІНСТРУКТАЖІВ / OPEN TRAINING ALERTS ######
+    def _open_trainings_attention(self, status_filter: str) -> None:
+        """Переходить із Dashboard до відфільтрованого модуля інструктажів.
+        Navigates from Dashboard to filtered trainings module.
+        """
+
+        self._pending_navigation_intent = QtNavigationIntent(
+            target_section=AppSection.TRAININGS,
+            training_status_filter=status_filter,
+        )
+        self._on_section_selected(AppSection.TRAININGS)

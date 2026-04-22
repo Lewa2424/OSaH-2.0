@@ -21,21 +21,21 @@ class EmployeesFilterBar(QWidget):
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Пошук: ПІБ, табельний, посада, підрозділ, участок")
-        self.search_input.textChanged.connect(self.filters_changed.emit)
+        self.search_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         layout.addWidget(self.search_input, stretch=3)
 
         self.department_filter = QComboBox()
         self.department_filter.addItem("Усі підрозділи", "")
         for department in sorted({row.department_name for row in workspace.rows}):
             self.department_filter.addItem(department, department)
-        self.department_filter.currentIndexChanged.connect(self.filters_changed.emit)
+        self.department_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         layout.addWidget(self.department_filter, stretch=1)
 
         self.position_filter = QComboBox()
         self.position_filter.addItem("Усі посади", "")
         for position in sorted({row.position_name for row in workspace.rows}):
             self.position_filter.addItem(position, position)
-        self.position_filter.currentIndexChanged.connect(self.filters_changed.emit)
+        self.position_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         layout.addWidget(self.position_filter, stretch=1)
 
         self.status_filter = QComboBox()
@@ -48,15 +48,15 @@ class EmployeesFilterBar(QWidget):
             (EmployeeStatusLevel.ARCHIVED, "Архів"),
         ):
             self.status_filter.addItem(label, level.value)
-        self.status_filter.currentIndexChanged.connect(self.filters_changed.emit)
+        self.status_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         layout.addWidget(self.status_filter)
 
         self.critical_only = QCheckBox("Критика")
-        self.critical_only.stateChanged.connect(self.filters_changed.emit)
+        self.critical_only.stateChanged.connect(lambda _state: self.filters_changed.emit())
         layout.addWidget(self.critical_only)
 
         self.warning_only = QCheckBox("Увага")
-        self.warning_only.stateChanged.connect(self.filters_changed.emit)
+        self.warning_only.stateChanged.connect(lambda _state: self.filters_changed.emit())
         layout.addWidget(self.warning_only)
 
         reset_button = QPushButton("Скинути")
