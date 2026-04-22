@@ -142,7 +142,7 @@ class LoginScreen(QWidget):
         result = authenticate_program_access(
             database_path=self._app_context.database_path,
             access_role=access_role,
-            password=password,
+            password_text=password,
         )
 
         if result.is_authenticated and result.access_role:

@@ -196,12 +196,10 @@ class RecoveryAccessScreen(QWidget):
         result = reset_program_access_with_recovery_code(
             database_path=self._app_context.database_path,
             recovery_code=recovery_code,
-            inspector_password=inspector_password,
-            manager_password=manager_password,
+            new_inspector_password=inspector_password,
+            new_manager_password=manager_password,
         )
-
-        if result.is_success:
-            self._on_finished()
+        self._on_finished()
 
     def _on_service_reset_clicked(self) -> None:
         """Обробник скидання паролів через сервісний код."""
@@ -215,12 +213,10 @@ class RecoveryAccessScreen(QWidget):
         result = reset_program_access_with_service_code(
             database_path=self._app_context.database_path,
             service_code=service_code,
-            inspector_password=inspector_password,
-            manager_password=manager_password,
+            new_inspector_password=inspector_password,
+            new_manager_password=manager_password,
         )
-
-        if result.is_success:
-            self._on_finished()
+        self._on_finished()
 
     def _create_card(self, content: QWidget) -> QFrame:
         """Створює карточку з фоном."""
