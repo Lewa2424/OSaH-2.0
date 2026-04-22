@@ -108,8 +108,15 @@ class AppWindow(QMainWindow):
             screen.employee_attention_requested.connect(self._open_employee_attention)
         if hasattr(screen, "trainings_attention_requested"):
             screen.trainings_attention_requested.connect(self._open_trainings_attention)
+        if hasattr(screen, "ppe_attention_requested"):
+            screen.ppe_attention_requested.connect(self._open_ppe_attention)
         if hasattr(screen, "employee_open_requested"):
-            screen.employee_open_requested.connect(lambda personnel_number: self._open_employee_attention(personnel_number, "trainings.registry"))
+            screen.employee_open_requested.connect(
+                lambda personnel_number, source=section: self._open_employee_attention(
+                    personnel_number,
+                    "trainings.registry" if source == AppSection.TRAININGS else "ppe.registry",
+                )
+            )
         
         from osah.ui.qt.components.animations.fade_in import apply_fade_in
         apply_fade_in(screen)
@@ -141,3 +148,15 @@ class AppWindow(QMainWindow):
             training_status_filter=status_filter,
         )
         self._on_section_selected(AppSection.TRAININGS)
+
+    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ ЗІЗ / OPEN PPE ALERTS ######
+    def _open_ppe_attention(self, status_filter: str) -> None:
+        """Переходить із Dashboard до відфільтрованого модуля ЗІЗ.
+        Navigates from Dashboard to filtered PPE module.
+        """
+
+        self._pending_navigation_intent = QtNavigationIntent(
+            target_section=AppSection.PPE,
+            ppe_status_filter=status_filter,
+        )
+        self._on_section_selected(AppSection.PPE)

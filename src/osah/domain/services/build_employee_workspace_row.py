@@ -31,7 +31,8 @@ def build_employee_workspace_row(
 
     training_records_tuple = tuple(training_records)
     training_summary, training_problems = _build_training_summary(training_records_tuple)
-    ppe_summary, ppe_problems = _build_ppe_summary(tuple(ppe_records))
+    ppe_records_tuple = tuple(ppe_records)
+    ppe_summary, ppe_problems = _build_ppe_summary(ppe_records_tuple)
     medical_summary, medical_problems = _build_medical_summary(tuple(medical_records))
     permit_summary, permit_problems = _build_work_permit_summary(tuple(work_permit_records))
 
@@ -59,6 +60,7 @@ def build_employee_workspace_row(
         position_name=employee.position_name,
         photo_path=None,
         training_records=training_records_tuple,
+        ppe_records=ppe_records_tuple,
         module_summaries=module_summaries,
         problems=problems,
     )
