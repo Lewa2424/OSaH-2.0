@@ -1,10 +1,10 @@
 """
-build_screen_for_section — фабрика для маршутизації екранів.
-Повертає відповідний екран для вибраного розділу.
+Screen factory for Qt section routing.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QWidget
 
+from osah.application.services.load_about_snapshot import load_about_snapshot
 from osah.application.services.load_audit_log_entries import load_audit_log_entries
 from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
 from osah.application.services.load_employee_workspace import load_employee_workspace
@@ -14,21 +14,24 @@ from osah.application.services.load_training_workspace import load_training_work
 from osah.application.services.load_work_permit_workspace import load_work_permit_workspace
 from osah.domain.entities.app_section import AppSection
 from osah.ui.qt.routing.qt_context import QtContext
+from osah.ui.qt.screens.about.about_screen import AboutScreen
+from osah.ui.qt.screens.archive.archive_screen import ArchiveScreen
+from osah.ui.qt.screens.contractors.contractors_screen import ContractorsScreen
 from osah.ui.qt.screens.dashboard.dashboard_screen import DashboardScreen
 from osah.ui.qt.screens.employees.employees_screen import EmployeesScreen
 from osah.ui.qt.screens.medical.medical_screen import MedicalScreen
 from osah.ui.qt.screens.news.news_screen import NewsScreen
 from osah.ui.qt.screens.ppe.ppe_screen import PpeScreen
 from osah.ui.qt.screens.reports.reports_screen import ReportsScreen
+from osah.ui.qt.screens.settings.settings_screen import SettingsScreen
 from osah.ui.qt.screens.trainings.trainings_screen import TrainingsScreen
 from osah.ui.qt.screens.work_permits.work_permits_screen import WorkPermitsScreen
 
 
+# ###### ПОБУДОВА ЕКРАНУ РОЗДІЛУ / BUILD SECTION SCREEN ######
 def build_screen_for_section(context: QtContext) -> QWidget:
-    """Будує та повертає віджет екрану для поточного розділу.
-    Builds and returns the screen widget for the current section.
-    """
-    
+    """Builds and returns screen widget for selected app section."""
+
     if context.selected_section == AppSection.DASHBOARD:
         snapshot = load_dashboard_snapshot_from_path(context.application_context.database_path)
         audit_entries = load_audit_log_entries(context.application_context.database_path, limit=80)
@@ -81,7 +84,23 @@ def build_screen_for_section(context: QtContext) -> QWidget:
     if context.selected_section == AppSection.NEWS_NPA:
         return NewsScreen(context.application_context.database_path)
 
-    # Заглушка для неперенесених екранів
+    if context.selected_section == AppSection.SETTINGS:
+        return SettingsScreen(context.application_context.database_path, context.access_role)
+
+    if context.selected_section == AppSection.ARCHIVE:
+        return ArchiveScreen(context.application_context.database_path, context.access_role)
+
+    if context.selected_section == AppSection.CONTRACTORS:
+        return ContractorsScreen(context.application_context.database_path, context.access_role)
+
+    if context.selected_section == AppSection.ABOUT:
+        return AboutScreen(
+            load_about_snapshot(
+                context.application_context.database_path,
+                context.application_context.log_path,
+            )
+        )
+
     placeholder = QLabel(f"Екран '{context.selected_section.value}' ще не мігрований на PySide6.")
     placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
     placeholder.setProperty("role", "status_muted")
