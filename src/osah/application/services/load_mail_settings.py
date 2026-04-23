@@ -27,4 +27,5 @@ def load_mail_settings(database_path: Path) -> MailSettings:
         recipient_email=app_settings.get("mail.recipient_email", ""),
         use_tls=app_settings.get("mail.use_tls", "1") == "1",
         last_sent_date=app_settings.get("mail.last_sent_date", ""),
+        daily_report_time=app_settings.get("mail.daily_report_time", "08:00"),
     )

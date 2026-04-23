@@ -24,6 +24,7 @@ def save_mail_settings(database_path: Path, mail_settings: MailSettings) -> None
             "mail.recipient_email": mail_settings.recipient_email.strip(),
             "mail.use_tls": "1" if mail_settings.use_tls else "0",
             "mail.last_sent_date": mail_settings.last_sent_date.strip(),
+            "mail.daily_report_time": mail_settings.daily_report_time.strip() or "08:00",
         }
         for setting_key, setting_value in setting_pairs.items():
             upsert_app_setting(connection, setting_key, setting_value)

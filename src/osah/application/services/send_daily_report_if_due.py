@@ -3,6 +3,7 @@ from pathlib import Path
 
 from osah.application.services.load_mail_settings import load_mail_settings
 from osah.application.services.send_daily_report_email import send_daily_report_email
+from osah.domain.services.is_daily_report_time_due import is_daily_report_time_due
 from osah.domain.services.is_mail_settings_ready import is_mail_settings_ready
 
 
@@ -17,6 +18,8 @@ def send_daily_report_if_due(database_path: Path, current_moment: datetime | Non
     if not mail_settings.daily_report_enabled:
         return
     if not is_mail_settings_ready(mail_settings):
+        return
+    if not is_daily_report_time_due(mail_settings, reference_moment):
         return
     if mail_settings.last_sent_date == reference_moment.strftime("%Y-%m-%d"):
         return

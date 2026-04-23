@@ -55,6 +55,46 @@ class RefreshNewsSourcesTests(unittest.TestCase):
             self.assertEqual(news_items[0].title_text, "Нове роз'яснення Держпраці")
             shut_down_logging()
 
+    def test_refresh_news_sources_keeps_cache_when_one_source_fails(self) -> None:
+        """Перевіряє, що збій одного зовнішнього джерела не ламає весь кеш.
+        Checks that one external source failure does not break the whole cache.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+            create_news_source(
+                context.database_path,
+                "Новини ОП",
+                "https://example.com/news.xml",
+                NewsSourceKind.NEWS,
+            )
+            create_news_source(
+                context.database_path,
+                "Бите джерело",
+                "https://example.com/broken.xml",
+                NewsSourceKind.NPA,
+            )
+
+            def mixed_feed_fetcher(source_url: str) -> tuple[RssFeedEntry, ...]:
+                if "broken" in source_url:
+                    raise RuntimeError("source unavailable")
+                return (
+                    RssFeedEntry(
+                        title_text="Оновлення правил охорони праці",
+                        link_url="https://example.com/item-1",
+                        published_at_text="2026-04-10T10:00:00",
+                    ),
+                )
+
+            cached_total = refresh_news_sources(context.database_path, mixed_feed_fetcher)
+
+            news_items = load_news_items(context.database_path)
+            self.assertEqual(cached_total, 1)
+            self.assertEqual(len(news_items), 1)
+            self.assertEqual(news_items[0].title_text, "Оновлення правил охорони праці")
+            shut_down_logging()
+
 
 if __name__ == "__main__":
     unittest.main()

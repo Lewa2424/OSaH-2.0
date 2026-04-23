@@ -22,6 +22,7 @@ class TopCommandBar(QWidget):
     def __init__(self, access_role: AccessRole) -> None:
         super().__init__()
         self.setProperty("role", "topbar")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFixedHeight(SIZE["top_bar_height"])
 
         layout = QHBoxLayout(self)
@@ -68,5 +69,7 @@ class TopCommandBar(QWidget):
             AppSection.PPE: "Забезпечення засобами захисту",
             AppSection.MEDICAL: "Контроль медоглядів",
             AppSection.WORK_PERMITS: "Облік нарядів-допусків",
+            AppSection.REPORTS: "Щоденний звіт, SMTP-доставка та службові помилки",
+            AppSection.NEWS_NPA: "Довірені джерела НПА та новин",
         }
         self._subtitle_label.setText(subtitles.get(section, "Керування розділом"))

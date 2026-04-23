@@ -27,15 +27,17 @@ def refresh_news_sources(
     try:
         news_sources = tuple(news_source for news_source in list_news_sources(connection) if news_source.is_active)
         cached_item_total = 0
+        failed_source_total = 0
         for news_source in news_sources:
             try:
                 feed_entries = feed_fetcher(news_source.source_url)
             except Exception as error:  # noqa: BLE001
+                failed_source_total += 1
                 log_alert_event(
                     "news_npa",
                     f"Source refresh failed: source={news_source.source_url};error={type(error).__name__}",
                 )
-                raise
+                continue
 
             for feed_entry in feed_entries:
                 upsert_news_item_row(
@@ -59,14 +61,20 @@ def refresh_news_sources(
             connection,
             event_type="news.refresh_completed",
             module_name="news_npa",
-            event_level="info",
+            event_level="warning" if failed_source_total else "info",
             actor_name="inspector",
             entity_name="news.sources",
-            result_status="success",
-            description_text=f"External news refresh completed for {len(news_sources)} sources.",
+            result_status="partial" if failed_source_total else "success",
+            description_text=(
+                f"External news refresh completed for {len(news_sources)} sources; "
+                f"failed_sources={failed_source_total}."
+            ),
         )
         connection.commit()
-        log_system_event("news_npa", f"External news refresh completed: sources={len(news_sources)};items={cached_item_total}")
+        log_system_event(
+            "news_npa",
+            f"External news refresh completed: sources={len(news_sources)};items={cached_item_total};failed={failed_source_total}",
+        )
         return cached_item_total
     finally:
         connection.close()

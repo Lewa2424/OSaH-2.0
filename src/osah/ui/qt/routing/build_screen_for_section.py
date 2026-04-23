@@ -5,6 +5,7 @@ build_screen_for_section — фабрика для маршутизації ек
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QWidget
 
+from osah.application.services.load_audit_log_entries import load_audit_log_entries
 from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
 from osah.application.services.load_employee_workspace import load_employee_workspace
 from osah.application.services.load_medical_workspace import load_medical_workspace
@@ -16,7 +17,9 @@ from osah.ui.qt.routing.qt_context import QtContext
 from osah.ui.qt.screens.dashboard.dashboard_screen import DashboardScreen
 from osah.ui.qt.screens.employees.employees_screen import EmployeesScreen
 from osah.ui.qt.screens.medical.medical_screen import MedicalScreen
+from osah.ui.qt.screens.news.news_screen import NewsScreen
 from osah.ui.qt.screens.ppe.ppe_screen import PpeScreen
+from osah.ui.qt.screens.reports.reports_screen import ReportsScreen
 from osah.ui.qt.screens.trainings.trainings_screen import TrainingsScreen
 from osah.ui.qt.screens.work_permits.work_permits_screen import WorkPermitsScreen
 
@@ -28,7 +31,8 @@ def build_screen_for_section(context: QtContext) -> QWidget:
     
     if context.selected_section == AppSection.DASHBOARD:
         snapshot = load_dashboard_snapshot_from_path(context.application_context.database_path)
-        return DashboardScreen(snapshot)
+        audit_entries = load_audit_log_entries(context.application_context.database_path, limit=80)
+        return DashboardScreen(snapshot, audit_entries)
 
     if context.selected_section == AppSection.EMPLOYEES:
         workspace = load_employee_workspace(context.application_context.database_path)
@@ -70,6 +74,12 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_work_permit_workspace(context.application_context.database_path),
             initial_status=intent.work_permit_status_filter if intent else None,
         )
+
+    if context.selected_section == AppSection.REPORTS:
+        return ReportsScreen(context.application_context.database_path)
+
+    if context.selected_section == AppSection.NEWS_NPA:
+        return NewsScreen(context.application_context.database_path)
 
     # Заглушка для неперенесених екранів
     placeholder = QLabel(f"Екран '{context.selected_section.value}' ще не мігрований на PySide6.")

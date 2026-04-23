@@ -29,6 +29,7 @@ class SideNav(QWidget):
     ) -> None:
         super().__init__()
         self.setProperty("role", "sidenav")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFixedWidth(SIZE["nav_width"])
 
         layout = QVBoxLayout(self)

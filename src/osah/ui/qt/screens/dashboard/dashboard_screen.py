@@ -6,6 +6,7 @@ DashboardScreen — dashboard stub using new UI components for DashboardSnapshot
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from osah.domain.entities.audit_log_entry import AuditLogEntry
 from osah.domain.entities.dashboard_snapshot import DashboardSnapshot
 from osah.domain.entities.notification_item import NotificationItem
 from osah.ui.qt.components.alert_card import AlertCard
@@ -24,7 +25,7 @@ class DashboardScreen(QWidget):
     medical_attention_requested = Signal(str)
     work_permits_attention_requested = Signal(str)
 
-    def __init__(self, snapshot: DashboardSnapshot) -> None:
+    def __init__(self, snapshot: DashboardSnapshot, service_audit_entries: tuple[AuditLogEntry, ...] = ()) -> None:
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xxl"], SPACING["xl"], SPACING["xxl"], SPACING["xl"])
@@ -186,10 +187,30 @@ class DashboardScreen(QWidget):
         
         ib_layout.addSpacing(SPACING["lg"])
 
-        ib_msg = QLabel("Зведення виконання плану...")
-        ib_msg.setProperty("role", "status_muted")
-        ib_msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        ib_layout.addWidget(ib_msg)
+        news_title = QLabel("Новини / НПА")
+        news_title.setStyleSheet(f"color: {COLOR['text_primary']}; font-weight: 900;")
+        ib_layout.addWidget(news_title)
+        if snapshot.latest_news_items:
+            for news_item in snapshot.latest_news_items[:3]:
+                news_label = QLabel(
+                    f"• {news_item.source_name} | {news_item.published_at_text or '-'}\n{news_item.title_text}"
+                )
+                news_label.setWordWrap(True)
+                news_label.setStyleSheet(f"color: {COLOR['text_secondary']};")
+                ib_layout.addWidget(news_label)
+        else:
+            news_empty = QLabel("Нових матеріалів із довірених джерел немає.")
+            news_empty.setProperty("role", "status_muted")
+            ib_layout.addWidget(news_empty)
+
+        service_title = QLabel("Службовий контроль")
+        service_title.setStyleSheet(f"color: {COLOR['text_primary']}; font-weight: 900;")
+        ib_layout.addWidget(service_title)
+        for service_status_text in _build_service_status_lines(service_audit_entries):
+            status_label = QLabel(service_status_text)
+            status_label.setWordWrap(True)
+            status_label.setStyleSheet(f"color: {COLOR['text_secondary']};")
+            ib_layout.addWidget(status_label)
 
         right_col.addWidget(info_box)
         right_col.addStretch()
@@ -282,3 +303,40 @@ def _count_work_permit_notifications(snapshot: DashboardSnapshot) -> tuple[int, 
         elif notification.notification_level.value == "warning":
             warning += 1
     return critical, warning
+
+
+# ###### СЛУЖБОВІ СТАТУСИ ЗОВНІШНЬОГО КОНТУРУ / EXTERNAL SERVICE STATUS LINES ######
+def _build_service_status_lines(audit_entries: tuple[AuditLogEntry, ...]) -> tuple[str, ...]:
+    """Формує короткі рядки стану пошти та джерел НПА для Dashboard.
+    Builds short mail and NPA source status lines for the Dashboard.
+    """
+
+    latest_mail = _find_latest_entry(audit_entries, "reports_mail")
+    latest_news = _find_latest_entry(audit_entries, "news_npa")
+    return (
+        _format_service_line("Пошта", latest_mail),
+        _format_service_line("Джерела НПА", latest_news),
+    )
+
+
+# ###### ОСТАННЯ ПОДІЯ МОДУЛЯ / LATEST MODULE EVENT ######
+def _find_latest_entry(audit_entries: tuple[AuditLogEntry, ...], module_name: str) -> AuditLogEntry | None:
+    """Повертає останню audit-подію потрібного зовнішнього модуля.
+    Returns the latest audit event for the requested external module.
+    """
+
+    for audit_entry in audit_entries:
+        if audit_entry.module_name == module_name:
+            return audit_entry
+    return None
+
+
+# ###### ФОРМАТ СЛУЖБОВОГО РЯДКА / SERVICE LINE FORMAT ######
+def _format_service_line(title: str, audit_entry: AuditLogEntry | None) -> str:
+    """Перетворює audit-подію на зрозумілий службовий статус.
+    Converts an audit event into a readable service status.
+    """
+
+    if audit_entry is None:
+        return f"{title}: подій ще немає"
+    return f"{title}: {audit_entry.result_status} | {audit_entry.event_type} | {audit_entry.created_at_text}"

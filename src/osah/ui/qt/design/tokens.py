@@ -10,56 +10,56 @@ Design tokens for OSaH 2.0 Qt UI layer — single source of truth.
 COLOR: dict[str, str] = {
     # Фони / Backgrounds
     "bg_app":              "#F0F2F5",   # Корінь вікна / root window
-    "bg_shell":            "#FFFFFF",   # Основні панелі / main panels
-    "bg_panel":            "#F8F9FB",   # Трохи піднята поверхня / slightly elevated
-    "bg_panel_elevated":   "#FFFFFF",   # Картки / cards
-    "bg_card":             "#FFFFFF",   # Картки / cards
-    "bg_card_hover":       "#F8FAFC",   # Hover картки / card hover
+    "bg_shell":            "#DBF0F3EA",   # Основні панелі / main panels
+    "bg_panel":            "#F8F9FB",   # Трохи піднята поверхня / slightly elevated panel
+    "bg_panel_elevated":   "#FFFFFF",   # Піднята панель або велика картка / elevated panel or large card
+    "bg_card":             "#FFFFFF",   # Звичайна картка / regular card
+    "bg_card_hover":       "#F8FAFC",   # Фон картки при наведенні / card hover background
 
     # Текст / Text
     "text_primary":        "#111827",   # Основний текст / primary text
-    "text_secondary":      "#374151",   # Другорядний / secondary
-    "text_muted":          "#6B7280",   # Приглушений / muted
+    "text_secondary":      "#374151",   # Другорядний текст / secondary text
+    "text_muted":          "#6B7280",   # Приглушений текст / muted text
 
     # Акцент / Accent
-    "accent":              "#2563EB",   # Основний акцент
-    "accent_hover":        "#1D4ED8",   # Hover акценту
-    "accent_pressed":      "#1E40AF",   # Pressed акценту
-    "accent_text":         "#FFFFFF",   # Текст на акценті
-    "accent_subtle":       "#DBEAFE",   # Слабкий акцент / subtle tint
-    "accent_subtle_text":  "#1E40AF",   # Текст на слабкому акценті
+    "accent":              "#2563EB",   # Основний акцентний колір / primary accent
+    "accent_hover":        "#1D4ED8",   # Акцент при наведенні / accent hover
+    "accent_pressed":      "#1E40AF",   # Акцент при натисканні / accent pressed
+    "accent_text":         "#FFFFFF",   # Текст на акцентній кнопці або плашці / text on accent surfaces
+    "accent_subtle":       "#DBEAFE",   # Слабкий акцентний фон / subtle accent background
+    "accent_subtle_text":  "#1E40AF",   # Текст на слабкому акцентному фоні / text on subtle accent background
 
     # Статуси / Status
-    "success":             "#059669",
-    "success_subtle":      "#D1FAE5",
+    "success":             "#059669",   # Успіх / success state
+    "success_subtle":      "#D1FAE5",   # М’який фон успіху / subtle success background
 
-    "warning":             "#D97706",
-    "warning_subtle":      "#FFFBEB",
-    "warning_hover":       "#FEF3C7",
+    "warning":             "#D97706",   # Попередження / warning state
+    "warning_subtle":      "#FFFBEB",   # М’який фон попередження / subtle warning background
+    "warning_hover":       "#FEF3C7",   # Попередження при наведенні / warning hover background
 
-    "critical":            "#DC2626",
-    "critical_subtle":     "#FEF2F2",
-    "critical_hover":      "#FEE2E2",
+    "critical":            "#DC2626",   # Критичний стан / critical state
+    "critical_subtle":     "#FEF2F2",   # М’який фон критичного стану / subtle critical background
+    "critical_hover":      "#FEE2E2",   # Критичний стан при наведенні / critical hover background
 
     # Межі / Borders
-    "border_soft":         "#E5E7EB",
-    "border_strong":       "#D1D5DB",
+    "border_soft":         "#AEC9FD",   # М’яка межа / soft border
+    "border_strong":       "#97BEF8",   # Виразніша межа / stronger border
 
     # Навігація / Navigation
-    "nav_bg":              "#FFFFFF",
-    "nav_hover":           "#E2E6EC",
-    "nav_active_bg":       "#2563EB",
-    "nav_active_text":     "#FFFFFF",
-    "nav_footer":          "#9CA3AF",
+    "nav_bg":              "#DBF0F3EA",   # Фон бокової навігації / side navigation background
+    "nav_hover":           "#CAEDF1",   # Фон кнопки навігації при наведенні / navigation hover background
+    "nav_active_bg":       "#2563EB",   # Активний пункт навігації / active navigation item background
+    "nav_active_text":     "#FFFFFF",   # Текст активного пункту навігації / active navigation text
+    "nav_footer":          "#9CA3AF",   # Текст або службова зона внизу навігації / navigation footer text
 
     # Роль / Role card
-    "role_card_bg":        "#EFF1F5",
-    "role_tag_bg":         "#DBEAFE",
-    "role_tag_text":       "#1E40AF",
+    "role_card_bg":        "#EFF1F5",   # Фон картки ролі / role card background
+    "role_tag_bg":         "#DBEAFE",   # Фон ярлика ролі / role tag background
+    "role_tag_text":       "#1E40AF",   # Текст ярлика ролі / role tag text
 
     # Dashboard специфіка / Dashboard specific
-    "metric_title":        "#6B7280",
-    "news_accent":         "#8B5CF6",
+    "metric_title":        "#6B7280",   # Заголовок метрики / metric title
+    "news_accent":         "#8B5CF6",   # Акцент для блоку новин / news accent
 }
 
 # ──────────────────────────────────────────────────────────────────

@@ -16,3 +16,4 @@ class MailSettings:
     recipient_email: str
     use_tls: bool
     last_sent_date: str
+    daily_report_time: str = "08:00"

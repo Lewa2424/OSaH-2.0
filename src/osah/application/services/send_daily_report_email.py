@@ -1,4 +1,5 @@
 import smtplib
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -17,7 +18,11 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### НАДСИЛАННЯ ЩОДЕННОГО ЗВІТУ ПОШТОЮ / ОТПРАВКА ЕЖЕДНЕВНОГО ОТЧЁТА ПО ПОЧТЕ ######
-def send_daily_report_email(database_path: Path, attempt_limit: int = 3) -> tuple[Path, Path | None]:
+def send_daily_report_email(
+    database_path: Path,
+    attempt_limit: int = 3,
+    retry_pause_seconds: int = 0,
+) -> tuple[Path, Path | None]:
     """Надсилає щоденний звіт поштою, повертає шлях до копії звіту та fallback-листа при невдачі.
     Отправляет ежедневный отчёт по почте, возвращает путь к копии отчёта и fallback-письму при неудаче.
     """
@@ -32,7 +37,7 @@ def send_daily_report_email(database_path: Path, attempt_limit: int = 3) -> tupl
     email_message = build_daily_report_email_message(daily_report_document, mail_settings)
 
     last_error: Exception | None = None
-    for _ in range(attempt_limit):
+    for attempt_index in range(attempt_limit):
         try:
             _send_email_message(mail_settings, email_message)
             updated_mail_settings = MailSettings(
@@ -45,6 +50,7 @@ def send_daily_report_email(database_path: Path, attempt_limit: int = 3) -> tupl
                 recipient_email=mail_settings.recipient_email,
                 use_tls=mail_settings.use_tls,
                 last_sent_date=datetime.now().strftime("%Y-%m-%d"),
+                daily_report_time=mail_settings.daily_report_time,
             )
             save_mail_settings(database_path, updated_mail_settings)
             _write_report_delivery_audit_log(
@@ -57,6 +63,14 @@ def send_daily_report_email(database_path: Path, attempt_limit: int = 3) -> tupl
             return report_copy_path, None
         except Exception as error:  # noqa: BLE001
             last_error = error
+            _write_report_delivery_audit_log(
+                database_path,
+                event_type="report.send_attempt_failed",
+                result_status="failed",
+                description_text=f"attempt={attempt_index + 1};error={type(error).__name__}",
+            )
+            if retry_pause_seconds > 0 and attempt_index < attempt_limit - 1:
+                time.sleep(retry_pause_seconds)
 
     failed_email_copy_path = save_failed_report_email_copy(
         database_path,
