@@ -11,9 +11,12 @@ class TrainingSummaryPanel(QFrame):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("trainingSummaryPanel")
         self.setStyleSheet(
+            f"QFrame#trainingSummaryPanel {{ "
             f"background: {COLOR['bg_panel']}; border: 1px solid {COLOR['border_soft']};"
-            f"border-radius: {RADIUS['lg']}px;"
+            f"border-radius: {RADIUS['lg']}px; "
+            f"}}"
         )
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])

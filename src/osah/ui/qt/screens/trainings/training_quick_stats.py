@@ -11,9 +11,12 @@ class TrainingQuickStats(QFrame):
 
     def __init__(self, summary: TrainingWorkspaceSummary) -> None:
         super().__init__()
+        self.setObjectName("trainingQuickStats")
         self.setStyleSheet(
+            f"QFrame#trainingQuickStats {{ "
             f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']};"
-            f"border-radius: {RADIUS['xl']}px;"
+            f"border-radius: {RADIUS['xl']}px; "
+            f"}}"
         )
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])

@@ -13,9 +13,12 @@ class EmployeeHeaderCard(QFrame):
 
     def __init__(self, row: EmployeeWorkspaceRow) -> None:
         super().__init__()
+        self.setObjectName("employeeHeaderCard")
         self.setStyleSheet(
+            f"QFrame#employeeHeaderCard {{ "
             f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['xl']}px;"
+            f"border-radius: {RADIUS['xl']}px; "
+            f"}}"
         )
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])

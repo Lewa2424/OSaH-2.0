@@ -11,9 +11,12 @@ class PpeProblemBreakdown(QFrame):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("ppeProblemBreakdown")
         self.setStyleSheet(
+            f"QFrame#ppeProblemBreakdown {{ "
             f"background: {COLOR['bg_panel']}; border: 1px solid {COLOR['border_soft']};"
-            f"border-radius: {RADIUS['lg']}px;"
+            f"border-radius: {RADIUS['lg']}px; "
+            f"}}"
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])

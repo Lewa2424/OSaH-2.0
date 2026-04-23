@@ -10,9 +10,12 @@ class EmployeeProblemSummary(QFrame):
 
     def __init__(self, problems: tuple[EmployeeProblem, ...]) -> None:
         super().__init__()
+        self.setObjectName("employeeProblemSummary")
         self.setStyleSheet(
+            f"QFrame#employeeProblemSummary {{ "
             f"background: {COLOR['bg_panel']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['lg']}px;"
+            f"border-radius: {RADIUS['lg']}px; "
+            f"}}"
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])

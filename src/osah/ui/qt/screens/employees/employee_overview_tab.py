@@ -40,9 +40,12 @@ class _ModuleSummaryCard(QFrame):
         """
 
         super().__init__()
+        self.setObjectName("employeeModuleSummaryCard")
         self.setStyleSheet(
+            f"QFrame#employeeModuleSummaryCard {{ "
             f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['lg']}px;"
+            f"border-radius: {RADIUS['lg']}px; "
+            f"}}"
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])

@@ -11,9 +11,12 @@ class PpeSummaryPanel(QFrame):
 
     def __init__(self, summary: PpeWorkspaceSummary) -> None:
         super().__init__()
+        self.setObjectName("ppeSummaryPanel")
         self.setStyleSheet(
+            f"QFrame#ppeSummaryPanel {{ "
             f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']};"
-            f"border-radius: {RADIUS['xl']}px;"
+            f"border-radius: {RADIUS['xl']}px; "
+            f"}}"
         )
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])
