@@ -16,6 +16,8 @@ from osah.ui.qt.screens.trainings.training_record_details_pane import TrainingRe
 from osah.ui.qt.screens.trainings.training_summary_panel import TrainingSummaryPanel
 from osah.ui.qt.screens.trainings.trainings_filter_bar import TrainingsFilterBar
 from osah.ui.qt.screens.trainings.trainings_registry_table import TrainingsRegistryTable
+from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
+from osah.ui.qt.workers.workspace_reload_worker import WorkspaceReloadWorker
 
 
 class TrainingsScreen(QWidget):
@@ -28,6 +30,13 @@ class TrainingsScreen(QWidget):
         self._database_path = database_path
         self._workspace = workspace
         self._visible_rows: tuple[TrainingWorkspaceRow, ...] = workspace.rows
+
+        self._reload_task_controller = WorkerTaskController()
+        self._reload_task_controller.started.connect(self._on_reload_started)
+        self._reload_task_controller.progress.connect(self._on_reload_progress)
+        self._reload_task_controller.success.connect(self._on_reload_success)
+        self._reload_task_controller.error.connect(self._on_reload_error)
+        self._reload_task_controller.finished.connect(self._on_reload_finished)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -82,17 +91,13 @@ class TrainingsScreen(QWidget):
     def _reload_workspace(self) -> None:
         """Reloads data after creating or editing a training record."""
 
-        self.loading_state.show_state("Оновлення реєстру інструктажів...")
-        self.error_state.hide()
-        try:
-            self._workspace = load_training_workspace(self._database_path)
-        except Exception as error:  # noqa: BLE001
-            self.loading_state.hide()
-            self.error_state.show_state(f"Не вдалося оновити дані інструктажів: {error}")
-            return
-
-        self.quick_stats.set_summary(self._workspace.summary)
-        self._apply_filters()
+        if not self._reload_task_controller.start_worker(
+            WorkspaceReloadWorker(
+                load_callable=lambda: load_training_workspace(self._database_path),
+                operation_label="Оновлення реєстру інструктажів",
+            )
+        ):
+            self.error_state.show_state("Оновлення вже виконується. Дочекайтеся завершення.")
 
     # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
@@ -130,6 +135,46 @@ class TrainingsScreen(QWidget):
             self.filter_bar.set_status_filter(TrainingRegistryFilter(initial_status))
         except ValueError:
             return
+
+    # ###### СТАРТ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD START ######
+    def _on_reload_started(self) -> None:
+        """Applies busy-state for workspace reload."""
+
+        self.loading_state.show_state("Оновлення реєстру інструктажів...")
+        self.error_state.hide()
+        self.filter_bar.setEnabled(False)
+        self.details_pane.setEnabled(False)
+
+    # ###### ПРОГРЕС ПЕРЕЗАВАНТАЖЕННЯ / RELOAD PROGRESS ######
+    def _on_reload_progress(self, progress_value: int, message_text: str) -> None:
+        """Updates loading message while reload is running."""
+
+        self.loading_state.show_state(message_text)
+
+    # ###### УСПІХ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD SUCCESS ######
+    def _on_reload_success(self, payload: object) -> None:
+        """Updates workspace from background reload result."""
+
+        if not isinstance(payload, TrainingWorkspace):
+            self.error_state.show_state("Отримано некоректний результат оновлення реєстру інструктажів.")
+            return
+        self._workspace = payload
+        self.quick_stats.set_summary(self._workspace.summary)
+        self._apply_filters()
+
+    # ###### ПОМИЛКА ПЕРЕЗАВАНТАЖЕННЯ / RELOAD ERROR ######
+    def _on_reload_error(self, message_text: str) -> None:
+        """Shows reload error text."""
+
+        self.error_state.show_state(message_text)
+
+    # ###### ФІНАЛ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD FINISH ######
+    def _on_reload_finished(self) -> None:
+        """Resets busy-state after reload completion."""
+
+        self.loading_state.hide()
+        self.filter_bar.setEnabled(True)
+        self.details_pane.setEnabled(True)
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
@@ -172,7 +217,7 @@ def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
 
 # ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[TrainingWorkspaceRow, ...]) -> tuple[TrainingWorkspaceRow, ...]:
-    """Keeps the most problematic training row per employee."""
+    """Keeps most problematic training row per employee."""
 
     priority = {
         TrainingRegistryFilter.MISSING: 4,

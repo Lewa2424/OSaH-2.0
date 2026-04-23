@@ -2,9 +2,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtCore import QObject
 
 from osah.application.services.create_news_source import create_news_source
+from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
 from osah.application.services.save_mail_settings import save_mail_settings
 from osah.application.services.save_system_behavior_settings import save_system_behavior_settings
@@ -15,16 +17,22 @@ from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
 from osah.ui.qt.screens.settings.mail_settings_panel import MailSettingsPanel
 from osah.ui.qt.screens.settings.news_sources_settings_panel import NewsSourcesSettingsPanel
+from osah.ui.qt.screens.settings.operations_settings_panel import OperationsSettingsPanel
 from osah.ui.qt.screens.settings.security_settings_panel import SecuritySettingsPanel
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
+from osah.ui.qt.workers.backup_create_worker import BackupCreateWorker
+from osah.ui.qt.workers.import_worker import ImportWorker
+from osah.ui.qt.workers.restore_backup_worker import RestoreBackupWorker
+from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
 
 
 class SettingsScreen(QWidget):
-    """Settings command-center screen."""
+    """Settings command center with non-blocking heavy service operations."""
 
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
@@ -32,6 +40,14 @@ class SettingsScreen(QWidget):
         self._access_role = access_role
         self._read_only = access_role != AccessRole.INSPECTOR
         self._workspace = load_system_settings_workspace(database_path)
+        self._active_task_name: str | None = None
+
+        self._task_controller = WorkerTaskController()
+        self._task_controller.started.connect(self._on_task_started)
+        self._task_controller.progress.connect(self._on_task_progress)
+        self._task_controller.success.connect(self._on_task_success)
+        self._task_controller.error.connect(self._on_task_error)
+        self._task_controller.finished.connect(self._on_task_finished)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -49,6 +65,9 @@ class SettingsScreen(QWidget):
         self._feedback = FormFeedbackLabel()
         layout.addWidget(self._feedback)
 
+        self._task_progress = TaskProgressWidget()
+        layout.addWidget(self._task_progress)
+
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._content_widget = QWidget()
@@ -58,6 +77,7 @@ class SettingsScreen(QWidget):
         self._scroll.setWidget(self._content_widget)
         layout.addWidget(self._scroll, stretch=1)
 
+        self._operations_panel: OperationsSettingsPanel | None = None
         self._rebuild_sections()
 
     # ###### ПЕРЕБУДОВА СЕКЦІЙ ЕКРАНУ / REBUILD SETTINGS SECTIONS ######
@@ -93,6 +113,13 @@ class SettingsScreen(QWidget):
         backup_panel.open_backup_requested.connect(self._open_backup_directory)
         self._content_layout.addWidget(backup_panel)
 
+        self._operations_panel = OperationsSettingsPanel(read_only=self._read_only)
+        self._operations_panel.create_backup_requested.connect(self._start_create_backup)
+        self._operations_panel.restore_backup_requested.connect(self._start_restore_backup)
+        self._operations_panel.create_import_batch_requested.connect(self._start_create_import_batch)
+        self._operations_panel.apply_latest_import_requested.connect(self._start_apply_latest_import_batch)
+        self._content_layout.addWidget(self._operations_panel)
+
         self._content_layout.addWidget(self._build_behavior_panel())
         self._content_layout.addWidget(self._build_service_info_panel())
         self._content_layout.addStretch()
@@ -101,10 +128,10 @@ class SettingsScreen(QWidget):
     def _build_behavior_panel(self) -> QWidget:
         """Builds behavior settings card."""
 
-        card = SettingsSectionCard()
-        layout = card.content_layout()
         from PySide6.QtWidgets import QLabel
 
+        card = SettingsSectionCard()
+        layout = card.content_layout()
         title = QLabel("Поведінка системи")
         title.setProperty("role", "section_title")
         layout.addWidget(title)
@@ -136,7 +163,8 @@ class SettingsScreen(QWidget):
         layout.addWidget(QLabel(f"Версія: {self._workspace.app_version}"))
         layout.addWidget(QLabel(f"База даних: {self._workspace.database_path}"))
         layout.addWidget(QLabel(f"Каталог даних: {self._workspace.data_directory_path}"))
-        layout.addWidget(QLabel(f"Стан ініціалізації: {'готово' if self._workspace.is_initialized else 'не готово'}"))
+        init_text = "готово" if self._workspace.is_initialized else "не готово"
+        layout.addWidget(QLabel(f"Стан ініціалізації: {init_text}"))
         return card
 
     # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / SAVE MAIL SETTINGS ######
@@ -188,7 +216,7 @@ class SettingsScreen(QWidget):
 
     # ###### ЗБЕРЕЖЕННЯ НАЛАШТУВАНЬ БЕКАПУ / SAVE BACKUP PREFERENCES ######
     def _save_backup_preferences(self, backup_auto_enabled: bool, backup_max_copies: int) -> None:
-        """Saves backup-related preferences through shared behavior service."""
+        """Saves backup-related preferences through behavior settings service."""
 
         self._save_behavior_settings(backup_auto_enabled=backup_auto_enabled, backup_max_copies=backup_max_copies)
 
@@ -208,8 +236,12 @@ class SettingsScreen(QWidget):
             save_system_behavior_settings(
                 self._database_path,
                 ppe_warning_days=ppe_warning_days,
-                backup_auto_enabled=backup_auto_enabled if backup_auto_enabled is not None else self._workspace.backup_auto_enabled,
-                backup_max_copies=backup_max_copies if backup_max_copies is not None else self._workspace.backup_max_copies,
+                backup_auto_enabled=backup_auto_enabled
+                if backup_auto_enabled is not None
+                else self._workspace.backup_auto_enabled,
+                backup_max_copies=backup_max_copies
+                if backup_max_copies is not None
+                else self._workspace.backup_max_copies,
             )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося зберегти параметри: {error}")
@@ -219,6 +251,157 @@ class SettingsScreen(QWidget):
 
     # ###### ВІДКРИТТЯ КАТАЛОГУ БЕКАПІВ / OPEN BACKUP DIRECTORY ######
     def _open_backup_directory(self) -> None:
-        """Opens backup directory in system file manager."""
+        """Opens backup directory in file manager."""
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(self._workspace.backup_directory_path))
+
+    # ###### ЗАПУСК СТВОРЕННЯ БЕКАПУ / START BACKUP CREATE ######
+    def _start_create_backup(self) -> None:
+        """Starts manual backup creation in background."""
+
+        self._start_task("backup.create_manual", BackupCreateWorker(self._database_path))
+
+    # ###### ЗАПУСК ВІДНОВЛЕННЯ / START RESTORE ######
+    def _start_restore_backup(self) -> None:
+        """Starts restore operation from selected backup file in background."""
+
+        selected_file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Оберіть файл резервної копії",
+            self._workspace.backup_directory_path,
+            "Backup files (*.sqlite3 *.db *.bak);;All files (*.*)",
+        )
+        if not selected_file_path:
+            return
+        self._start_task(
+            "backup.restore",
+            RestoreBackupWorker(self._database_path, Path(selected_file_path)),
+        )
+
+    # ###### ЗАПУСК ІМПОРТУ ЧЕРНЕТОК / START IMPORT DRAFT CREATION ######
+    def _start_create_import_batch(self) -> None:
+        """Starts import draft creation from selected file in background."""
+
+        selected_file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Оберіть файл імпорту працівників",
+            self._workspace.data_directory_path,
+            "Supported files (*.json *.xlsx);;JSON (*.json);;Excel (*.xlsx)",
+        )
+        if not selected_file_path:
+            return
+        self._start_task(
+            "import.create_batch",
+            ImportWorker(
+                database_path=self._database_path,
+                operation_kind="create_batch",
+                source_file_path=Path(selected_file_path),
+            ),
+        )
+
+    # ###### ЗАПУСК ЗАСТОСУВАННЯ ПАРТІЇ ІМПОРТУ / START IMPORT BATCH APPLY ######
+    def _start_apply_latest_import_batch(self) -> None:
+        """Starts apply operation for latest import batch in background."""
+
+        latest_batch_summary, _ = load_latest_employee_import_review(self._database_path)
+        if latest_batch_summary is None:
+            self._feedback.show_error("Немає доступної партії імпорту для застосування.")
+            return
+        if latest_batch_summary.applied_at:
+            self._feedback.show_error("Останню партію імпорту вже застосовано.")
+            return
+        self._start_task(
+            "import.apply_batch",
+            ImportWorker(
+                database_path=self._database_path,
+                operation_kind="apply_batch",
+                batch_id=latest_batch_summary.batch_id,
+            ),
+        )
+
+    # ###### СТАРТ ФОНОВОЇ ОПЕРАЦІЇ / START BACKGROUND TASK ######
+    def _start_task(self, task_name: str, worker: QObject) -> None:
+        """Starts background worker and protects from double-run."""
+
+        if self._read_only:
+            self._feedback.show_error("Режим read-only: операція недоступна.")
+            return
+        self._active_task_name = task_name
+        if not self._task_controller.start_worker(worker):
+            self._feedback.show_error("Операція вже виконується. Дочекайтеся завершення.")
+            self._active_task_name = None
+
+    # ###### СТАРТ ФОНОВОЇ ЗАДАЧІ / BACKGROUND TASK START ######
+    def _on_task_started(self) -> None:
+        """Applies busy-state on task start."""
+
+        self._task_progress.show_indeterminate("Запущено фонову операцію...")
+        if self._operations_panel is not None:
+            self._operations_panel.setEnabled(False)
+
+    # ###### ПРОГРЕС ФОНОВОЇ ЗАДАЧІ / BACKGROUND TASK PROGRESS ######
+    def _on_task_progress(self, progress_value: int, message_text: str) -> None:
+        """Updates progress text/value for active heavy task."""
+
+        self._task_progress.show_progress(message_text, progress_value)
+        if self._operations_panel is not None:
+            self._operations_panel.set_status_text(message_text)
+
+    # ###### УСПІХ ФОНОВОЇ ЗАДАЧІ / BACKGROUND TASK SUCCESS ######
+    def _on_task_success(self, payload: object) -> None:
+        """Handles successful completion for each heavy operation."""
+
+        if self._active_task_name == "backup.create_manual":
+            if isinstance(payload, Path):
+                self._feedback.show_success(f"Резервну копію створено: {payload}")
+            else:
+                self._feedback.show_success("Резервну копію створено.")
+            self._rebuild_sections()
+            return
+
+        if self._active_task_name == "backup.restore":
+            if isinstance(payload, dict):
+                restored_from = payload.get("restored_from")
+                safety_copy = payload.get("safety_copy")
+                self._feedback.show_success(
+                    f"Відновлення завершено: {restored_from}. Страхувальна копія: {safety_copy}."
+                )
+            else:
+                self._feedback.show_success("Відновлення завершено.")
+            self._rebuild_sections()
+            return
+
+        if self._active_task_name == "import.create_batch":
+            if isinstance(payload, dict):
+                self._feedback.show_success(f"Партію імпорту #{payload.get('batch_id')} створено.")
+            else:
+                self._feedback.show_success("Партію імпорту створено.")
+            return
+
+        if self._active_task_name == "import.apply_batch":
+            if isinstance(payload, dict):
+                self._feedback.show_success(f"Партію імпорту #{payload.get('batch_id')} застосовано.")
+            else:
+                self._feedback.show_success("Партію імпорту застосовано.")
+            self._rebuild_sections()
+            return
+
+        self._feedback.show_success("Фонову операцію завершено.")
+
+    # ###### ПОМИЛКА ФОНОВОЇ ЗАДАЧІ / BACKGROUND TASK ERROR ######
+    def _on_task_error(self, message_text: str) -> None:
+        """Shows background task error text."""
+
+        self._feedback.show_error(message_text)
+
+    # ###### ФІНАЛ ФОНОВОЇ ЗАДАЧІ / BACKGROUND TASK FINISH ######
+    def _on_task_finished(self) -> None:
+        """Resets busy-state after task completion."""
+
+        self._task_progress.hide_state()
+        if self._operations_panel is not None:
+            self._operations_panel.setEnabled(True)
+            self._operations_panel.set_status_text(
+                "Тут запускаються важкі операції у фоновому режимі без блокування інтерфейсу."
+            )
+        self._active_task_name = None

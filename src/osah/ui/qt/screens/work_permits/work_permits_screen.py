@@ -15,6 +15,8 @@ from osah.ui.qt.screens.work_permits.work_permit_details_pane import WorkPermitD
 from osah.ui.qt.screens.work_permits.work_permit_summary_panel import WorkPermitSummaryPanel
 from osah.ui.qt.screens.work_permits.work_permits_filter_bar import WorkPermitsFilterBar
 from osah.ui.qt.screens.work_permits.work_permits_registry_table import WorkPermitsRegistryTable
+from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
+from osah.ui.qt.workers.workspace_reload_worker import WorkspaceReloadWorker
 
 
 class WorkPermitsScreen(QWidget):
@@ -26,6 +28,14 @@ class WorkPermitsScreen(QWidget):
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
+
+        self._reload_task_controller = WorkerTaskController()
+        self._reload_task_controller.started.connect(self._on_reload_started)
+        self._reload_task_controller.progress.connect(self._on_reload_progress)
+        self._reload_task_controller.success.connect(self._on_reload_success)
+        self._reload_task_controller.error.connect(self._on_reload_error)
+        self._reload_task_controller.finished.connect(self._on_reload_finished)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
@@ -70,16 +80,13 @@ class WorkPermitsScreen(QWidget):
     def _reload_workspace(self) -> None:
         """Reloads data after creating, editing, closing or canceling permit."""
 
-        self.loading_state.show_state("Оновлення реєстру нарядів-допусків...")
-        self.error_state.hide()
-        try:
-            self._workspace = load_work_permit_workspace(self._database_path)
-        except Exception as error:  # noqa: BLE001
-            self.loading_state.hide()
-            self.error_state.show_state(f"Не вдалося оновити наряди-допуски: {error}")
-            return
-        self.summary_panel.set_summary(self._workspace.summary)
-        self._apply_filters()
+        if not self._reload_task_controller.start_worker(
+            WorkspaceReloadWorker(
+                load_callable=lambda: load_work_permit_workspace(self._database_path),
+                operation_label="Оновлення реєстру нарядів-допусків",
+            )
+        ):
+            self.error_state.show_state("Оновлення вже виконується. Дочекайтеся завершення.")
 
     # ###### ФІЛЬТРИ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
@@ -93,7 +100,8 @@ class WorkPermitsScreen(QWidget):
             rows = tuple(
                 row
                 for row in rows
-                if row.status in {WorkPermitStatus.ACTIVE, WorkPermitStatus.WARNING, WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}
+                if row.status
+                in {WorkPermitStatus.ACTIVE, WorkPermitStatus.WARNING, WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}
             )
         self.registry_table.set_rows(rows)
         self.loading_state.hide()
@@ -121,6 +129,46 @@ class WorkPermitsScreen(QWidget):
             self.filter_bar.set_status_filter(WorkPermitStatus(initial_status))
         except ValueError:
             return
+
+    # ###### СТАРТ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD START ######
+    def _on_reload_started(self) -> None:
+        """Applies busy-state for workspace reload."""
+
+        self.loading_state.show_state("Оновлення реєстру нарядів-допусків...")
+        self.error_state.hide()
+        self.filter_bar.setEnabled(False)
+        self.details_pane.setEnabled(False)
+
+    # ###### ПРОГРЕС ПЕРЕЗАВАНТАЖЕННЯ / RELOAD PROGRESS ######
+    def _on_reload_progress(self, progress_value: int, message_text: str) -> None:
+        """Updates loading message while reload is running."""
+
+        self.loading_state.show_state(message_text)
+
+    # ###### УСПІХ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD SUCCESS ######
+    def _on_reload_success(self, payload: object) -> None:
+        """Updates workspace from background reload result."""
+
+        if not isinstance(payload, WorkPermitWorkspace):
+            self.error_state.show_state("Отримано некоректний результат оновлення реєстру нарядів-допусків.")
+            return
+        self._workspace = payload
+        self.summary_panel.set_summary(self._workspace.summary)
+        self._apply_filters()
+
+    # ###### ПОМИЛКА ПЕРЕЗАВАНТАЖЕННЯ / RELOAD ERROR ######
+    def _on_reload_error(self, message_text: str) -> None:
+        """Shows reload error text."""
+
+        self.error_state.show_state(message_text)
+
+    # ###### ФІНАЛ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD FINISH ######
+    def _on_reload_finished(self) -> None:
+        """Resets busy-state after reload completion."""
+
+        self.loading_state.hide()
+        self.filter_bar.setEnabled(True)
+        self.details_pane.setEnabled(True)
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
