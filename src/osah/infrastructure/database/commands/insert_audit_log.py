@@ -1,7 +1,9 @@
 from sqlite3 import Connection
 
+from osah.infrastructure.logging.sanitize_log_message import sanitize_log_message
 
-# ###### ДОДАВАННЯ AUDIT-ЗАПИСУ / ДОБАВЛЕНИЕ AUDIT-ЗАПИСИ ######
+
+# ###### ДОДАВАННЯ AUDIT-ЗАПИСУ / AUDIT RECORD INSERT ######
 def insert_audit_log(
     connection: Connection,
     event_type: str,
@@ -12,8 +14,8 @@ def insert_audit_log(
     result_status: str,
     description_text: str,
 ) -> None:
-    """Зберігає audit-подію в локальній базі даних.
-    Сохраняет audit-событие в локальной базе данных.
+    """Зберігає audit-подію в локальній базі даних після маскування чутливого опису.
+    Saves an audit event into the local database after redacting sensitive description text.
     """
 
     connection.execute(
@@ -36,6 +38,6 @@ def insert_audit_log(
             actor_name,
             entity_name,
             result_status,
-            description_text,
+            sanitize_log_message(description_text),
         ),
     )
