@@ -21,6 +21,7 @@ class DashboardScreen(QWidget):
     employee_attention_requested = Signal(str, str)
     trainings_attention_requested = Signal(str)
     ppe_attention_requested = Signal(str)
+    medical_attention_requested = Signal(str)
 
     def __init__(self, snapshot: DashboardSnapshot) -> None:
         super().__init__()
@@ -136,6 +137,7 @@ class DashboardScreen(QWidget):
 
         training_critical, training_warning = _count_training_notifications(snapshot)
         ppe_critical, ppe_warning = _count_ppe_notifications(snapshot)
+        medical_critical, medical_warning = _count_medical_notifications(snapshot)
         training_status = QLabel(
             f"Інструктажі: критично {training_critical}, увага {training_warning}"
         )
@@ -157,6 +159,15 @@ class DashboardScreen(QWidget):
         ppe_btn.setProperty("variant", "secondary")
         ppe_btn.clicked.connect(lambda: self.ppe_attention_requested.emit("not_issued" if ppe_critical else "warning"))
         ib_layout.addWidget(ppe_btn)
+
+        medical_status = QLabel(f"Медицина: критично {medical_critical}, увага {medical_warning}")
+        medical_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
+        ib_layout.addWidget(medical_status)
+
+        medical_btn = QPushButton("Відкрити проблемну медицину")
+        medical_btn.setProperty("variant", "secondary")
+        medical_btn.clicked.connect(lambda: self.medical_attention_requested.emit("expired" if medical_critical else "warning"))
+        ib_layout.addWidget(medical_btn)
         
         btn1 = QPushButton("📝 Оформити наряд-допуск")
         btn1.setProperty("variant", "secondary")
@@ -222,6 +233,24 @@ def _count_ppe_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
     warning = 0
     for notification in snapshot.active_notifications:
         if not notification.source_module.startswith("ppe."):
+            continue
+        if notification.notification_level.value == "critical":
+            critical += 1
+        elif notification.notification_level.value == "warning":
+            warning += 1
+    return critical, warning
+
+
+# ###### ПІДРАХУНОК СИГНАЛІВ МЕДИЦИНИ / COUNT MEDICAL SIGNALS ######
+def _count_medical_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
+    """Рахує критичні та попереджувальні сповіщення модуля медицини.
+    Counts critical and warning notifications for the medical module.
+    """
+
+    critical = 0
+    warning = 0
+    for notification in snapshot.active_notifications:
+        if not notification.source_module.startswith("medical."):
             continue
         if notification.notification_level.value == "critical":
             critical += 1

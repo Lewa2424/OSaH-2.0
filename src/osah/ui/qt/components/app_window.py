@@ -110,11 +110,13 @@ class AppWindow(QMainWindow):
             screen.trainings_attention_requested.connect(self._open_trainings_attention)
         if hasattr(screen, "ppe_attention_requested"):
             screen.ppe_attention_requested.connect(self._open_ppe_attention)
+        if hasattr(screen, "medical_attention_requested"):
+            screen.medical_attention_requested.connect(self._open_medical_attention)
         if hasattr(screen, "employee_open_requested"):
             screen.employee_open_requested.connect(
                 lambda personnel_number, source=section: self._open_employee_attention(
                     personnel_number,
-                    "trainings.registry" if source == AppSection.TRAININGS else "ppe.registry",
+                    _notification_source_for_section(source),
                 )
             )
         
@@ -160,3 +162,30 @@ class AppWindow(QMainWindow):
             ppe_status_filter=status_filter,
         )
         self._on_section_selected(AppSection.PPE)
+
+    # ###### ВІДКРИТТЯ ПРОБЛЕМНОЇ МЕДИЦИНИ / OPEN MEDICAL ALERTS ######
+    def _open_medical_attention(self, status_filter: str) -> None:
+        """Переходить із Dashboard до відфільтрованого модуля медицини.
+        Navigates from Dashboard to filtered medical module.
+        """
+
+        self._pending_navigation_intent = QtNavigationIntent(
+            target_section=AppSection.MEDICAL,
+            medical_status_filter=status_filter,
+        )
+        self._on_section_selected(AppSection.MEDICAL)
+
+
+# ###### ДЖЕРЕЛО СПОВІЩЕННЯ СЕКЦІЇ / SECTION NOTIFICATION SOURCE ######
+def _notification_source_for_section(section: AppSection) -> str:
+    """Повертає source_module для переходу з профільного модуля до картки працівника.
+    Returns source_module for navigation from a domain module to an employee card.
+    """
+
+    if section == AppSection.TRAININGS:
+        return "trainings.registry"
+    if section == AppSection.PPE:
+        return "ppe.registry"
+    if section == AppSection.MEDICAL:
+        return "medical.registry"
+    return "employees.registry"

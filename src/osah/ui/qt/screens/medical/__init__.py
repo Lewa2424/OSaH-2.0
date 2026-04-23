@@ -1,0 +1,1 @@
+"""Qt medical module."""

@@ -14,3 +14,4 @@ class QtNavigationIntent:
     problem_key: str | None = None
     training_status_filter: str | None = None
     ppe_status_filter: str | None = None
+    medical_status_filter: str | None = None
