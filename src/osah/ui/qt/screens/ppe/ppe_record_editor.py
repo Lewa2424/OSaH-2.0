@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QCheckBox, QComboBox, QFormLayout, QLineEdit, QMessageBox, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QCheckBox, QComboBox, QFormLayout, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from osah.application.services.create_ppe_record import create_ppe_record
 from osah.application.services.update_ppe_record import update_ppe_record
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
+from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
 
 
@@ -57,6 +58,9 @@ class PpeRecordEditor(QWidget):
         self.note_input.setMaximumHeight(80)
         form.addRow("Примітка", self.note_input)
         layout.addLayout(form)
+
+        self.feedback_label = FormFeedbackLabel()
+        layout.addWidget(self.feedback_label)
 
         self.save_button = QPushButton("Зберегти запис")
         self.save_button.setProperty("variant", "accent")
@@ -130,7 +134,7 @@ class PpeRecordEditor(QWidget):
                     self.note_input.toPlainText(),
                 )
         except ValueError as error:
-            QMessageBox.warning(self, "Не збережено", str(error))
+            self.feedback_label.show_error(str(error))
             return
-        QMessageBox.information(self, "Збережено", "Запис ЗІЗ збережено.")
+        self.feedback_label.show_success("Запис ЗІЗ збережено.")
         self.saved.emit()

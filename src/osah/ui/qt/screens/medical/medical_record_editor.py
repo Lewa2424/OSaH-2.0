@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QFormLayout, QLineEdit, QMessageBox, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QFormLayout, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from osah.application.services.create_medical_record import create_medical_record
 from osah.application.services.update_medical_record import update_medical_record
@@ -9,6 +9,7 @@ from osah.domain.entities.employee import Employee
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
 from osah.domain.services.format_medical_decision_label import format_medical_decision_label
+from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
 
 
@@ -49,6 +50,9 @@ class MedicalRecordEditor(QWidget):
         self.restriction_input.setMaximumHeight(90)
         form.addRow("Обмеження", self.restriction_input)
         layout.addLayout(form)
+
+        self.feedback_label = FormFeedbackLabel()
+        layout.addWidget(self.feedback_label)
 
         self.save_button = QPushButton("Зберегти запис")
         self.save_button.setProperty("variant", "accent")
@@ -110,7 +114,7 @@ class MedicalRecordEditor(QWidget):
                     self.restriction_input.toPlainText(),
                 )
         except ValueError as error:
-            QMessageBox.warning(self, "Не збережено", str(error))
+            self.feedback_label.show_error(str(error))
             return
-        QMessageBox.information(self, "Збережено", "Медичний запис збережено.")
+        self.feedback_label.show_success("Медичний запис збережено.")
         self.saved.emit()
