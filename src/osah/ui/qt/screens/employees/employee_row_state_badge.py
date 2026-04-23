@@ -6,9 +6,7 @@ from osah.ui.qt.design.tokens import COLOR
 
 
 class EmployeeRowStateBadge(QLabel):
-    """Компактний бейдж статусу працівника для таблиці і картки.
-    Compact employee status badge for table and card.
-    """
+    """Compact employee status badge for table and card."""
 
     def __init__(self, level: EmployeeStatusLevel, text: str) -> None:
         super().__init__(text)
@@ -17,18 +15,15 @@ class EmployeeRowStateBadge(QLabel):
         self.setStyleSheet(_build_badge_stylesheet(level))
 
 
-# ###### СТИЛЬ БЕЙДЖА СТАТУСУ / STATUS BADGE STYLE ######
 def _build_badge_stylesheet(level: EmployeeStatusLevel) -> str:
-    """Повертає QSS для бейджа з кольором, текстом і маркером статусу.
-    Returns QSS for a badge with color, text and status marker.
-    """
+    """###### СТИЛЬ БЕЙДЖА СТАТУСУ / STATUS BADGE STYLE ######"""
 
     palette = {
         EmployeeStatusLevel.NORMAL: (COLOR["success_subtle"], COLOR["success"], COLOR["success"]),
         EmployeeStatusLevel.WARNING: (COLOR["warning_subtle"], COLOR["warning"], COLOR["warning"]),
         EmployeeStatusLevel.CRITICAL: (COLOR["critical_subtle"], COLOR["critical"], COLOR["critical"]),
-        EmployeeStatusLevel.RESTRICTED: ("#EEF2FF", "#4338CA", "#4338CA"),
-        EmployeeStatusLevel.ARCHIVED: ("#F3F4F6", COLOR["text_muted"], COLOR["text_muted"]),
+        EmployeeStatusLevel.RESTRICTED: (COLOR["restricted_subtle"], COLOR["restricted_text"], COLOR["restricted"]),
+        EmployeeStatusLevel.ARCHIVED: (COLOR["status_archive_bg"], COLOR["status_archive_text"], COLOR["status_archive"]),
     }
     background, foreground, border = palette[level]
     return (

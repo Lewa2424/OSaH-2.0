@@ -6,9 +6,7 @@ from osah.ui.qt.design.tokens import COLOR
 
 
 class MedicalStatusBadge(QLabel):
-    """Бейдж статусу меддопуску з текстом і кольором.
-    Medical admission status badge with text and color.
-    """
+    """Medical admission status badge with text and color."""
 
     def __init__(self, status: MedicalStatus, text: str) -> None:
         super().__init__(text)
@@ -18,14 +16,12 @@ class MedicalStatusBadge(QLabel):
 
 
 def _build_badge_style(status: MedicalStatus) -> str:
-    """Повертає QSS для бейджа статусу медицини.
-    Returns QSS for a medical status badge.
-    """
+    """###### СТИЛЬ МЕДБЕЙДЖА / MEDICAL BADGE STYLE ######"""
 
     palette = {
         MedicalStatus.CURRENT: (COLOR["success_subtle"], COLOR["success"]),
         MedicalStatus.WARNING: (COLOR["warning_subtle"], COLOR["warning"]),
-        MedicalStatus.RESTRICTED: ("#EEF2FF", "#4338CA"),
+        MedicalStatus.RESTRICTED: (COLOR["restricted_subtle"], COLOR["restricted"]),
         MedicalStatus.EXPIRED: (COLOR["critical_subtle"], COLOR["critical"]),
         MedicalStatus.NOT_FIT: (COLOR["critical_subtle"], COLOR["critical"]),
     }

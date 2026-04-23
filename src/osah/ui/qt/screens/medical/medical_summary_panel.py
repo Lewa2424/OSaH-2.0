@@ -5,9 +5,7 @@ from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class MedicalSummaryPanel(QFrame):
-    """Швидкі показники модуля медицини.
-    Quick metrics for the medical module.
-    """
+    """Quick metrics for the medical module."""
 
     def __init__(self, summary: MedicalWorkspaceSummary) -> None:
         super().__init__()
@@ -20,7 +18,7 @@ class MedicalSummaryPanel(QFrame):
         layout.setSpacing(SPACING["lg"])
         self._total = _metric("Усього", summary.total_rows, COLOR["accent"])
         self._critical = _metric("Не допущено", summary.critical_total, COLOR["critical"])
-        self._restricted = _metric("Обмежено", summary.restricted_total, "#4338CA")
+        self._restricted = _metric("Обмежено", summary.restricted_total, COLOR["restricted"])
         self._warning = _metric("Увага", summary.warning_total, COLOR["warning"])
         self._current = _metric("Допущено", summary.current_total, COLOR["success"])
         for widget in (self._total, self._critical, self._restricted, self._warning, self._current):
@@ -28,9 +26,7 @@ class MedicalSummaryPanel(QFrame):
         layout.addStretch()
 
     def set_summary(self, summary: MedicalWorkspaceSummary) -> None:
-        """Оновлює числа quick stats після зміни даних.
-        Updates quick-stats values after data changes.
-        """
+        """###### ОНОВЛЕННЯ ПОКАЗНИКІВ / UPDATE METRICS ######"""
 
         _set_metric_value(self._total, summary.total_rows)
         _set_metric_value(self._critical, summary.critical_total)
@@ -40,9 +36,7 @@ class MedicalSummaryPanel(QFrame):
 
 
 def _metric(title: str, value: int, color: str) -> QFrame:
-    """Створює одну компактну метрику медицини.
-    Creates one compact medical metric.
-    """
+    """###### ЕЛЕМЕНТ МЕТРИКИ / METRIC ITEM ######"""
 
     frame = QFrame()
     layout = QVBoxLayout(frame)
@@ -57,9 +51,7 @@ def _metric(title: str, value: int, color: str) -> QFrame:
 
 
 def _set_metric_value(frame: QFrame, value: int) -> None:
-    """Оновлює числове значення в готовій метриці.
-    Updates numeric value in an existing metric.
-    """
+    """###### ЗМІНА ЗНАЧЕННЯ / SET METRIC VALUE ######"""
 
     label = frame.layout().itemAt(1).widget()
     if isinstance(label, QLabel):

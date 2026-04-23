@@ -6,9 +6,7 @@ from osah.ui.qt.design.tokens import COLOR
 
 
 class WorkPermitStatusBadge(QLabel):
-    """Бейдж статусу наряду-допуску.
-    Work permit status badge.
-    """
+    """Work permit status badge."""
 
     def __init__(self, status: WorkPermitStatus, text: str) -> None:
         super().__init__(text)
@@ -17,19 +15,16 @@ class WorkPermitStatusBadge(QLabel):
         self.setStyleSheet(_build_badge_style(status))
 
 
-# ###### СТИЛЬ БЕЙДЖА / BADGE STYLE ######
 def _build_badge_style(status: WorkPermitStatus) -> str:
-    """Повертає QSS для бейджа статусу наряду.
-    Returns QSS for a work permit status badge.
-    """
+    """###### СТИЛЬ БЕЙДЖА НД / WORK PERMIT BADGE STYLE ######"""
 
     palette = {
         WorkPermitStatus.ACTIVE: (COLOR["success_subtle"], COLOR["success"]),
         WorkPermitStatus.WARNING: (COLOR["warning_subtle"], COLOR["warning"]),
         WorkPermitStatus.EXPIRED: (COLOR["critical_subtle"], COLOR["critical"]),
         WorkPermitStatus.INVALID: (COLOR["critical_subtle"], COLOR["critical"]),
-        WorkPermitStatus.CLOSED: (COLOR["bg_panel"], COLOR["text_muted"]),
-        WorkPermitStatus.CANCELED: ("#EEF2FF", "#4338CA"),
+        WorkPermitStatus.CLOSED: (COLOR["status_archive_bg"], COLOR["status_archive_text"]),
+        WorkPermitStatus.CANCELED: (COLOR["restricted_subtle"], COLOR["restricted"]),
     }
     background, foreground = palette[status]
     return (

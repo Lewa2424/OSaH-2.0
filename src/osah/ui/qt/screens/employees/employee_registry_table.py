@@ -9,9 +9,7 @@ from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowSta
 
 
 class EmployeeRegistryTable(QTableWidget):
-    """Центральний компактний реєстр працівників.
-    Central compact employee registry.
-    """
+    """Central compact employee registry."""
 
     employee_selected = Signal(str)
 
@@ -29,11 +27,8 @@ class EmployeeRegistryTable(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
         self.itemSelectionChanged.connect(self._emit_selected_employee)
 
-    # ###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######
     def set_rows(self, rows: tuple[EmployeeWorkspaceRow, ...]) -> None:
-        """Перемальовує таблицю за переданими рядками робочої моделі.
-        Redraws the table from provided workspace rows.
-        """
+        """###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######"""
 
         self.setRowCount(0)
         self._rows_by_personnel_number = {row.employee.personnel_number: row for row in rows}
@@ -53,11 +48,8 @@ class EmployeeRegistryTable(QTableWidget):
 
         self.resizeColumnsToContents()
 
-    # ###### ВИБІР ПРАЦІВНИКА / SELECT EMPLOYEE ######
     def select_employee(self, personnel_number: str) -> None:
-        """Виділяє працівника за табельним номером, якщо він є у поточному реєстрі.
-        Selects an employee by personnel number when present in the current registry.
-        """
+        """###### ВИБІР ПРАЦІВНИКА / SELECT EMPLOYEE ######"""
 
         for row_index in range(self.rowCount()):
             item = self.item(row_index, 1)
@@ -66,11 +58,8 @@ class EmployeeRegistryTable(QTableWidget):
                 self.scrollToItem(item)
                 return
 
-    # ###### ПОТОЧНИЙ РЯДОК / CURRENT ROW MODEL ######
     def current_employee_row(self) -> EmployeeWorkspaceRow | None:
-        """Повертає модель вибраного працівника або None.
-        Returns selected employee model or None.
-        """
+        """###### ПОТОЧНИЙ РЯДОК / CURRENT ROW MODEL ######"""
 
         selected = self.selectedItems()
         if not selected:
@@ -79,9 +68,7 @@ class EmployeeRegistryTable(QTableWidget):
         return self._rows_by_personnel_number.get(personnel_number)
 
     def _set_text_item(self, row_index: int, column_index: int, text: str, row: EmployeeWorkspaceRow) -> None:
-        """Додає текстову комірку таблиці з прив'язкою до працівника.
-        Adds a text table cell bound to an employee row.
-        """
+        """###### ТЕКСТОВА КОМІРКА / TEXT CELL ######"""
 
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row.employee.personnel_number)
@@ -90,13 +77,11 @@ class EmployeeRegistryTable(QTableWidget):
         elif row.status_level == EmployeeStatusLevel.WARNING:
             item.setForeground(QColor(COLOR["warning"]))
         elif row.status_level == EmployeeStatusLevel.RESTRICTED:
-            item.setForeground(QColor("#4338CA"))
+            item.setForeground(QColor(COLOR["restricted"]))
         self.setItem(row_index, column_index, item)
 
     def _emit_selected_employee(self) -> None:
-        """Передає табельний номер вибраного працівника назовні.
-        Emits the selected employee personnel number.
-        """
+        """###### СИГНАЛ ВИБОРУ / SELECTION SIGNAL ######"""
 
         selected_row = self.current_employee_row()
         if selected_row:

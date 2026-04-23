@@ -9,9 +9,7 @@ from osah.ui.qt.screens.medical.medical_status_badge import MedicalStatusBadge
 
 
 class MedicalRegistryTable(QTableWidget):
-    """Центральний реєстр меддопусків.
-    Central medical admission registry.
-    """
+    """Central medical admission registry."""
 
     row_selected = Signal(object)
 
@@ -28,9 +26,7 @@ class MedicalRegistryTable(QTableWidget):
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     def set_rows(self, rows: tuple[MedicalWorkspaceRow, ...]) -> None:
-        """Перемальовує таблицю за підготовленими рядками.
-        Redraws the table with prepared rows.
-        """
+        """###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######"""
 
         self._rows = rows
         self.setRowCount(0)
@@ -53,17 +49,13 @@ class MedicalRegistryTable(QTableWidget):
         self.resizeColumnsToContents()
 
     def select_first(self) -> None:
-        """Виділяє перший рядок, якщо таблиця не порожня.
-        Selects the first row when the table is not empty.
-        """
+        """###### ВИБІР ПЕРШОГО РЯДКА / SELECT FIRST ROW ######"""
 
         if self.rowCount():
             self.selectRow(0)
 
     def _set_item(self, row_index: int, column_index: int, text: str, row: MedicalWorkspaceRow) -> None:
-        """Додає текстову комірку з візуальним акцентом статусу.
-        Adds a text cell with status visual accent.
-        """
+        """###### КОМІРКА РЕЄСТРУ / REGISTRY CELL ######"""
 
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row_index)
@@ -72,13 +64,11 @@ class MedicalRegistryTable(QTableWidget):
         elif row.status == MedicalStatus.WARNING:
             item.setForeground(QColor(COLOR["warning"]))
         elif row.status == MedicalStatus.RESTRICTED:
-            item.setForeground(QColor("#4338CA"))
+            item.setForeground(QColor(COLOR["restricted"]))
         self.setItem(row_index, column_index, item)
 
     def _emit_selected_row(self) -> None:
-        """Передає вибраний рядок у detail-pane.
-        Emits the selected row to the detail pane.
-        """
+        """###### СИГНАЛ ВИБОРУ / SELECTION SIGNAL ######"""
 
         selected = self.selectedItems()
         if selected:

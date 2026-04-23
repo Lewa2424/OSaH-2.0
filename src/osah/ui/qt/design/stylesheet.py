@@ -82,7 +82,7 @@ QLabel {{
 QFrame[card="true"] {{
     background: {c["bg_card"]};
     border-radius: {r["xl"]}px;
-    border: 1px solid {c["border_soft"]};
+    border: 1px solid {c["card_border"]};
 }}
 
 /* ── QFrame-інсет (вставлений блок) / Inset frame ── */
@@ -94,47 +94,48 @@ QFrame[inset="true"] {{
 
 /* ── Кнопка акценту / Accent button ── */
 QPushButton[variant="accent"] {{
-    background: {c["accent"]};
-    color: {c["accent_text"]};
-    border: none;
+    background: {c["button_primary_bg"]};
+    color: {c["button_primary_text"]};
+    border: 1px solid {c["button_primary_border"]};
     border-radius: {r["md"]}px;
     padding: 8px 20px;
     font-size: 12px;
     font-weight: bold;
 }}
 QPushButton[variant="accent"]:hover {{
-    background: {c["accent_hover"]};
+    background: {c["button_primary_hover"]};
 }}
 QPushButton[variant="accent"]:pressed {{
-    background: {c["accent_pressed"]};
+    background: {c["button_primary_active"]};
 }}
 QPushButton[variant="accent"]:disabled {{
-    background: {c["border_strong"]};
-    color: {c["text_muted"]};
+    background: {c["button_disabled_bg"]};
+    color: {c["button_disabled_text"]};
+    border-color: {c["button_disabled_border"]};
 }}
 
 /* ── Вторинна кнопка / Secondary button ── */
 QPushButton[variant="secondary"] {{
-    background: {c["bg_card"]};
-    color: {c["text_primary"]};
-    border: 1px solid {c["border_soft"]};
+    background: {c["button_secondary_bg"]};
+    color: {c["button_secondary_text"]};
+    border: 1px solid {c["button_secondary_border"]};
     border-radius: {r["md"]}px;
     padding: 8px 20px;
     font-size: 12px;
 }}
 QPushButton[variant="secondary"]:hover {{
-    background: {c["bg_panel"]};
-    border-color: {c["border_strong"]};
+    background: {c["button_secondary_hover"]};
+    border-color: {c["input_border_hover"]};
 }}
 QPushButton[variant="secondary"]:pressed {{
-    background: {c["border_soft"]};
+    background: {c["button_secondary_active"]};
 }}
 
 /* ── NavButton (idle) ── */
 QPushButton[nav="true"] {{
     background: transparent;
-    color: {c["text_primary"]};
-    border: 1px solid {c["border_soft"]};
+    color: {c["nav_item_text"]};
+    border: 1px solid {c["border_default"]};
     border-radius: {r["md"]}px;
     padding: 8px 12px;
     text-align: left;
@@ -142,36 +143,36 @@ QPushButton[nav="true"] {{
     font-weight: bold;
 }}
 QPushButton[nav="true"]:hover {{
-    background: {c["nav_hover"]};
-    border-color: {c["border_strong"]};
+    background: {c["nav_item_hover_bg"]};
+    border-color: {c["input_border_hover"]};
 }}
 QPushButton[nav="true"]:pressed {{
-    background: {c["border_soft"]};
+    background: {c["button_secondary_active"]};
 }}
 QPushButton[nav="true"]:checked {{
-    background: {c["nav_active_bg"]};
-    color: {c["nav_active_text"]};
-    border-color: {c["nav_active_bg"]};
+    background: {c["nav_item_active_bg"]};
+    color: {c["nav_item_active_text"]};
+    border-color: {c["nav_item_active_bg"]};
 }}
 
 /* NavButton — Warning (рівень уваги) */
 QPushButton[nav="true"][alert="warning"] {{
-    background: {c["warning_subtle"]};
-    border: 1px solid {c["warning"]};
+    background: {c["status_warning_bg"]};
+    border: 1px solid {c["status_warning"]};
     color: {c["text_primary"]};
 }}
 QPushButton[nav="true"][alert="warning"]:hover {{
-    background: {c["warning_hover"]};
+    background: {c["warning_bg"]};
 }}
 
 /* NavButton — Critical (критичний рівень) */
 QPushButton[nav="true"][alert="critical"] {{
-    background: {c["critical_subtle"]};
-    border: 2px solid {c["critical"]};
+    background: {c["status_critical_bg"]};
+    border: 2px solid {c["nav_item_problem_border"]};
     color: {c["text_primary"]};
 }}
 QPushButton[nav="true"][alert="critical"]:hover {{
-    background: {c["critical_hover"]};
+    background: {c["error_bg"]};
 }}
 
 /* ── QSplitter ── */
@@ -193,32 +194,32 @@ QLabel[pill="true"] {{
     font-weight: bold;
 }}
 QLabel[pill="critical"] {{
-    background: {c["critical"]};
-    color: #FFFFFF;
+    background: {c["status_critical"]};
+    color: {c["text_on_accent"]};
     border-radius: 9px;
     padding: 2px 10px;
     font-size: 9px;
     font-weight: bold;
 }}
 QLabel[pill="warning"] {{
-    background: {c["warning"]};
-    color: #FFFFFF;
+    background: {c["status_warning"]};
+    color: {c["text_on_accent"]};
     border-radius: 9px;
     padding: 2px 10px;
     font-size: 9px;
     font-weight: bold;
 }}
 QLabel[pill="info"] {{
-    background: {c["accent"]};
-    color: #FFFFFF;
+    background: {c["status_info"]};
+    color: {c["text_on_accent"]};
     border-radius: 9px;
     padding: 2px 10px;
     font-size: 9px;
     font-weight: bold;
 }}
 QLabel[pill="success"] {{
-    background: {c["success"]};
-    color: #FFFFFF;
+    background: {c["status_ok"]};
+    color: {c["text_on_accent"]};
     border-radius: 9px;
     padding: 2px 10px;
     font-size: 9px;
@@ -227,20 +228,20 @@ QLabel[pill="success"] {{
 
 /* ── TopCommandBar фон / TopCommandBar bg ── */
 QWidget[role="topbar"] {{
-    background: {c["bg_shell"]};
-    border-bottom: 1px solid {c["border_soft"]};
+    background: {c["bg_panel"]};
+    border-bottom: 1px solid {c["divider"]};
 }}
 
 /* ── SideNav фон / SideNav bg ── */
 QWidget[role="sidenav"] {{
     background: {c["nav_bg"]};
-    border-right: 1px solid {c["border_soft"]};
+    border-right: 1px solid {c["divider"]};
 }}
 
 /* ── StatusStrip фон / StatusStrip bg ── */
 QWidget[role="statusbar"] {{
     background: {c["bg_panel"]};
-    border-top: 1px solid {c["border_soft"]};
+    border-top: 1px solid {c["divider"]};
 }}
 
 /* ── General Elements ── */
@@ -274,37 +275,38 @@ QLabel[role="state_loading"] {{
     font-weight: 700;
 }}
 QLabel[role="state_error"] {{
-    color: {c["critical"]};
-    background: {c["critical_subtle"]};
-    border: 1px solid {c["critical"]};
+    color: {c["status_critical_text"]};
+    background: {c["error_bg"]};
+    border: 1px solid {c["status_critical"]};
     border-radius: 10px;
     padding: 8px 10px;
     font-weight: 700;
 }}
 QLabel[role="readonly_banner"] {{
-    color: {c["text_secondary"]};
-    background: {c["bg_panel"]};
-    border: 1px dashed {c["border_strong"]};
+    color: {c["readonly_text"]};
+    background: {c["readonly_bg"]};
+    border: 1px dashed {c["border_default"]};
     border-radius: {r["md"]}px;
     padding: 8px 10px;
     font-weight: 700;
 }}
 QWidget[role="section_bg"] {{
-    background: {c["bg_app"]};
+    background: {c["bg_workspace"]};
 }}
 
 /* Employees module */
 QLineEdit,
 QComboBox {{
-    background: {c["bg_card"]};
-    border: 1px solid {c["border_soft"]};
+    background: {c["input_bg"]};
+    color: {c["input_text"]};
+    border: 1px solid {c["input_border"]};
     border-radius: {r["md"]}px;
     padding: 8px 10px;
     min-height: 24px;
 }}
 QLineEdit:focus,
 QComboBox:focus {{
-    border: 1px solid {c["accent"]};
+    border: 1px solid {c["input_border_focus"]};
 }}
 QCheckBox {{
     spacing: 6px;
@@ -313,19 +315,19 @@ QCheckBox {{
 }}
 QTreeWidget,
 QTableWidget {{
-    background: {c["bg_card"]};
-    alternate-background-color: {c["bg_panel"]};
-    border: 1px solid {c["border_soft"]};
+    background: {c["table_bg"]};
+    alternate-background-color: {c["table_row_alt_bg"]};
+    border: 1px solid {c["table_border"]};
     border-radius: {r["lg"]}px;
-    gridline-color: {c["border_soft"]};
-    selection-background-color: {c["accent_subtle"]};
-    selection-color: {c["text_primary"]};
+    gridline-color: {c["table_border"]};
+    selection-background-color: {c["table_row_selected_bg"]};
+    selection-color: {c["table_text"]};
 }}
 QHeaderView::section {{
-    background: {c["bg_panel"]};
+    background: {c["table_header_bg"]};
     border: none;
-    border-bottom: 1px solid {c["border_soft"]};
-    color: {c["text_secondary"]};
+    border-bottom: 1px solid {c["table_border"]};
+    color: {c["table_header_text"]};
     font-weight: 800;
     padding: 8px;
 }}
@@ -335,21 +337,21 @@ QTableWidget::item {{
 }}
 QTreeWidget::item:hover,
 QTableWidget::item:hover {{
-    background: {c["bg_card_hover"]};
+    background: {c["table_row_hover_bg"]};
 }}
 QTreeWidget::item:selected,
 QTableWidget::item:selected {{
-    background: {c["accent_subtle"]};
-    color: {c["text_primary"]};
+    background: {c["table_row_selected_bg"]};
+    color: {c["table_text"]};
 }}
 QTabWidget::pane {{
-    border: 1px solid {c["border_soft"]};
+    border: 1px solid {c["border_default"]};
     border-radius: {r["lg"]}px;
     background: {c["bg_card"]};
 }}
 QTabBar::tab {{
     background: {c["bg_panel"]};
-    border: 1px solid {c["border_soft"]};
+    border: 1px solid {c["border_default"]};
     border-bottom: none;
     border-top-left-radius: {r["md"]}px;
     border-top-right-radius: {r["md"]}px;
@@ -394,7 +396,7 @@ QLabel[role="metric_value"] {{
     color: {c["text_primary"]};
 }}
 QLabel[role="metric_subtitle"] {{
-    color: {c["accent"]};
+    color: {c["text_secondary"]};
     font-size: 9px;
 }}
 
@@ -409,7 +411,7 @@ QLabel[role="alert_body"] {{
     font-size: 10px;
 }}
 QLabel[role="empty_state"] {{
-    color: {c["success"]};
+    color: {c["status_ok_text"]};
     padding: 16px;
 }}
 
@@ -419,6 +421,6 @@ QScrollArea {{
     border: none;
 }}
 QScrollArea > QWidget > QWidget {{
-    background: {c["bg_app"]};
+    background: {c["bg_workspace"]};
 }}
 """

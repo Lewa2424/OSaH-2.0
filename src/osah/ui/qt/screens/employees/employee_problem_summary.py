@@ -6,9 +6,7 @@ from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class EmployeeProblemSummary(QFrame):
-    """Блок причин проблем у картці працівника.
-    Problem reason block in the employee card.
-    """
+    """Problem reason block in the employee card."""
 
     def __init__(self, problems: tuple[EmployeeProblem, ...]) -> None:
         super().__init__()
@@ -37,19 +35,14 @@ class EmployeeProblemSummary(QFrame):
             layout.addWidget(label)
 
 
-# ###### РЯДОК ПРОБЛЕМИ / PROBLEM LINE ######
 def _format_problem_line(problem: EmployeeProblem) -> str:
-    """Форматує проблему як короткий зрозумілий рядок для користувача.
-    Formats a problem as a short user-readable line.
-    """
+    """###### РЯДОК ПРОБЛЕМИ / PROBLEM LINE ######"""
 
     return f"{_marker_for_problem(problem.level)} {problem.module_name}: {problem.title}"
 
 
 def _marker_for_problem(level: EmployeeStatusLevel) -> str:
-    """Повертає текстовий маркер рівня проблеми без залежності тільки від кольору.
-    Returns a textual problem marker so status is not color-only.
-    """
+    """###### МАРКЕР РІВНЯ / LEVEL MARKER ######"""
 
     if level == EmployeeStatusLevel.CRITICAL:
         return "!"
@@ -61,14 +54,12 @@ def _marker_for_problem(level: EmployeeStatusLevel) -> str:
 
 
 def _color_for_problem(level: EmployeeStatusLevel) -> str:
-    """Повертає колір проблеми для візуального акценту.
-    Returns problem color for visual emphasis.
-    """
+    """###### КОЛІР ПРОБЛЕМИ / PROBLEM COLOR ######"""
 
     if level == EmployeeStatusLevel.CRITICAL:
         return COLOR["critical"]
     if level == EmployeeStatusLevel.WARNING:
         return COLOR["warning"]
     if level == EmployeeStatusLevel.RESTRICTED:
-        return "#4338CA"
+        return COLOR["restricted"]
     return COLOR["text_secondary"]
