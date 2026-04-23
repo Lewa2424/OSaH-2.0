@@ -22,6 +22,7 @@ class DashboardScreen(QWidget):
     trainings_attention_requested = Signal(str)
     ppe_attention_requested = Signal(str)
     medical_attention_requested = Signal(str)
+    work_permits_attention_requested = Signal(str)
 
     def __init__(self, snapshot: DashboardSnapshot) -> None:
         super().__init__()
@@ -138,6 +139,7 @@ class DashboardScreen(QWidget):
         training_critical, training_warning = _count_training_notifications(snapshot)
         ppe_critical, ppe_warning = _count_ppe_notifications(snapshot)
         medical_critical, medical_warning = _count_medical_notifications(snapshot)
+        permit_critical, permit_warning = _count_work_permit_notifications(snapshot)
         training_status = QLabel(
             f"Інструктажі: критично {training_critical}, увага {training_warning}"
         )
@@ -169,9 +171,14 @@ class DashboardScreen(QWidget):
         medical_btn.clicked.connect(lambda: self.medical_attention_requested.emit("expired" if medical_critical else "warning"))
         ib_layout.addWidget(medical_btn)
         
-        btn1 = QPushButton("📝 Оформити наряд-допуск")
-        btn1.setProperty("variant", "secondary")
-        ib_layout.addWidget(btn1)
+        permit_status = QLabel(f"Наряди-допуски: критично {permit_critical}, увага {permit_warning}")
+        permit_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
+        ib_layout.addWidget(permit_status)
+
+        permit_btn = QPushButton("Відкрити проблемні наряди-допуски")
+        permit_btn.setProperty("variant", "secondary")
+        permit_btn.clicked.connect(lambda: self.work_permits_attention_requested.emit("expired" if permit_critical else "warning"))
+        ib_layout.addWidget(permit_btn)
         
         btn2 = QPushButton("🛡️ Реєстрація інструктажу")
         btn2.setProperty("variant", "secondary")
@@ -251,6 +258,24 @@ def _count_medical_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]
     warning = 0
     for notification in snapshot.active_notifications:
         if not notification.source_module.startswith("medical."):
+            continue
+        if notification.notification_level.value == "critical":
+            critical += 1
+        elif notification.notification_level.value == "warning":
+            warning += 1
+    return critical, warning
+
+
+# ###### ПІДРАХУНОК СИГНАЛІВ НАРЯДІВ / COUNT WORK PERMIT SIGNALS ######
+def _count_work_permit_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
+    """Рахує критичні та попереджувальні сповіщення модуля нарядів-допусків.
+    Counts critical and warning notifications for the work permits module.
+    """
+
+    critical = 0
+    warning = 0
+    for notification in snapshot.active_notifications:
+        if not notification.source_module.startswith("work_permits."):
             continue
         if notification.notification_level.value == "critical":
             critical += 1

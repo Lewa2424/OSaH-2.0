@@ -10,6 +10,7 @@ from osah.application.services.load_employee_workspace import load_employee_work
 from osah.application.services.load_medical_workspace import load_medical_workspace
 from osah.application.services.load_ppe_workspace import load_ppe_workspace
 from osah.application.services.load_training_workspace import load_training_workspace
+from osah.application.services.load_work_permit_workspace import load_work_permit_workspace
 from osah.domain.entities.app_section import AppSection
 from osah.ui.qt.routing.qt_context import QtContext
 from osah.ui.qt.screens.dashboard.dashboard_screen import DashboardScreen
@@ -17,6 +18,7 @@ from osah.ui.qt.screens.employees.employees_screen import EmployeesScreen
 from osah.ui.qt.screens.medical.medical_screen import MedicalScreen
 from osah.ui.qt.screens.ppe.ppe_screen import PpeScreen
 from osah.ui.qt.screens.trainings.trainings_screen import TrainingsScreen
+from osah.ui.qt.screens.work_permits.work_permits_screen import WorkPermitsScreen
 
 
 def build_screen_for_section(context: QtContext) -> QWidget:
@@ -59,6 +61,14 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             context.application_context.database_path,
             load_medical_workspace(context.application_context.database_path),
             initial_status=intent.medical_status_filter if intent else None,
+        )
+
+    if context.selected_section == AppSection.WORK_PERMITS:
+        intent = context.navigation_intent
+        return WorkPermitsScreen(
+            context.application_context.database_path,
+            load_work_permit_workspace(context.application_context.database_path),
+            initial_status=intent.work_permit_status_filter if intent else None,
         )
 
     # Заглушка для неперенесених екранів

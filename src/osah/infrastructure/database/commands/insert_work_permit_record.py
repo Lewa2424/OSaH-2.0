@@ -20,9 +20,11 @@ def insert_work_permit_record(connection: Connection, work_permit_record: WorkPe
             responsible_person,
             issuer_person,
             note_text,
-            closed_at
+            closed_at,
+            canceled_at,
+            cancel_reason_text
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             work_permit_record.permit_number,
@@ -34,6 +36,8 @@ def insert_work_permit_record(connection: Connection, work_permit_record: WorkPe
             work_permit_record.issuer_person,
             work_permit_record.note_text,
             work_permit_record.closed_at,
+            work_permit_record.canceled_at,
+            work_permit_record.cancel_reason_text,
         ),
     )
     return int(cursor.lastrowid)

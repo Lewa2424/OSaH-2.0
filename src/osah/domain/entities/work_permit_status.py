@@ -10,3 +10,5 @@ class WorkPermitStatus(StrEnum):
     WARNING = "warning"
     EXPIRED = "expired"
     CLOSED = "closed"
+    CANCELED = "canceled"
+    INVALID = "invalid"

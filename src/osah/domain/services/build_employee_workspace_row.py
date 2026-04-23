@@ -35,7 +35,8 @@ def build_employee_workspace_row(
     ppe_summary, ppe_problems = _build_ppe_summary(ppe_records_tuple)
     medical_records_tuple = tuple(medical_records)
     medical_summary, medical_problems = _build_medical_summary(medical_records_tuple)
-    permit_summary, permit_problems = _build_work_permit_summary(tuple(work_permit_records))
+    work_permit_records_tuple = tuple(work_permit_records)
+    permit_summary, permit_problems = _build_work_permit_summary(work_permit_records_tuple)
 
     module_summaries = (training_summary, ppe_summary, medical_summary, permit_summary)
     problems = training_problems + ppe_problems + medical_problems + permit_problems
@@ -63,6 +64,7 @@ def build_employee_workspace_row(
         training_records=training_records_tuple,
         ppe_records=ppe_records_tuple,
         medical_records=medical_records_tuple,
+        work_permit_records=work_permit_records_tuple,
         module_summaries=module_summaries,
         problems=problems,
     )
@@ -204,8 +206,8 @@ def _build_work_permit_summary(
     Builds work permit summary and employee problem list.
     """
 
-    active_records = tuple(record for record in records if record.status != WorkPermitStatus.CLOSED)
-    if any(record.status == WorkPermitStatus.EXPIRED for record in active_records):
+    active_records = tuple(record for record in records if record.status not in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED})
+    if any(record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID} for record in active_records):
         problem = EmployeeProblem(
             module_name="Наряди-допуски",
             level=EmployeeStatusLevel.CRITICAL,

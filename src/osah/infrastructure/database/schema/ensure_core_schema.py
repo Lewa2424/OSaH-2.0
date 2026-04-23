@@ -186,4 +186,21 @@ def ensure_core_schema(connection: Connection) -> None:
         );
         """
     )
+    _ensure_work_permit_cancel_columns(connection)
     connection.commit()
+
+
+# ###### МІГРАЦІЯ ПОЛІВ СКАСУВАННЯ НАРЯДУ / WORK PERMIT CANCEL COLUMNS MIGRATION ######
+def _ensure_work_permit_cancel_columns(connection: Connection) -> None:
+    """Додає nullable-поля скасування наряду до вже існуючих локальних баз.
+    Adds nullable work permit cancel fields to already existing local databases.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(work_permits);").fetchall()
+    }
+    if "canceled_at" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN canceled_at TEXT NULL;")
+    if "cancel_reason_text" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN cancel_reason_text TEXT NOT NULL DEFAULT '';")

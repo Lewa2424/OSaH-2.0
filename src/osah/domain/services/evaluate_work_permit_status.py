@@ -14,8 +14,14 @@ def evaluate_work_permit_status(
     Возвращает статус наряда-допуска по сроку завершения и факту ручного закрытия.
     """
 
+    if work_permit_record.canceled_at:
+        return WorkPermitStatus.CANCELED
     if work_permit_record.closed_at:
         return WorkPermitStatus.CLOSED
+    if not work_permit_record.responsible_person.strip() or not work_permit_record.issuer_person.strip():
+        return WorkPermitStatus.INVALID
+    if not work_permit_record.participants:
+        return WorkPermitStatus.INVALID
 
     reference_moment = current_moment or datetime.now()
     ends_at = datetime.fromisoformat(work_permit_record.ends_at)

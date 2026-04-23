@@ -15,3 +15,4 @@ class QtNavigationIntent:
     training_status_filter: str | None = None
     ppe_status_filter: str | None = None
     medical_status_filter: str | None = None
+    work_permit_status_filter: str | None = None

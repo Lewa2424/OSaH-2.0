@@ -7,6 +7,7 @@ from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.training_record import TrainingRecord
+from osah.domain.entities.work_permit_record import WorkPermitRecord
 
 
 @dataclass(slots=True)
@@ -26,5 +27,6 @@ class EmployeeWorkspaceRow:
     training_records: tuple[TrainingRecord, ...]
     ppe_records: tuple[PpeRecord, ...]
     medical_records: tuple[MedicalRecord, ...]
+    work_permit_records: tuple[WorkPermitRecord, ...]
     module_summaries: tuple[EmployeeModuleStatusSummary, ...]
     problems: tuple[EmployeeProblem, ...]

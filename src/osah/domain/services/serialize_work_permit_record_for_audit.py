@@ -17,5 +17,6 @@ def serialize_work_permit_record_for_audit(work_permit_record: WorkPermitRecord)
         f"starts_at={work_permit_record.starts_at};"
         f"ends_at={work_permit_record.ends_at};"
         f"closed_at={work_permit_record.closed_at or ''};"
+        f"canceled_at={work_permit_record.canceled_at or ''};"
         f"participants={participants_text}"
     )

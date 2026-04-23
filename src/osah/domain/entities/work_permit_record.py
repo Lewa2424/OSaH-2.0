@@ -22,3 +22,5 @@ class WorkPermitRecord:
     closed_at: str | None
     participants: tuple[WorkPermitParticipant, ...]
     status: WorkPermitStatus
+    canceled_at: str | None = None
+    cancel_reason_text: str = ""

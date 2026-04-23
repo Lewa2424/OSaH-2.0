@@ -7,6 +7,7 @@ from osah.ui.qt.screens.employees.employee_overview_tab import EmployeeOverviewT
 from osah.ui.qt.screens.medical.employee_medical_tab import EmployeeMedicalTab
 from osah.ui.qt.screens.ppe.employee_ppe_tab import EmployeePpeTab
 from osah.ui.qt.screens.trainings.employee_trainings_tab import EmployeeTrainingsTab
+from osah.ui.qt.screens.work_permits.employee_work_permits_tab import EmployeeWorkPermitsTab
 
 
 class EmployeeDetailsPane(QScrollArea):
@@ -50,7 +51,7 @@ class EmployeeDetailsPane(QScrollArea):
         tabs.addTab(EmployeeTrainingsTab(row.training_records), "Інструктажі")
         tabs.addTab(EmployeePpeTab(row.ppe_records), "ЗІЗ")
         tabs.addTab(EmployeeMedicalTab(row.medical_records), "Медицина")
-        tabs.addTab(_stub_tab("Наряди-допуски", "Read-only зведення вже враховано в огляді."), "Наряди-допуски")
+        tabs.addTab(EmployeeWorkPermitsTab(row.work_permit_records), "Наряди-допуски")
         tabs.addTab(_stub_tab("Історія", "Історія буде прив'язана до audit-журналу."), "Історія")
         layout.addWidget(tabs)
         layout.addStretch()

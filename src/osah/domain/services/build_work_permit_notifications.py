@@ -23,14 +23,14 @@ def build_work_permit_notifications(
 
     notifications: list[NotificationItem] = []
     for work_permit_record in work_permit_records:
-        if work_permit_record.status == WorkPermitStatus.CLOSED:
+        if work_permit_record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}:
             continue
 
         for participant in work_permit_record.participants:
             if participant.employee_personnel_number not in active_employee_numbers:
                 continue
 
-            if work_permit_record.status == WorkPermitStatus.EXPIRED:
+            if work_permit_record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}:
                 notifications.append(
                     NotificationItem(
                         notification_kind=NotificationKind.CONTROL,

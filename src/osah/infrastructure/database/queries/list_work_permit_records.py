@@ -25,7 +25,9 @@ def list_work_permit_records(connection: Connection) -> tuple[WorkPermitRecord, 
             responsible_person,
             issuer_person,
             note_text,
-            closed_at
+            closed_at,
+            canceled_at,
+            cancel_reason_text
         FROM work_permits
         ORDER BY CASE WHEN closed_at IS NULL THEN 0 ELSE 1 END, ends_at ASC, id ASC;
         """
@@ -67,6 +69,8 @@ def list_work_permit_records(connection: Connection) -> tuple[WorkPermitRecord, 
             issuer_person=row["issuer_person"],
             note_text=row["note_text"] or "",
             closed_at=row["closed_at"],
+            canceled_at=row["canceled_at"],
+            cancel_reason_text=row["cancel_reason_text"] or "",
             participants=tuple(participants_by_permit_id.get(int(row["id"]), ())),
             status=WorkPermitStatus.ACTIVE,
         )
@@ -84,6 +88,8 @@ def list_work_permit_records(connection: Connection) -> tuple[WorkPermitRecord, 
                 closed_at=work_permit_record.closed_at,
                 participants=work_permit_record.participants,
                 status=evaluate_work_permit_status(work_permit_record),
+                canceled_at=work_permit_record.canceled_at,
+                cancel_reason_text=work_permit_record.cancel_reason_text,
             )
         )
 

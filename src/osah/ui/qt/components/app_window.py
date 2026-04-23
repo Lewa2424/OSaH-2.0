@@ -112,6 +112,8 @@ class AppWindow(QMainWindow):
             screen.ppe_attention_requested.connect(self._open_ppe_attention)
         if hasattr(screen, "medical_attention_requested"):
             screen.medical_attention_requested.connect(self._open_medical_attention)
+        if hasattr(screen, "work_permits_attention_requested"):
+            screen.work_permits_attention_requested.connect(self._open_work_permits_attention)
         if hasattr(screen, "employee_open_requested"):
             screen.employee_open_requested.connect(
                 lambda personnel_number, source=section: self._open_employee_attention(
@@ -175,6 +177,18 @@ class AppWindow(QMainWindow):
         )
         self._on_section_selected(AppSection.MEDICAL)
 
+    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ НАРЯДІВ / OPEN WORK PERMIT ALERTS ######
+    def _open_work_permits_attention(self, status_filter: str) -> None:
+        """Переходить із Dashboard до відфільтрованого модуля нарядів-допусків.
+        Navigates from Dashboard to filtered work permits module.
+        """
+
+        self._pending_navigation_intent = QtNavigationIntent(
+            target_section=AppSection.WORK_PERMITS,
+            work_permit_status_filter=status_filter,
+        )
+        self._on_section_selected(AppSection.WORK_PERMITS)
+
 
 # ###### ДЖЕРЕЛО СПОВІЩЕННЯ СЕКЦІЇ / SECTION NOTIFICATION SOURCE ######
 def _notification_source_for_section(section: AppSection) -> str:
@@ -188,4 +202,6 @@ def _notification_source_for_section(section: AppSection) -> str:
         return "ppe.registry"
     if section == AppSection.MEDICAL:
         return "medical.registry"
+    if section == AppSection.WORK_PERMITS:
+        return "work_permits.registry"
     return "employees.registry"
