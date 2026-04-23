@@ -1,14 +1,16 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_training_workspace import load_training_workspace
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.trainings.training_quick_stats import TrainingQuickStats
 from osah.ui.qt.screens.trainings.training_record_details_pane import TrainingRecordDetailsPane
 from osah.ui.qt.screens.trainings.training_summary_panel import TrainingSummaryPanel
@@ -17,9 +19,7 @@ from osah.ui.qt.screens.trainings.trainings_registry_table import TrainingsRegis
 
 
 class TrainingsScreen(QWidget):
-    """Повноцінний Qt-екран модуля інструктажів.
-    Full Qt screen for the trainings module.
-    """
+    """Full Qt screen for the trainings module."""
 
     employee_open_requested = Signal(str)
 
@@ -33,13 +33,11 @@ class TrainingsScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Інструктажі")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-
-        subtitle = QLabel("Контроль строків, просрочок, відсутніх записів і відповідальних за інструктажі.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Інструктажі",
+            "Контроль строків, прострочок, відсутніх записів і відповідальних осіб.",
+        )
+        layout.addWidget(self._section_header)
 
         self.quick_stats = TrainingQuickStats(workspace.summary)
         layout.addWidget(self.quick_stats)
@@ -69,8 +67,11 @@ class TrainingsScreen(QWidget):
         splitter.setStretchFactor(1, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self.empty_state = QLabel("")
-        self.empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self.loading_state = LoadingStateWidget()
+        self.error_state = ErrorStateWidget()
+        self.empty_state = EmptyStateWidget()
+        layout.addWidget(self.loading_state)
+        layout.addWidget(self.error_state)
         layout.addWidget(self.empty_state)
 
         if initial_status:
@@ -79,19 +80,23 @@ class TrainingsScreen(QWidget):
 
     # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######
     def _reload_workspace(self) -> None:
-        """Перезавантажує дані після створення або редагування запису.
-        Reloads data after creating or editing a record.
-        """
+        """Reloads data after creating or editing a training record."""
 
-        self._workspace = load_training_workspace(self._database_path)
+        self.loading_state.show_state("Оновлення реєстру інструктажів...")
+        self.error_state.hide()
+        try:
+            self._workspace = load_training_workspace(self._database_path)
+        except Exception as error:  # noqa: BLE001
+            self.loading_state.hide()
+            self.error_state.show_state(f"Не вдалося оновити дані інструктажів: {error}")
+            return
+
         self.quick_stats.set_summary(self._workspace.summary)
         self._apply_filters()
 
     # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
-        """Застосовує комбіновані фільтри без доменних розрахунків у UI.
-        Applies combined filters without domain calculations in UI.
-        """
+        """Applies combined filters without domain calculations in UI."""
 
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
@@ -99,22 +104,27 @@ class TrainingsScreen(QWidget):
             rows = _collapse_by_employee(rows)
         self._visible_rows = rows
         self.registry_table.set_rows(rows)
-        self.empty_state.setText("" if rows else "Нічого не знайдено. Змініть фільтри або скиньте пошук.")
+        self.loading_state.hide()
+        self.error_state.hide()
+        if rows:
+            self.empty_state.hide()
+        else:
+            self.empty_state.show_state(
+                "Немає записів за активними фільтрами.",
+                "Скиньте фільтри або змініть параметри пошуку.",
+            )
         self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: TrainingWorkspaceRow) -> None:
-        """Показує вибраний запис у правій панелі і короткому підсумку.
-        Shows the selected record in the right pane and summary panel.
-        """
+        """Shows selected row in summary and details pane."""
 
         self.summary_panel.set_row(row)
         self.details_pane.show_row(row)
 
+    # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
     def _apply_initial_status(self, initial_status: str) -> None:
-        """Активує стартовий фільтр статусу з navigation intent.
-        Activates initial status filter from navigation intent.
-        """
+        """Activates initial status filter from navigation intent."""
 
         try:
             self.filter_bar.set_status_filter(TrainingRegistryFilter(initial_status))
@@ -124,9 +134,7 @@ class TrainingsScreen(QWidget):
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
-    """Перевіряє відповідність рядка активним фільтрам екрана.
-    Checks if a row matches active screen filters.
-    """
+    """Checks if row matches active filters."""
 
     haystack = " ".join(
         (
@@ -162,10 +170,9 @@ def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
     return True
 
 
+# ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[TrainingWorkspaceRow, ...]) -> tuple[TrainingWorkspaceRow, ...]:
-    """Залишає для кожного працівника найпроблемніший рядок інструктажів.
-    Keeps the most problematic training row for each employee.
-    """
+    """Keeps the most problematic training row per employee."""
 
     priority = {
         TrainingRegistryFilter.MISSING: 4,

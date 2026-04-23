@@ -1,22 +1,24 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_contractor_workspace import load_contractor_workspace
 from osah.application.services.save_contractor_record import save_contractor_record
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.contractor_record import ContractorRecord
-from osah.domain.entities.contractor_workspace import ContractorWorkspace
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
+from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.contractors.contractor_details_pane import ContractorDetailsPane
 from osah.ui.qt.screens.contractors.contractors_filter_bar import ContractorsFilterBar
 from osah.ui.qt.screens.contractors.contractors_registry_table import ContractorsRegistryTable
 
 
 class ContractorsScreen(QWidget):
-    """Staged contractors screen with registry and editable card."""
+    """Contractors screen with unified header, registry and details pane."""
 
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
@@ -29,12 +31,14 @@ class ContractorsScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Підрядники")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-        subtitle = QLabel("Базовий реєстр підрядників: контакти, статус активності, робочі примітки та staged-контур допусків.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Підрядники",
+            "Базовий реєстр підрядників: контакти, статус активності, примітки та зв'язок з роботами.",
+        )
+        layout.addWidget(self._section_header)
+
+        if self._read_only:
+            layout.addWidget(ReadOnlyBanner("Режим тільки перегляду: редагування підрядників вимкнено."))
 
         self._feedback = FormFeedbackLabel()
         layout.addWidget(self._feedback)
@@ -55,8 +59,7 @@ class ContractorsScreen(QWidget):
         splitter.setStretchFactor(1, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self._empty_state = QLabel("")
-        self._empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self._empty_state = EmptyStateWidget()
         layout.addWidget(self._empty_state)
         self._apply_filters()
 
@@ -75,8 +78,12 @@ class ContractorsScreen(QWidget):
         rows = tuple(record for record in self._workspace.records if _contractor_matches(record, values))
         self._table.set_rows(rows)
         self._table.select_first()
-        self._empty_state.setText(
-            "" if rows else "Реєстр порожній. Створіть перший запис підрядника або змініть активні фільтри."
+        if rows:
+            self._empty_state.hide()
+            return
+        self._empty_state.show_state(
+            "Реєстр підрядників порожній.",
+            "Створіть перший запис або змініть активні фільтри.",
         )
 
     # ###### ПОКАЗ КАРТКИ ПІДРЯДНИКА / SHOW CONTRACTOR CARD ######

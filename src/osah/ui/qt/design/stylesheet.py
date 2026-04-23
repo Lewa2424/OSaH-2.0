@@ -249,6 +249,46 @@ QLabel[role="section_title"] {{
     font-size: 16px;
     font-weight: bold;
 }}
+QLabel[role="section_header_title"] {{
+    color: {c["text_primary"]};
+    font-size: 22px;
+    font-weight: 900;
+}}
+QLabel[role="section_header_subtitle"] {{
+    color: {c["text_secondary"]};
+    font-size: 11px;
+    font-weight: 500;
+}}
+QLabel[role="state_title"] {{
+    color: {c["text_secondary"]};
+    font-size: 12px;
+    font-weight: 800;
+}}
+QLabel[role="state_subtitle"] {{
+    color: {c["text_muted"]};
+    font-size: 10px;
+}}
+QLabel[role="state_loading"] {{
+    color: {c["accent"]};
+    font-size: 11px;
+    font-weight: 700;
+}}
+QLabel[role="state_error"] {{
+    color: {c["critical"]};
+    background: {c["critical_subtle"]};
+    border: 1px solid {c["critical"]};
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-weight: 700;
+}}
+QLabel[role="readonly_banner"] {{
+    color: {c["text_secondary"]};
+    background: {c["bg_panel"]};
+    border: 1px dashed {c["border_strong"]};
+    border-radius: {r["md"]}px;
+    padding: 8px 10px;
+    font-weight: 700;
+}}
 QWidget[role="section_bg"] {{
     background: {c["bg_app"]};
 }}

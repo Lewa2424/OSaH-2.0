@@ -1,14 +1,16 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_medical_workspace import load_medical_workspace
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.entities.medical_workspace import MedicalWorkspace
 from osah.domain.entities.medical_workspace_mode import MedicalWorkspaceMode
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.medical.medical_filter_bar import MedicalFilterBar
 from osah.ui.qt.screens.medical.medical_record_details_pane import MedicalRecordDetailsPane
 from osah.ui.qt.screens.medical.medical_registry_table import MedicalRegistryTable
@@ -16,9 +18,7 @@ from osah.ui.qt.screens.medical.medical_summary_panel import MedicalSummaryPanel
 
 
 class MedicalScreen(QWidget):
-    """Повноцінний Qt-екран модуля медицини і меддопусків.
-    Full Qt screen for medical admission and restriction control.
-    """
+    """Full Qt screen for medical admission and restrictions module."""
 
     employee_open_requested = Signal(str)
 
@@ -31,12 +31,11 @@ class MedicalScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Медицина")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-        subtitle = QLabel("Контроль меддопуску, строків дії та робочих обмежень без зберігання діагнозів.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Медицина",
+            "Контроль меддопуску, строків дії та робочих обмежень без зберігання діагнозів.",
+        )
+        layout.addWidget(self._section_header)
 
         self.summary_panel = MedicalSummaryPanel(workspace.summary)
         layout.addWidget(self.summary_panel)
@@ -58,8 +57,11 @@ class MedicalScreen(QWidget):
         splitter.setStretchFactor(1, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self.empty_state = QLabel("")
-        self.empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self.loading_state = LoadingStateWidget()
+        self.error_state = ErrorStateWidget()
+        self.empty_state = EmptyStateWidget()
+        layout.addWidget(self.loading_state)
+        layout.addWidget(self.error_state)
         layout.addWidget(self.empty_state)
 
         if initial_status:
@@ -68,41 +70,48 @@ class MedicalScreen(QWidget):
 
     # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######
     def _reload_workspace(self) -> None:
-        """Перезавантажує дані після створення або редагування медичного запису.
-        Reloads data after creating or editing a medical record.
-        """
+        """Reloads data after creating or editing a medical record."""
 
-        self._workspace = load_medical_workspace(self._database_path)
+        self.loading_state.show_state("Оновлення реєстру медицини...")
+        self.error_state.hide()
+        try:
+            self._workspace = load_medical_workspace(self._database_path)
+        except Exception as error:  # noqa: BLE001
+            self.loading_state.hide()
+            self.error_state.show_state(f"Не вдалося оновити медичні дані: {error}")
+            return
         self.summary_panel.set_summary(self._workspace.summary)
         self._apply_filters()
 
     # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
-        """Застосовує комбіновані фільтри без доменних розрахунків у UI.
-        Applies combined filters without domain calculations in UI.
-        """
+        """Applies combined filters without domain calculations in UI."""
 
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
         if values["mode"] == MedicalWorkspaceMode.BY_EMPLOYEES.value:
             rows = _collapse_by_employee(rows)
         self.registry_table.set_rows(rows)
-        self.empty_state.setText("" if rows else "Нічого не знайдено. Змініть фільтри або скиньте пошук.")
+        self.loading_state.hide()
+        self.error_state.hide()
+        if rows:
+            self.empty_state.hide()
+        else:
+            self.empty_state.show_state(
+                "Немає медичних записів за активними фільтрами.",
+                "Змініть параметри пошуку або перевірте актуальність записів.",
+            )
         self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: MedicalWorkspaceRow) -> None:
-        """Показує вибраний медичний запис у правій панелі.
-        Shows the selected medical record in the right pane.
-        """
+        """Shows selected medical row in details pane."""
 
         self.details_pane.show_row(row)
 
-    # ###### СТАРТОВИЙ ФІЛЬТР / INITIAL FILTER ######
+    # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
     def _apply_initial_status(self, initial_status: str) -> None:
-        """Активує стартовий фільтр статусу з navigation intent.
-        Activates initial status filter from navigation intent.
-        """
+        """Activates initial status filter from navigation intent."""
 
         try:
             self.filter_bar.set_status_filter(MedicalStatus(initial_status))
@@ -112,9 +121,7 @@ class MedicalScreen(QWidget):
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches(row: MedicalWorkspaceRow, values: dict[str, str | bool]) -> bool:
-    """Перевіряє відповідність рядка активним фільтрам екрана.
-    Checks whether a row matches active screen filters.
-    """
+    """Checks whether row matches active filters."""
 
     haystack = " ".join(
         (
@@ -147,9 +154,7 @@ def _row_matches(row: MedicalWorkspaceRow, values: dict[str, str | bool]) -> boo
 
 # ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[MedicalWorkspaceRow, ...]) -> tuple[MedicalWorkspaceRow, ...]:
-    """Залишає для кожного працівника найпроблемніший медичний рядок.
-    Keeps the most problematic medical row for each employee.
-    """
+    """Keeps most problematic medical row per employee."""
 
     priority = {
         MedicalStatus.NOT_FIT: 5,

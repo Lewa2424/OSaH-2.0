@@ -1,10 +1,12 @@
-from osah.domain.entities.about_snapshot import AboutSnapshot
-from osah.ui.qt.design.tokens import COLOR, SPACING
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
+from osah.domain.entities.about_snapshot import AboutSnapshot
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 
 
 class AboutScreen(QWidget):
-    """Informational About screen."""
+    """Informational About screen in unified service-style layout."""
 
     def __init__(self, snapshot: AboutSnapshot) -> None:
         super().__init__()
@@ -12,13 +14,12 @@ class AboutScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Про програму")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-
-        subtitle = QLabel("Локальна система управління охороною праці для режиму 'встановив → налаштував → працюєш'.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        layout.addWidget(
+            SectionHeader(
+                "Про програму",
+                "Інформаційний екран локальної системи управління охороною праці.",
+            )
+        )
 
         info = QLabel(
             f"Продукт: {snapshot.product_name}\n"
@@ -33,6 +34,7 @@ class AboutScreen(QWidget):
             f"Кількість працівників: {snapshot.employee_count}\n"
             f"Непрочитані НПА/новини: {snapshot.unread_news_count}"
         )
+        info.setProperty("role", "section_header_subtitle")
         info.setWordWrap(True)
         layout.addWidget(info)
         layout.addStretch()

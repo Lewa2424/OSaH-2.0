@@ -1,22 +1,24 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_archive_workspace import load_archive_workspace
 from osah.application.services.reactivate_archived_employee import reactivate_archived_employee
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.archive_entry import ArchiveEntry
-from osah.domain.entities.archive_workspace import ArchiveWorkspace
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
+from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.archive.archive_details_pane import ArchiveDetailsPane
 from osah.ui.qt.screens.archive.archive_filter_bar import ArchiveFilterBar
 from osah.ui.qt.screens.archive.archive_registry_table import ArchiveRegistryTable
 
 
 class ArchiveScreen(QWidget):
-    """Archive screen with registry, filters and reactivation action."""
+    """Archive screen with unified layout, filters, registry and details pane."""
 
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
@@ -28,12 +30,14 @@ class ArchiveScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Архів")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-        subtitle = QLabel("Окремий контур архівних працівників та історичних сутностей, без змішування з активними.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Архів",
+            "Окремий контур архівних працівників та історичних сутностей без змішування з активними.",
+        )
+        layout.addWidget(self._section_header)
+
+        if access_role != AccessRole.INSPECTOR:
+            layout.addWidget(ReadOnlyBanner("Режим тільки перегляду: реактивація недоступна."))
 
         self._feedback = FormFeedbackLabel()
         layout.addWidget(self._feedback)
@@ -54,8 +58,7 @@ class ArchiveScreen(QWidget):
         splitter.setStretchFactor(1, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self._empty_state = QLabel("")
-        self._empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self._empty_state = EmptyStateWidget()
         layout.addWidget(self._empty_state)
         self._apply_filters()
 
@@ -74,7 +77,13 @@ class ArchiveScreen(QWidget):
         rows = tuple(entry for entry in self._workspace.entries if _archive_entry_matches(entry, values))
         self._table.set_rows(rows)
         self._table.select_first()
-        self._empty_state.setText("" if rows else "Нічого не знайдено. Змініть фільтри або очистіть пошук.")
+        if rows:
+            self._empty_state.hide()
+            return
+        self._empty_state.show_state(
+            "Нічого не знайдено в архіві.",
+            "Змініть фільтри або очистіть пошуковий запит.",
+        )
 
     # ###### ПОКАЗ ДЕТАЛЕЙ ЗАПИСУ / SHOW ENTRY DETAILS ######
     def _show_entry(self, entry: ArchiveEntry) -> None:

@@ -1,23 +1,18 @@
-"""
-DashboardScreen — заглушка головного екрана нового UI.
-Використовує MetricCard, InfoPanel та AlertCard для відображення даних з DashboardSnapshot.
-DashboardScreen — dashboard stub using new UI components for DashboardSnapshot.
-"""
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.audit_log_entry import AuditLogEntry
 from osah.domain.entities.dashboard_snapshot import DashboardSnapshot
 from osah.domain.entities.notification_item import NotificationItem
 from osah.ui.qt.components.alert_card import AlertCard
 from osah.ui.qt.components.metric_card import MetricCard
-from osah.ui.qt.design.tokens import COLOR, SIZE, SPACING
+from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
 class DashboardScreen(QWidget):
-    """Екран Dashboard у новій Qt архітектурі.
-    Dashboard screen assembled with new architecture components.
-    """
+    """Dashboard as a unified control panel screen."""
 
     employee_attention_requested = Signal(str, str)
     trainings_attention_requested = Signal(str)
@@ -28,36 +23,18 @@ class DashboardScreen(QWidget):
     def __init__(self, snapshot: DashboardSnapshot, service_audit_entries: tuple[AuditLogEntry, ...] = ()) -> None:
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["xxl"], SPACING["xl"], SPACING["xxl"], SPACING["xl"])
-        layout.setSpacing(SPACING["xl"])
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
+        layout.setSpacing(SPACING["lg"])
 
-        # 0. Hero блок (Привітання і фокус)
-        hero_layout = QHBoxLayout()
-        hero_layout.setContentsMargins(0, 0, 0, SPACING["md"])
-        
-        greetings = QLabel("Доброго дня, інспектроре!")
-        greetings.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {COLOR['text_primary']};")
-        hero_layout.addWidget(greetings)
-        hero_layout.addStretch()
+        layout.addWidget(
+            SectionHeader(
+                "Головна",
+                "Дашборд-пульт: критичні сигнали, проблемні контури, швидкі переходи та службовий стан системи.",
+            )
+        )
 
-        system_status = QLabel("Система: Нормальна робота")
-        if snapshot.critical_items > 0:
-            system_status.setText(f"Система: {snapshot.critical_items} критичних проблем!")
-            system_status.setStyleSheet(f"color: {COLOR['critical']}; font-weight: bold; font-size: 14px;")
-        elif snapshot.warning_items > 0:
-            system_status.setText("Система: Потребує уваги")
-            system_status.setStyleSheet(f"color: {COLOR['warning']}; font-weight: bold; font-size: 14px;")
-        else:
-            system_status.setStyleSheet(f"color: {COLOR['success']}; font-weight: bold; font-size: 14px;")
-
-        hero_layout.addWidget(system_status)
-        layout.addLayout(hero_layout)
-
-        # 1. Верхній ряд: Метрики (Metrics row)
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(SPACING["lg"])
-
         metrics_layout.addWidget(
             MetricCard(
                 title="Працівники",
@@ -78,7 +55,7 @@ class DashboardScreen(QWidget):
             MetricCard(
                 title="Потребують уваги",
                 value=str(snapshot.warning_items),
-                subtitle="Підхід до порогу ризику",
+                subtitle="Порогові сигнали",
                 accent_color=COLOR["warning"],
             )
         )
@@ -86,146 +63,123 @@ class DashboardScreen(QWidget):
             MetricCard(
                 title="Нові матеріали",
                 value=str(snapshot.unread_news_total),
-                subtitle="Непрочитані новини",
-                accent_color="#8B5CF6",  # Фіолетовий акцент
+                subtitle="НПА/новини",
+                accent_color=COLOR["news_accent"],
             )
         )
-
         layout.addLayout(metrics_layout)
 
-        # 2. Нижній ряд: дві колонки
-        cols_layout = QHBoxLayout()
-        cols_layout.setSpacing(SPACING["xl"])
+        sections_layout = QHBoxLayout()
+        sections_layout.setSpacing(SPACING["lg"])
+        sections_layout.addWidget(self._build_alerts_panel(snapshot), stretch=6)
+        sections_layout.addWidget(self._build_focus_panel(snapshot, service_audit_entries), stretch=4)
+        layout.addLayout(sections_layout)
 
-        # Ліва колонка: Алерт-фід (Left column: Alert feed)
-        left_col = QVBoxLayout()
-        left_col.setContentsMargins(0, 0, 0, 0)
-        left_col.setSpacing(SPACING["md"])
+    # ###### ПАНЕЛЬ СПОВІЩЕНЬ / ALERTS PANEL ######
+    def _build_alerts_panel(self, snapshot: DashboardSnapshot) -> QWidget:
+        """Builds active notifications panel."""
 
-        feed_title = QLabel("Активні сповіщення")
-        feed_title.setProperty("role", "section_title")
-        left_col.addWidget(feed_title)
+        panel = QWidget()
+        panel.setProperty("inset", "true")
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])
+        layout.setSpacing(SPACING["sm"])
+
+        title = QLabel("Активні сповіщення")
+        title.setProperty("role", "section_title")
+        layout.addWidget(title)
 
         if snapshot.active_notifications:
-            for n in snapshot.active_notifications[:5]:  # Показуємо топ-5
-                card = AlertCard(n)
-                card.clicked.connect(lambda notification=n: self._emit_employee_attention(notification))
-                left_col.addWidget(card)
+            for notification in snapshot.active_notifications[:6]:
+                card = AlertCard(notification)
+                card.clicked.connect(lambda item=notification: self._emit_employee_attention(item))
+                layout.addWidget(card)
         else:
-            empty_lbl = QLabel("Немає активних сповіщень. Все добре!")
-            empty_lbl.setProperty("role", "empty_state")
-            left_col.addWidget(empty_lbl)
+            empty_state = EmptyStateWidget()
+            empty_state.show_state("Активних сповіщень немає.", "Система не бачить відкритих проблемних сигналів.")
+            layout.addWidget(empty_state)
 
-        left_col.addStretch()
-        left_wrap = QWidget()
-        left_wrap.setLayout(left_col)
-        cols_layout.addWidget(left_wrap, stretch=6)
+        layout.addStretch()
+        return panel
 
-        # Права колонка: Інфо-панель (Right column: Info/News)
-        right_col = QVBoxLayout()
-        right_col.setContentsMargins(0, 0, 0, 0)
-        right_col.setSpacing(SPACING["md"])
+    # ###### ПАНЕЛЬ ФОКУСУ / FOCUS PANEL ######
+    def _build_focus_panel(self, snapshot: DashboardSnapshot, service_audit_entries: tuple[AuditLogEntry, ...]) -> QWidget:
+        """Builds quick actions, news and service state panel."""
 
-        info_title = QLabel("Швидкі дії та Фокус")
-        info_title.setProperty("role", "section_title")
-        right_col.addWidget(info_title)
+        panel = QWidget()
+        panel.setProperty("inset", "true")
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])
+        layout.setSpacing(SPACING["sm"])
 
-        info_box = QWidget()
-        info_box.setProperty("inset", "true")
-        ib_layout = QVBoxLayout(info_box)
-        ib_layout.setSpacing(SPACING["md"])
-        
-        from PySide6.QtWidgets import QPushButton
+        focus_title = QLabel("Фокус дня")
+        focus_title.setProperty("role", "section_title")
+        layout.addWidget(focus_title)
 
         training_critical, training_warning = _count_training_notifications(snapshot)
         ppe_critical, ppe_warning = _count_ppe_notifications(snapshot)
         medical_critical, medical_warning = _count_medical_notifications(snapshot)
         permit_critical, permit_warning = _count_work_permit_notifications(snapshot)
-        training_status = QLabel(
-            f"Інструктажі: критично {training_critical}, увага {training_warning}"
-        )
-        training_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
-        ib_layout.addWidget(training_status)
 
-        trainings_btn = QPushButton("Відкрити проблемні інструктажі")
-        trainings_btn.setProperty("variant", "secondary")
-        trainings_btn.clicked.connect(
+        layout.addWidget(_focus_line("Інструктажі", training_critical, training_warning))
+        button = QPushButton("Відкрити проблемні інструктажі")
+        button.setProperty("variant", "secondary")
+        button.clicked.connect(
             lambda: self.trainings_attention_requested.emit("missing" if training_critical else "warning")
         )
-        ib_layout.addWidget(trainings_btn)
+        layout.addWidget(button)
 
-        ppe_status = QLabel(f"ЗІЗ: критично {ppe_critical}, увага {ppe_warning}")
-        ppe_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
-        ib_layout.addWidget(ppe_status)
+        layout.addWidget(_focus_line("ЗІЗ", ppe_critical, ppe_warning))
+        button = QPushButton("Відкрити проблемні ЗІЗ")
+        button.setProperty("variant", "secondary")
+        button.clicked.connect(lambda: self.ppe_attention_requested.emit("not_issued" if ppe_critical else "warning"))
+        layout.addWidget(button)
 
-        ppe_btn = QPushButton("Відкрити проблемні ЗІЗ")
-        ppe_btn.setProperty("variant", "secondary")
-        ppe_btn.clicked.connect(lambda: self.ppe_attention_requested.emit("not_issued" if ppe_critical else "warning"))
-        ib_layout.addWidget(ppe_btn)
+        layout.addWidget(_focus_line("Медицина", medical_critical, medical_warning))
+        button = QPushButton("Відкрити проблемну медицину")
+        button.setProperty("variant", "secondary")
+        button.clicked.connect(lambda: self.medical_attention_requested.emit("expired" if medical_critical else "warning"))
+        layout.addWidget(button)
 
-        medical_status = QLabel(f"Медицина: критично {medical_critical}, увага {medical_warning}")
-        medical_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
-        ib_layout.addWidget(medical_status)
-
-        medical_btn = QPushButton("Відкрити проблемну медицину")
-        medical_btn.setProperty("variant", "secondary")
-        medical_btn.clicked.connect(lambda: self.medical_attention_requested.emit("expired" if medical_critical else "warning"))
-        ib_layout.addWidget(medical_btn)
-        
-        permit_status = QLabel(f"Наряди-допуски: критично {permit_critical}, увага {permit_warning}")
-        permit_status.setStyleSheet(f"color: {COLOR['text_secondary']}; font-weight: 700;")
-        ib_layout.addWidget(permit_status)
-
-        permit_btn = QPushButton("Відкрити проблемні наряди-допуски")
-        permit_btn.setProperty("variant", "secondary")
-        permit_btn.clicked.connect(lambda: self.work_permits_attention_requested.emit("expired" if permit_critical else "warning"))
-        ib_layout.addWidget(permit_btn)
-        
-        btn2 = QPushButton("🛡️ Реєстрація інструктажу")
-        btn2.setProperty("variant", "secondary")
-        ib_layout.addWidget(btn2)
-        
-        ib_layout.addSpacing(SPACING["lg"])
+        layout.addWidget(_focus_line("Наряди-допуски", permit_critical, permit_warning))
+        button = QPushButton("Відкрити проблемні наряди-допуски")
+        button.setProperty("variant", "secondary")
+        button.clicked.connect(
+            lambda: self.work_permits_attention_requested.emit("expired" if permit_critical else "warning")
+        )
+        layout.addWidget(button)
 
         news_title = QLabel("Новини / НПА")
-        news_title.setStyleSheet(f"color: {COLOR['text_primary']}; font-weight: 900;")
-        ib_layout.addWidget(news_title)
+        news_title.setProperty("role", "section_title")
+        layout.addWidget(news_title)
         if snapshot.latest_news_items:
             for news_item in snapshot.latest_news_items[:3]:
                 news_label = QLabel(
                     f"• {news_item.source_name} | {news_item.published_at_text or '-'}\n{news_item.title_text}"
                 )
+                news_label.setProperty("role", "section_header_subtitle")
                 news_label.setWordWrap(True)
-                news_label.setStyleSheet(f"color: {COLOR['text_secondary']};")
-                ib_layout.addWidget(news_label)
+                layout.addWidget(news_label)
         else:
-            news_empty = QLabel("Нових матеріалів із довірених джерел немає.")
-            news_empty.setProperty("role", "status_muted")
-            ib_layout.addWidget(news_empty)
+            empty_news = EmptyStateWidget()
+            empty_news.show_state("Нових матеріалів немає.", "Після перевірки джерел тут з'являться оновлення.")
+            layout.addWidget(empty_news)
 
         service_title = QLabel("Службовий контроль")
-        service_title.setStyleSheet(f"color: {COLOR['text_primary']}; font-weight: 900;")
-        ib_layout.addWidget(service_title)
+        service_title.setProperty("role", "section_title")
+        layout.addWidget(service_title)
         for service_status_text in _build_service_status_lines(service_audit_entries):
-            status_label = QLabel(service_status_text)
-            status_label.setWordWrap(True)
-            status_label.setStyleSheet(f"color: {COLOR['text_secondary']};")
-            ib_layout.addWidget(status_label)
+            service_label = QLabel(service_status_text)
+            service_label.setProperty("role", "section_header_subtitle")
+            service_label.setWordWrap(True)
+            layout.addWidget(service_label)
 
-        right_col.addWidget(info_box)
-        right_col.addStretch()
-
-        right_wrap = QWidget()
-        right_wrap.setLayout(right_col)
-        cols_layout.addWidget(right_wrap, stretch=4)
-
-        layout.addLayout(cols_layout)
+        layout.addStretch()
+        return panel
 
     # ###### ПЕРЕХІД ДО ПРАЦІВНИКА / EMPLOYEE ATTENTION NAVIGATION ######
     def _emit_employee_attention(self, notification: NotificationItem) -> None:
-        """Передає запит перейти з Dashboard до працівника і контексту проблеми.
-        Emits a request to navigate from Dashboard to an employee and problem context.
-        """
+        """Emits request to open employee card and problem context."""
 
         if notification.employee_personnel_number:
             self.employee_attention_requested.emit(
@@ -234,11 +188,18 @@ class DashboardScreen(QWidget):
             )
 
 
+# ###### РЯДОК ФОКУСУ КОНТУРУ / FOCUS LINE ######
+def _focus_line(module_title: str, critical_count: int, warning_count: int) -> QLabel:
+    """Builds one summary line for module focus counters."""
+
+    label = QLabel(f"{module_title}: критично {critical_count}, увага {warning_count}")
+    label.setProperty("role", "section_header_subtitle")
+    return label
+
+
 # ###### ПІДРАХУНОК СИГНАЛІВ ІНСТРУКТАЖІВ / COUNT TRAINING SIGNALS ######
 def _count_training_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
-    """Рахує критичні та попереджувальні сповіщення модуля інструктажів.
-    Counts critical and warning notifications for the trainings module.
-    """
+    """Counts critical and warning notifications for trainings module."""
 
     critical = 0
     warning = 0
@@ -252,10 +213,9 @@ def _count_training_notifications(snapshot: DashboardSnapshot) -> tuple[int, int
     return critical, warning
 
 
+# ###### ПІДРАХУНОК СИГНАЛІВ ЗІЗ / COUNT PPE SIGNALS ######
 def _count_ppe_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
-    """Рахує критичні та попереджувальні сповіщення модуля ЗІЗ.
-    Counts critical and warning notifications for the PPE module.
-    """
+    """Counts critical and warning notifications for PPE module."""
 
     critical = 0
     warning = 0
@@ -271,9 +231,7 @@ def _count_ppe_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
 
 # ###### ПІДРАХУНОК СИГНАЛІВ МЕДИЦИНИ / COUNT MEDICAL SIGNALS ######
 def _count_medical_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
-    """Рахує критичні та попереджувальні сповіщення модуля медицини.
-    Counts critical and warning notifications for the medical module.
-    """
+    """Counts critical and warning notifications for medical module."""
 
     critical = 0
     warning = 0
@@ -289,9 +247,7 @@ def _count_medical_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]
 
 # ###### ПІДРАХУНОК СИГНАЛІВ НАРЯДІВ / COUNT WORK PERMIT SIGNALS ######
 def _count_work_permit_notifications(snapshot: DashboardSnapshot) -> tuple[int, int]:
-    """Рахує критичні та попереджувальні сповіщення модуля нарядів-допусків.
-    Counts critical and warning notifications for the work permits module.
-    """
+    """Counts critical and warning notifications for work permit module."""
 
     critical = 0
     warning = 0
@@ -307,9 +263,7 @@ def _count_work_permit_notifications(snapshot: DashboardSnapshot) -> tuple[int, 
 
 # ###### СЛУЖБОВІ СТАТУСИ ЗОВНІШНЬОГО КОНТУРУ / EXTERNAL SERVICE STATUS LINES ######
 def _build_service_status_lines(audit_entries: tuple[AuditLogEntry, ...]) -> tuple[str, ...]:
-    """Формує короткі рядки стану пошти та джерел НПА для Dashboard.
-    Builds short mail and NPA source status lines for the Dashboard.
-    """
+    """Builds short status lines for mail and NPA sources."""
 
     latest_mail = _find_latest_entry(audit_entries, "reports_mail")
     latest_news = _find_latest_entry(audit_entries, "news_npa")
@@ -321,9 +275,7 @@ def _build_service_status_lines(audit_entries: tuple[AuditLogEntry, ...]) -> tup
 
 # ###### ОСТАННЯ ПОДІЯ МОДУЛЯ / LATEST MODULE EVENT ######
 def _find_latest_entry(audit_entries: tuple[AuditLogEntry, ...], module_name: str) -> AuditLogEntry | None:
-    """Повертає останню audit-подію потрібного зовнішнього модуля.
-    Returns the latest audit event for the requested external module.
-    """
+    """Returns latest audit event for requested module."""
 
     for audit_entry in audit_entries:
         if audit_entry.module_name == module_name:
@@ -333,9 +285,7 @@ def _find_latest_entry(audit_entries: tuple[AuditLogEntry, ...], module_name: st
 
 # ###### ФОРМАТ СЛУЖБОВОГО РЯДКА / SERVICE LINE FORMAT ######
 def _format_service_line(title: str, audit_entry: AuditLogEntry | None) -> str:
-    """Перетворює audit-подію на зрозумілий службовий статус.
-    Converts an audit event into a readable service status.
-    """
+    """Formats audit event into readable service line."""
 
     if audit_entry is None:
         return f"{title}: подій ще немає"

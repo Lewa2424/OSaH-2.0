@@ -1,14 +1,16 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_work_permit_workspace import load_work_permit_workspace
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_workspace import WorkPermitWorkspace
 from osah.domain.entities.work_permit_workspace_mode import WorkPermitWorkspaceMode
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.work_permits.work_permit_details_pane import WorkPermitDetailsPane
 from osah.ui.qt.screens.work_permits.work_permit_summary_panel import WorkPermitSummaryPanel
 from osah.ui.qt.screens.work_permits.work_permits_filter_bar import WorkPermitsFilterBar
@@ -16,9 +18,7 @@ from osah.ui.qt.screens.work_permits.work_permits_registry_table import WorkPerm
 
 
 class WorkPermitsScreen(QWidget):
-    """Повноцінний Qt-екран модуля нарядів-допусків.
-    Full Qt screen for the work permits module.
-    """
+    """Full Qt screen for work permits module."""
 
     employee_open_requested = Signal(str)
 
@@ -30,12 +30,11 @@ class WorkPermitsScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Наряди-допуски")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-        subtitle = QLabel("Оперативний контроль активних, прострочених, закритих і проблемних допусків до робіт.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Наряди-допуски",
+            "Оперативний контроль активних, прострочених, закритих і проблемних допусків до робіт.",
+        )
+        layout.addWidget(self._section_header)
 
         self.summary_panel = WorkPermitSummaryPanel(workspace.summary)
         layout.addWidget(self.summary_panel)
@@ -56,8 +55,11 @@ class WorkPermitsScreen(QWidget):
         splitter.setStretchFactor(1, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self.empty_state = QLabel("")
-        self.empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self.loading_state = LoadingStateWidget()
+        self.error_state = ErrorStateWidget()
+        self.empty_state = EmptyStateWidget()
+        layout.addWidget(self.loading_state)
+        layout.addWidget(self.error_state)
         layout.addWidget(self.empty_state)
 
         if initial_status:
@@ -66,43 +68,54 @@ class WorkPermitsScreen(QWidget):
 
     # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######
     def _reload_workspace(self) -> None:
-        """Перезавантажує дані після створення, редагування, закриття або скасування наряду.
-        Reloads data after creating, editing, closing or canceling a work permit.
-        """
+        """Reloads data after creating, editing, closing or canceling permit."""
 
-        self._workspace = load_work_permit_workspace(self._database_path)
+        self.loading_state.show_state("Оновлення реєстру нарядів-допусків...")
+        self.error_state.hide()
+        try:
+            self._workspace = load_work_permit_workspace(self._database_path)
+        except Exception as error:  # noqa: BLE001
+            self.loading_state.hide()
+            self.error_state.show_state(f"Не вдалося оновити наряди-допуски: {error}")
+            return
         self.summary_panel.set_summary(self._workspace.summary)
         self._apply_filters()
 
-    # ###### ФІЛЬТРИ / FILTERS ######
+    # ###### ФІЛЬТРИ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
-        """Застосовує комбіновані фільтри без доменних розрахунків у UI.
-        Applies combined filters without domain calculations in UI.
-        """
+        """Applies combined filters without domain calculations in UI."""
 
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
         if values["mode"] == WorkPermitWorkspaceMode.BY_EMPLOYEES.value:
             rows = _collapse_by_employee(rows)
         elif values["mode"] == WorkPermitWorkspaceMode.ACTIVE_WORKS.value:
-            rows = tuple(row for row in rows if row.status in {WorkPermitStatus.ACTIVE, WorkPermitStatus.WARNING, WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID})
+            rows = tuple(
+                row
+                for row in rows
+                if row.status in {WorkPermitStatus.ACTIVE, WorkPermitStatus.WARNING, WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}
+            )
         self.registry_table.set_rows(rows)
-        self.empty_state.setText("" if rows else "Нічого не знайдено. Змініть фільтри або скиньте пошук.")
+        self.loading_state.hide()
+        self.error_state.hide()
+        if rows:
+            self.empty_state.hide()
+        else:
+            self.empty_state.show_state(
+                "Немає нарядів-допусків за поточними фільтрами.",
+                "Скиньте фільтри або перевірте активні роботи.",
+            )
         self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: WorkPermitWorkspaceRow) -> None:
-        """Показує вибраний наряд у правій панелі.
-        Shows the selected work permit in the right pane.
-        """
+        """Shows selected permit in details pane."""
 
         self.details_pane.show_row(row)
 
-    # ###### СТАРТОВИЙ ФІЛЬТР / INITIAL FILTER ######
+    # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
     def _apply_initial_status(self, initial_status: str) -> None:
-        """Активує стартовий фільтр статусу з navigation intent.
-        Activates initial status filter from navigation intent.
-        """
+        """Activates initial status filter from navigation intent."""
 
         try:
             self.filter_bar.set_status_filter(WorkPermitStatus(initial_status))
@@ -112,11 +125,11 @@ class WorkPermitsScreen(QWidget):
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches(row: WorkPermitWorkspaceRow, values: dict[str, str | bool]) -> bool:
-    """Перевіряє відповідність рядка активним фільтрам.
-    Checks whether a row matches active filters.
-    """
+    """Checks whether row matches active filters."""
 
-    haystack = " ".join((row.permit_number, row.work_kind, row.work_location, row.responsible_person, row.issuer_person, row.participant_names)).lower()
+    haystack = " ".join(
+        (row.permit_number, row.work_kind, row.work_location, row.responsible_person, row.issuer_person, row.participant_names)
+    ).lower()
     if values["search"] and str(values["search"]) not in haystack:
         return False
     if values["status"] and row.status.value != values["status"]:
@@ -129,16 +142,19 @@ def _row_matches(row: WorkPermitWorkspaceRow, values: dict[str, str | bool]) -> 
         return False
     if values["problem_only"] and not (row.has_conflicts or row.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}):
         return False
-    if values["active_only"] and row.status not in {WorkPermitStatus.ACTIVE, WorkPermitStatus.WARNING, WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}:
+    if values["active_only"] and row.status not in {
+        WorkPermitStatus.ACTIVE,
+        WorkPermitStatus.WARNING,
+        WorkPermitStatus.EXPIRED,
+        WorkPermitStatus.INVALID,
+    }:
         return False
     return True
 
 
 # ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[WorkPermitWorkspaceRow, ...]) -> tuple[WorkPermitWorkspaceRow, ...]:
-    """Залишає для кожного учасника найпроблемніший наряд.
-    Keeps the most problematic work permit for each participant.
-    """
+    """Keeps most problematic permit per participant."""
 
     priority = {
         WorkPermitStatus.INVALID: 5,

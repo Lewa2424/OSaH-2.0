@@ -9,8 +9,8 @@ Design tokens for OSaH 2.0 Qt UI layer — single source of truth.
 # ──────────────────────────────────────────────────────────────────
 COLOR: dict[str, str] = {
     # Фони / Backgrounds
-    "bg_app":              "#F0F2F5",   # Корінь вікна / root window
-    "bg_shell":            "#DBF0F3EA",   # Основні панелі / main panels
+    "bg_app":              "#00615e",   # Корінь вікна / root window + 
+    "bg_shell":            "#033634",   # Основні панелі / main panels +
     "bg_panel":            "#F8F9FB",   # Трохи піднята поверхня / slightly elevated panel
     "bg_panel_elevated":   "#FFFFFF",   # Піднята панель або велика картка / elevated panel or large card
     "bg_card":             "#FFFFFF",   # Звичайна картка / regular card
@@ -46,7 +46,7 @@ COLOR: dict[str, str] = {
     "border_strong":       "#97BEF8",   # Виразніша межа / stronger border
 
     # Навігація / Navigation
-    "nav_bg":              "#DBF0F3EA",   # Фон бокової навігації / side navigation background
+    "nav_bg":              "#033634",   # Фон бокової навігації / side navigation background +
     "nav_hover":           "#CAEDF1",   # Фон кнопки навігації при наведенні / navigation hover background
     "nav_active_bg":       "#2563EB",   # Активний пункт навігації / active navigation item background
     "nav_active_text":     "#FFFFFF",   # Текст активного пункту навігації / active navigation text

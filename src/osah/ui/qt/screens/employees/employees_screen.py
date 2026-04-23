@@ -1,10 +1,12 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.employees.employee_details_pane import EmployeeDetailsPane
 from osah.ui.qt.screens.employees.employee_registry_table import EmployeeRegistryTable
 from osah.ui.qt.screens.employees.employees_filter_bar import EmployeesFilterBar
@@ -12,9 +14,7 @@ from osah.ui.qt.screens.employees.structure_tree_panel import StructureTreePanel
 
 
 class EmployeesScreen(QWidget):
-    """Повноцінний Qt-екран модуля працівників.
-    Full Qt screen for the employees module.
-    """
+    """Full Qt screen for employees module."""
 
     def __init__(
         self,
@@ -32,16 +32,12 @@ class EmployeesScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Працівники")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-
-        subtitle_text = "Реєстр персоналу з ієрархією, пошуком, фільтрами та ОП-карткою працівника."
+        subtitle_text = "Реєстр персоналу з ієрархією, пошуком, фільтрами і ОП-карткою працівника."
         if initial_personnel_number:
             subtitle_text = f"Перехід із сигналу: відкрито працівника {initial_personnel_number}."
-        subtitle = QLabel(subtitle_text)
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader("Працівники", subtitle_text)
+        self._section_header.set_warning_accent(bool(initial_personnel_number))
+        layout.addWidget(self._section_header)
 
         self.filter_bar = EmployeesFilterBar(workspace)
         self.filter_bar.filters_changed.connect(self._apply_filters)
@@ -65,8 +61,7 @@ class EmployeesScreen(QWidget):
         splitter.setStretchFactor(2, 0)
         layout.addWidget(splitter, stretch=1)
 
-        self.empty_state = QLabel("")
-        self.empty_state.setStyleSheet(f"color: {COLOR['text_muted']};")
+        self.empty_state = EmptyStateWidget()
         layout.addWidget(self.empty_state)
 
         self._apply_filters()
@@ -74,9 +69,7 @@ class EmployeesScreen(QWidget):
 
     # ###### ФОКУС НА ПРАЦІВНИКУ / FOCUS EMPLOYEE ######
     def focus_employee(self, personnel_number: str, problem_key: str | None = None) -> None:
-        """Відкриває працівника за навігаційним наміром dashboard -> employees -> card.
-        Opens an employee from a navigation intent dashboard -> employees -> card.
-        """
+        """Opens employee card from dashboard navigation intent."""
 
         self._initial_personnel_number = personnel_number
         self._initial_problem_key = problem_key
@@ -85,25 +78,25 @@ class EmployeesScreen(QWidget):
 
     # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
-        """Комбінує пошук, дерево і фільтри без перерахунку доменних статусів.
-        Combines search, tree and filters without recalculating domain statuses.
-        """
+        """Combines search, tree and filters without domain recalculations."""
 
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches_filters(row, values))
         self._visible_rows = rows
         self.registry_table.set_rows(rows)
-        self.empty_state.setText("" if rows else "Нічого не знайдено. Змініть пошук або скиньте фільтри.")
         if rows:
+            self.empty_state.hide()
             self.registry_table.selectRow(0)
         else:
+            self.empty_state.show_state(
+                "Немає працівників за поточними фільтрами.",
+                "Скиньте фільтри або змініть умови пошуку.",
+            )
             self.details_pane.show_empty_state()
 
-    # ###### НАМІР З ДЕРЕВА / TREE INTENT ######
+    # ###### НАМІР З ДЕРЕВА / APPLY TREE INTENT ######
     def _apply_tree_intent(self, node_kind: str, node_value: str) -> None:
-        """Перетворює вибір у дереві на активні фільтри реєстру.
-        Converts tree selection into active registry filters.
-        """
+        """Converts structure tree selection into registry filters."""
 
         if node_kind == "enterprise":
             self.filter_bar.reset_filters()
@@ -114,18 +107,15 @@ class EmployeesScreen(QWidget):
 
     # ###### ПОКАЗ ПРАЦІВНИКА / SHOW EMPLOYEE ######
     def _show_employee(self, personnel_number: str) -> None:
-        """Показує праву картку вибраного працівника.
-        Shows the right detail card for the selected employee.
-        """
+        """Shows selected employee in right details pane."""
 
         row = next((item for item in self._workspace.rows if item.employee.personnel_number == personnel_number), None)
         if row:
             self.details_pane.show_employee(row)
 
+    # ###### ПОЧАТКОВИЙ ФОКУС / INITIAL FOCUS ######
     def _focus_initial_employee(self) -> None:
-        """Виконує первинний фокус за навігаційним наміром, якщо він заданий.
-        Applies initial focus from navigation intent when provided.
-        """
+        """Applies initial focus from navigation intent when provided."""
 
         if self._initial_personnel_number:
             self.registry_table.select_employee(self._initial_personnel_number)
@@ -133,9 +123,7 @@ class EmployeesScreen(QWidget):
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches_filters(row: EmployeeWorkspaceRow, values: dict[str, object]) -> bool:
-    """Перевіряє, чи рядок працівника відповідає активним фільтрам.
-    Checks whether an employee row matches active filters.
-    """
+    """Checks whether employee row matches active filters."""
 
     search = str(values["search"])
     haystack = " ".join(

@@ -2,15 +2,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from osah.application.services.create_news_source import create_news_source
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
@@ -20,9 +12,10 @@ from osah.application.services.toggle_news_source_activity import toggle_news_so
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.mail_settings import MailSettings
 from osah.domain.entities.news_source_kind import NewsSourceKind
-from osah.domain.entities.settings_workspace import SettingsWorkspace
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
+from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
 from osah.ui.qt.screens.settings.mail_settings_panel import MailSettingsPanel
 from osah.ui.qt.screens.settings.news_sources_settings_panel import NewsSourcesSettingsPanel
@@ -31,25 +24,27 @@ from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCar
 
 
 class SettingsScreen(QWidget):
-    """Full settings screen for configuration and service controls."""
+    """Settings command-center screen."""
 
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
         self._access_role = access_role
-        self._workspace = load_system_settings_workspace(database_path)
         self._read_only = access_role != AccessRole.INSPECTOR
+        self._workspace = load_system_settings_workspace(database_path)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        title = QLabel("Налаштування")
-        title.setStyleSheet("font-size: 22px; font-weight: 900;")
-        layout.addWidget(title)
-        subtitle = QLabel("Командний центр конфігурації системи без змішування внутрішнього й зовнішнього контурів.")
-        subtitle.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(subtitle)
+        self._section_header = SectionHeader(
+            "Налаштування",
+            "Командний центр конфігурації системи без змішування внутрішнього та зовнішнього контурів.",
+        )
+        layout.addWidget(self._section_header)
+
+        if self._read_only:
+            layout.addWidget(ReadOnlyBanner())
 
         self._feedback = FormFeedbackLabel()
         layout.addWidget(self._feedback)
@@ -108,6 +103,8 @@ class SettingsScreen(QWidget):
 
         card = SettingsSectionCard()
         layout = card.content_layout()
+        from PySide6.QtWidgets import QLabel
+
         title = QLabel("Поведінка системи")
         title.setProperty("role", "section_title")
         layout.addWidget(title)
@@ -129,6 +126,8 @@ class SettingsScreen(QWidget):
     def _build_service_info_panel(self) -> QWidget:
         """Builds service information card."""
 
+        from PySide6.QtWidgets import QLabel
+
         card = SettingsSectionCard()
         layout = card.content_layout()
         title = QLabel("Службова інформація")
@@ -138,8 +137,6 @@ class SettingsScreen(QWidget):
         layout.addWidget(QLabel(f"База даних: {self._workspace.database_path}"))
         layout.addWidget(QLabel(f"Каталог даних: {self._workspace.data_directory_path}"))
         layout.addWidget(QLabel(f"Стан ініціалізації: {'готово' if self._workspace.is_initialized else 'не готово'}"))
-        if self._read_only:
-            layout.addWidget(QLabel("Роль read-only: редагування налаштувань вимкнено."))
         return card
 
     # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / SAVE MAIL SETTINGS ######
