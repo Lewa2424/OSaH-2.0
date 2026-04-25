@@ -9,6 +9,7 @@ from osah.domain.entities.ppe_workspace import PpeWorkspace
 from osah.domain.entities.ppe_workspace_mode import PpeWorkspaceMode
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.ppe.ppe_filter_bar import PpeFilterBar
@@ -61,7 +62,7 @@ class PpeScreen(QWidget):
         center_layout.addWidget(self.problem_breakdown)
         self.registry_table = PpeRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        center_layout.addWidget(self.registry_table, stretch=1)
+        center_layout.addWidget(ScrollableTableFrame(self.registry_table), stretch=1)
         splitter.addWidget(center)
 
         names = tuple(sorted({row.ppe_name for row in workspace.rows}))

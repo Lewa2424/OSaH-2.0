@@ -1,10 +1,10 @@
 """
-Qt Security Flow Controller - управління переходом між екранами безпеки.
-Qt Security Flow Controller - управление переходом между экранами безопасности.
+Qt security flow controller.
 """
+
 from typing import Callable
 
-from PySide6.QtWidgets import QStackedWidget, QMainWindow
+from PySide6.QtWidgets import QStackedWidget
 
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.security.load_security_profile import load_security_profile
@@ -15,9 +15,7 @@ from osah.ui.qt.security.screens.recovery_access_screen import RecoveryAccessScr
 
 
 class SecurityFlowController:
-    """Контролер для управління потоком безпеки в Qt-інтерфейсі.
-    Контроллер для управления потоком безопасности в Qt-интерфейсе.
-    """
+    """Manages transitions between login, setup and recovery screens."""
 
     def __init__(
         self,
@@ -25,27 +23,16 @@ class SecurityFlowController:
         application_context: ApplicationContext,
         on_authenticated: Callable[[AccessRole], None],
     ) -> None:
-        """
-        Ініціалізує контроллер.
-        Инициализирует контроллер.
-        
-        Args:
-            stacked_widget: QStackedWidget для перемикання екранів
-            application_context: контекст застосунку
-            on_authenticated: callback при успішній автентифікації
-        """
         self._stacked_widget = stacked_widget
         self._app_context = application_context
         self._on_authenticated = on_authenticated
         self._security_profile = load_security_profile(application_context.database_path)
-
-        # Ініціалізуємо екрани / Инициализируем экраны
         self._setup_screens()
 
     def _setup_screens(self) -> None:
-        """Створює і реєструє всі security screens."""
+        """###### ПОЧАТКОВИЙ SECURITY FLOW / INITIAL SECURITY FLOW ######"""
+
         if self._security_profile.is_configured:
-            # Система налаштована, показуємо login
             self._login_screen = LoginScreen(
                 self._app_context,
                 on_authenticated=self._on_login_authenticated,
@@ -53,25 +40,22 @@ class SecurityFlowController:
             )
             self._stacked_widget.addWidget(self._login_screen)
             self._stacked_widget.setCurrentWidget(self._login_screen)
-        else:
-            # Перший запуск, показуємо initial setup
-            self._initial_setup_screen = InitialSetupScreen(
-                self._app_context,
-                on_configured=self._on_initial_setup_configured,
-            )
-            self._stacked_widget.addWidget(self._initial_setup_screen)
-            self._stacked_widget.setCurrentWidget(self._initial_setup_screen)
+            return
+
+        self._initial_setup_screen = InitialSetupScreen(
+            self._app_context,
+            on_configured=self._on_initial_setup_configured,
+        )
+        self._stacked_widget.addWidget(self._initial_setup_screen)
+        self._stacked_widget.setCurrentWidget(self._initial_setup_screen)
 
     def _on_initial_setup_configured(self) -> None:
-        """Обробник при завершенні першого налаштування."""
-        # Перезавантажуємо профіль безпеки
+        """###### ПІСЛЯ ПЕРШОГО НАЛАШТУВАННЯ / AFTER INITIAL SETUP ######"""
+
         self._security_profile = load_security_profile(self._app_context.database_path)
-        
-        # Очищуємо попередні екрани
         while self._stacked_widget.count() > 0:
             self._stacked_widget.removeWidget(self._stacked_widget.widget(0))
-        
-        # Показуємо login екран
+
         self._login_screen = LoginScreen(
             self._app_context,
             on_authenticated=self._on_login_authenticated,
@@ -81,11 +65,13 @@ class SecurityFlowController:
         self._stacked_widget.setCurrentWidget(self._login_screen)
 
     def _on_login_authenticated(self, access_role: AccessRole) -> None:
-        """Обробник при успішній автентифікації."""
+        """###### УСПІШНА АВТЕНТИФІКАЦІЯ / SUCCESSFUL AUTH ######"""
+
         self._on_authenticated(access_role)
 
     def _show_recovery_screen(self) -> None:
-        """Показує екран відновлення доступу."""
+        """###### ВІДКРИТИ RECOVERY / OPEN RECOVERY ######"""
+
         if not hasattr(self, "_recovery_screen"):
             self._recovery_screen = RecoveryAccessScreen(
                 self._app_context,
@@ -93,14 +79,22 @@ class SecurityFlowController:
                 on_back_to_login=self._show_login_screen,
             )
             self._stacked_widget.addWidget(self._recovery_screen)
-        
+
         self._stacked_widget.setCurrentWidget(self._recovery_screen)
 
     def _show_login_screen(self) -> None:
-        """Повертає до екрана входу."""
+        """###### ПОВЕРНЕННЯ ДО LOGIN / RETURN TO LOGIN ######"""
+
         if hasattr(self, "_login_screen"):
             self._stacked_widget.setCurrentWidget(self._login_screen)
 
+    def navigate_back(self) -> None:
+        """###### НАЗАД У SECURITY FLOW / BACK IN SECURITY FLOW ######"""
+
+        if hasattr(self, "_recovery_screen") and self._stacked_widget.currentWidget() is self._recovery_screen:
+            self._show_login_screen()
+
     def _on_recovery_finished(self) -> None:
-        """Обробник при завершенні recovery."""
+        """###### ПІСЛЯ RECOVERY / AFTER RECOVERY ######"""
+
         self._show_login_screen()

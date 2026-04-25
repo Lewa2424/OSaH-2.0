@@ -2,9 +2,10 @@ from datetime import date
 
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
+from osah.domain.services.format_ui_date import format_ui_date
 
 
-# ###### ПРИЧИНА СТАТУСУ МЕДИЦИНИ / MEDICAL STATUS REASON ######
+# ###### ПРИЧИНА СТАТУСУ МЕДИЦИНИ / BUILD MEDICAL STATUS REASON ######
 def build_medical_status_reason(medical_record: MedicalRecord, today: date | None = None) -> str:
     """Пояснює, чому меддопуск має конкретний статус.
     Explains why a medical admission has a specific status.
@@ -20,4 +21,4 @@ def build_medical_status_reason(medical_record: MedicalRecord, today: date | Non
         return "Обмежено - заборонені окремі види робіт"
     if medical_record.status == MedicalStatus.WARNING:
         return f"Увага - меддопуск спливає через {remaining_days} дн."
-    return f"Допущено - строк дії до {medical_record.valid_until}"
+    return f"Допущено - строк дії до {format_ui_date(medical_record.valid_until)}"

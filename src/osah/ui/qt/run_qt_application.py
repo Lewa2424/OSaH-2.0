@@ -29,7 +29,7 @@ def run_qt_application(application_context: ApplicationContext) -> None:
     dummy_role = AccessRole.INSPECTOR
 
     window = AppWindow(application_context, dummy_role)
-    window.show()
+    window.showMaximized()
 
     # Запуск циклу подій
     sys.exit(app.exec())

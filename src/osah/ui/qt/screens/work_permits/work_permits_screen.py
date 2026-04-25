@@ -9,6 +9,7 @@ from osah.domain.entities.work_permit_workspace import WorkPermitWorkspace
 from osah.domain.entities.work_permit_workspace_mode import WorkPermitWorkspaceMode
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.work_permits.work_permit_details_pane import WorkPermitDetailsPane
@@ -56,7 +57,7 @@ class WorkPermitsScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self.registry_table = WorkPermitsRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        splitter.addWidget(self.registry_table)
+        splitter.addWidget(ScrollableTableFrame(self.registry_table))
         self.details_pane = WorkPermitDetailsPane(database_path, workspace.employees)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)

@@ -10,6 +10,7 @@ from osah.application.services.load_news_sources import load_news_sources
 from osah.application.services.mark_news_item_as_read import mark_news_item_as_read
 from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
@@ -65,7 +66,7 @@ class NewsScreen(QWidget):
         self.unread_only.stateChanged.connect(lambda _: self._reload_state())
         right_layout.addWidget(self.unread_only)
         self.items_table = NewsItemsTable()
-        right_layout.addWidget(self.items_table, stretch=1)
+        right_layout.addWidget(ScrollableTableFrame(self.items_table), stretch=1)
         mark_read_button = QPushButton("Позначити прочитаним")
         mark_read_button.clicked.connect(self._mark_selected_read)
         right_layout.addWidget(mark_read_button)

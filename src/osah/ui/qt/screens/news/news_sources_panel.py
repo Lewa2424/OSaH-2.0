@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QComboBox, QFormLayout, QLineEdit, QPushButton, QT
 
 from osah.domain.entities.news_source import NewsSource
 from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 
 
 class NewsSourcesPanel(QWidget):
@@ -20,7 +21,7 @@ class NewsSourcesPanel(QWidget):
         self.sources_table = QTableWidget(0, 5)
         self.sources_table.setHorizontalHeaderLabels(("Назва", "Тип", "Активне", "Довірене", "Остання перевірка"))
         self.sources_table.verticalHeader().setVisible(False)
-        layout.addWidget(self.sources_table)
+        layout.addWidget(ScrollableTableFrame(self.sources_table))
 
         form = QFormLayout()
         self.source_name = QLineEdit()

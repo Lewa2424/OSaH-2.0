@@ -2,7 +2,10 @@ from PySide6.QtWidgets import QAbstractItemView, QLabel, QTableWidget, QTableWid
 
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.services.build_work_permit_status_reason import build_work_permit_status_reason
+from osah.domain.services.format_ui_datetime import format_ui_datetime
 from osah.domain.services.format_work_permit_status_label import format_work_permit_status_label
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
@@ -39,11 +42,12 @@ class EmployeeWorkPermitsTab(QWidget):
                 record.permit_number,
                 record.work_kind,
                 record.work_location,
-                record.ends_at,
+                format_ui_datetime(record.ends_at),
                 format_work_permit_status_label(record.status),
                 build_work_permit_status_reason(record),
             )
             for column, value in enumerate(values):
                 table.setItem(row_index, column, QTableWidgetItem(value))
         table.resizeColumnsToContents()
-        layout.addWidget(table)
+        ensure_table_column_width(table, 4)
+        layout.addWidget(ScrollableTableFrame(table))

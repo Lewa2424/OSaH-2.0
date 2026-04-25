@@ -9,6 +9,7 @@ from osah.domain.entities.employee import Employee
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
 from osah.domain.services.format_training_type_label import format_training_type_label
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
 
@@ -42,11 +43,11 @@ class TrainingRecordEditor(QWidget):
         form.addRow("Тип", self.type_input)
 
         self.event_date_input = QLineEdit()
-        self.event_date_input.setPlaceholderText("YYYY-MM-DD")
+        self.event_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Дата проведення", self.event_date_input)
 
         self.next_date_input = QLineEdit()
-        self.next_date_input.setPlaceholderText("YYYY-MM-DD")
+        self.next_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Наступний контроль", self.next_date_input)
 
         self.conducted_by_input = QLineEdit()
@@ -70,7 +71,6 @@ class TrainingRecordEditor(QWidget):
         self.new_button.clicked.connect(self.clear_form)
         layout.addWidget(self.new_button)
 
-    # ###### ЗАПОВНЕННЯ ФОРМИ / FILL FORM ######
     def set_row(self, row: TrainingWorkspaceRow) -> None:
         """Заповнює форму вибраним записом або шаблоном для відсутнього запису.
         Fills the form with selected record or a template for a missing record.
@@ -80,13 +80,12 @@ class TrainingRecordEditor(QWidget):
         self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(row.employee_personnel_number)))
         if row.training_type:
             self.type_input.setCurrentIndex(max(0, self.type_input.findData(row.training_type.value)))
-        self.event_date_input.setText("" if row.event_date == "-" else row.event_date)
-        self.next_date_input.setText("" if row.next_control_date == "-" else row.next_control_date)
+        self.event_date_input.setText("" if row.event_date == "-" else format_ui_date(row.event_date))
+        self.next_date_input.setText("" if row.next_control_date == "-" else format_ui_date(row.next_control_date))
         self.conducted_by_input.setText("" if row.conducted_by == "-" else row.conducted_by)
         self.note_input.setPlainText(row.note_text)
         self.save_button.setText("Створити запис" if row.is_missing else "Зберегти зміни")
 
-    # ###### ОЧИЩЕННЯ ФОРМИ / CLEAR FORM ######
     def clear_form(self) -> None:
         """Готує форму до створення нового запису.
         Prepares the form for creating a new record.
@@ -99,7 +98,6 @@ class TrainingRecordEditor(QWidget):
         self.note_input.clear()
         self.save_button.setText("Створити запис")
 
-    # ###### ЗБЕРЕЖЕННЯ ЗАПИСУ / SAVE RECORD ######
     def _save_record(self) -> None:
         """Зберігає запис через application service і повідомляє екран про оновлення.
         Saves the record through application service and notifies the screen to refresh.

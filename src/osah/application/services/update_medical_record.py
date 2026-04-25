@@ -1,10 +1,10 @@
-from datetime import date
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.serialize_medical_record_for_audit import serialize_medical_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.update_medical_record_row import update_medical_record_row
@@ -34,8 +34,8 @@ def update_medical_record(
     if not normalized_decision:
         raise ValueError("Потрібно вибрати медичне рішення.")
 
-    valid_from = _parse_iso_date(valid_from_text)
-    valid_until = _parse_iso_date(valid_until_text)
+    valid_from = parse_ui_date_text(valid_from_text)
+    valid_until = parse_ui_date_text(valid_until_text)
     if valid_until < valid_from:
         raise ValueError("Дата завершення не може бути раніше дати початку.")
 
@@ -73,17 +73,3 @@ def update_medical_record(
         connection.commit()
     finally:
         connection.close()
-
-
-def _parse_iso_date(date_text: str) -> date:
-    """Перетворює текст дати формату YYYY-MM-DD у date.
-    Converts YYYY-MM-DD date text into date.
-    """
-
-    normalized = date_text.strip()
-    if not normalized:
-        raise ValueError("Дата обов'язкова у форматі YYYY-MM-DD.")
-    try:
-        return date.fromisoformat(normalized)
-    except ValueError as error:
-        raise ValueError("Дата має бути у форматі YYYY-MM-DD.") from error

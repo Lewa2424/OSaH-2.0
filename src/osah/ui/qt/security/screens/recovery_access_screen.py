@@ -221,10 +221,13 @@ class RecoveryAccessScreen(QWidget):
     def _create_card(self, content: QWidget) -> QFrame:
         """Створює карточку з фоном."""
         card = QFrame()
+        card.setObjectName("recoveryScreenCard")
         card.setStyleSheet(
+            f"QFrame#recoveryScreenCard {{ "
             f"background-color: {COLOR['bg_card']}; "
             f"border-radius: 20px; "
-            f"border: 1px solid {COLOR['border_soft']};"
+            f"border: 1px solid {COLOR['border_soft']}; "
+            f"}}"
         )
         layout = QVBoxLayout(card)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -234,10 +237,13 @@ class RecoveryAccessScreen(QWidget):
     def _create_info_card(self, title: str, value: str) -> QFrame:
         """Створює інформаційну карточку."""
         card = QFrame()
+        card.setObjectName("recoveryInfoCard")
         card.setStyleSheet(
+            f"QFrame#recoveryInfoCard {{ "
             f"background-color: {COLOR['bg_panel']}; "
             f"border-radius: 12px; "
-            f"border: 1px solid {COLOR['border_soft']};"
+            f"border: 1px solid {COLOR['border_soft']}; "
+            f"}}"
         )
         layout = QVBoxLayout(card)
         layout.setContentsMargins(16, 16, 16, 16)

@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
@@ -6,6 +5,7 @@ from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.delete_work_permit_participants import delete_work_permit_participants
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -15,7 +15,7 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.list_work_permit_records import list_work_permit_records
 
 
-# ###### ОНОВЛЕННЯ НАРЯДУ-ДОПУСКУ / UPDATE WORK PERMIT ######
+# ###### ОНОВЛЕННЯ НАРЯДУ-ДОПУСКУ / UPDATE WORK PERMIT RECORD ######
 def update_work_permit_record(
     database_path: Path,
     record_id: int,
@@ -54,7 +54,14 @@ def update_work_permit_record(
         if previous_record.closed_at or previous_record.canceled_at:
             raise ValueError("Закритий або скасований наряд не редагується.")
 
-        updated_record = WorkPermitRecord(record_id=record_id, status=WorkPermitStatus.ACTIVE, closed_at=None, canceled_at=None, cancel_reason_text="", **normalized)
+        updated_record = WorkPermitRecord(
+            record_id=record_id,
+            status=WorkPermitStatus.ACTIVE,
+            closed_at=None,
+            canceled_at=None,
+            cancel_reason_text="",
+            **normalized,
+        )
         update_work_permit_record_row(connection, updated_record)
         delete_work_permit_participants(connection, record_id)
         for participant in updated_record.participants:
@@ -78,7 +85,7 @@ def update_work_permit_record(
         connection.close()
 
 
-# ###### ВАЛІДАЦІЯ НАРЯДУ / WORK PERMIT VALIDATION ######
+# ###### ВАЛІДАЦІЯ НАРЯДУ / VALIDATE WORK PERMIT INPUT ######
 def _validate_work_permit_input(
     permit_number: str,
     work_kind: str,
@@ -95,8 +102,8 @@ def _validate_work_permit_input(
     Validates work permit fields and returns normalized values.
     """
 
-    starts_at = _parse_iso_datetime(starts_at_text)
-    ends_at = _parse_iso_datetime(ends_at_text)
+    starts_at = parse_ui_datetime_text(starts_at_text)
+    ends_at = parse_ui_datetime_text(ends_at_text)
     if ends_at <= starts_at:
         raise ValueError("Час завершення має бути пізніше часу початку.")
 
@@ -131,15 +138,3 @@ def _validate_work_permit_input(
             ),
         ),
     }
-
-
-# ###### РОЗБІР ДАТИ НАРЯДУ / PARSE WORK PERMIT DATETIME ######
-def _parse_iso_datetime(datetime_text: str) -> datetime:
-    """Перетворює текст дати й часу формату YYYY-MM-DD HH:MM у datetime.
-    Converts YYYY-MM-DD HH:MM datetime text into datetime.
-    """
-
-    try:
-        return datetime.fromisoformat(datetime_text.strip())
-    except ValueError as error:
-        raise ValueError("Дата й час мають бути у форматі YYYY-MM-DD HH:MM.") from error

@@ -4,6 +4,9 @@ from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.services.build_training_status_reason import build_training_status_reason
 from osah.domain.services.format_training_status_label import format_training_status_label
 from osah.domain.services.format_training_type_label import format_training_type_label
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
@@ -39,12 +42,13 @@ class EmployeeTrainingsTab(QWidget):
             table.insertRow(row_index)
             values = (
                 format_training_type_label(record.training_type),
-                record.event_date,
-                record.next_control_date,
+                format_ui_date(record.event_date),
+                format_ui_date(record.next_control_date),
                 f"{format_training_status_label(record.status)} - {build_training_status_reason(record.status, record.training_type, record.next_control_date)}",
                 record.conducted_by,
             )
             for column, value in enumerate(values):
                 table.setItem(row_index, column, QTableWidgetItem(value))
         table.resizeColumnsToContents()
-        layout.addWidget(table)
+        ensure_table_column_width(table, 3)
+        layout.addWidget(ScrollableTableFrame(table))

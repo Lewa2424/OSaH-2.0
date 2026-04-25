@@ -4,6 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.mail_settings import MailSettings
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
@@ -43,7 +44,6 @@ class ReportDeliveryPanel(QWidget):
         self.fallback_button.setEnabled(False)
         layout.addWidget(self.fallback_button)
 
-    # ###### ОНОВЛЕННЯ СТАНУ / UPDATE STATE ######
     def set_state(
         self,
         mail_settings: MailSettings,
@@ -56,7 +56,7 @@ class ReportDeliveryPanel(QWidget):
 
         enabled_text = "увімкнено" if mail_settings.daily_report_enabled else "вимкнено"
         recipient_text = mail_settings.recipient_email.strip() or "не задано"
-        last_sent_text = mail_settings.last_sent_date.strip() or "ще не відправлявся"
+        last_sent_text = format_ui_date(mail_settings.last_sent_date.strip()) if mail_settings.last_sent_date.strip() else "ще не відправлявся"
         report_text = report_copy_path.name if report_copy_path else "файл ще не сформовано"
         fallback_text = fallback_email_path.name if fallback_email_path else "не потрібен"
         self.status_label.setText(

@@ -9,6 +9,7 @@ from osah.domain.entities.employee import Employee
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
 from osah.domain.services.format_medical_decision_label import format_medical_decision_label
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
 
@@ -41,11 +42,13 @@ class MedicalRecordEditor(QWidget):
         form.addRow("Рішення", self.decision_input)
 
         self.valid_from_input = QLineEdit()
-        self.valid_from_input.setPlaceholderText("YYYY-MM-DD")
+        self.valid_from_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Початок", self.valid_from_input)
+
         self.valid_until_input = QLineEdit()
-        self.valid_until_input.setPlaceholderText("YYYY-MM-DD")
+        self.valid_until_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Закінчення", self.valid_until_input)
+
         self.restriction_input = QTextEdit()
         self.restriction_input.setMaximumHeight(90)
         form.addRow("Обмеження", self.restriction_input)
@@ -58,6 +61,7 @@ class MedicalRecordEditor(QWidget):
         self.save_button.setProperty("variant", "accent")
         self.save_button.clicked.connect(self._save_record)
         layout.addWidget(self.save_button)
+
         self.new_button = QPushButton("Новий запис")
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
@@ -71,8 +75,8 @@ class MedicalRecordEditor(QWidget):
         self._current_record_id = row.record_id
         self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(row.employee_personnel_number)))
         self.decision_input.setCurrentIndex(max(0, self.decision_input.findData(row.medical_decision.value)))
-        self.valid_from_input.setText(row.valid_from)
-        self.valid_until_input.setText(row.valid_until)
+        self.valid_from_input.setText(format_ui_date(row.valid_from))
+        self.valid_until_input.setText(format_ui_date(row.valid_until))
         self.restriction_input.setPlainText(row.restriction_note)
         self.save_button.setText("Зберегти зміни")
 

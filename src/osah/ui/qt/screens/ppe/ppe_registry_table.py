@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.ppe.ppe_status_badge import PpeStatusBadge
 
@@ -43,7 +45,7 @@ class PpeRegistryTable(QTableWidget):
                     row.ppe_name,
                     str(row.quantity),
                     "Так" if row.is_issued else "Ні",
-                    row.replacement_date,
+                    format_ui_date(row.replacement_date),
                 )
             ):
                 self._set_item(row_index, column, text, row)
@@ -51,6 +53,7 @@ class PpeRegistryTable(QTableWidget):
             self._set_item(row_index, 7, row.status_reason, row)
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 6)
 
     def select_first(self) -> None:
         """Виділяє перший рядок, якщо таблиця не порожня.

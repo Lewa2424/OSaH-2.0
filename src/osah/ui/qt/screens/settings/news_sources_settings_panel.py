@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 from osah.domain.entities.news_source import NewsSource
 from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 
 
@@ -51,7 +52,7 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         self._table = QTableWidget(0, 4)
         self._table.setHorizontalHeaderLabels(["Джерело", "Тип", "Активно", "Остання перевірка"])
         self._table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(self._table)
+        layout.addWidget(ScrollableTableFrame(self._table))
         self._render_sources()
         self._apply_read_only()
 

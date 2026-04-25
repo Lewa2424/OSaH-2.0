@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
+from osah.domain.services.format_ui_datetime import format_ui_datetime
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.work_permits.work_permit_status_badge import WorkPermitStatusBadge
 
@@ -27,7 +29,6 @@ class WorkPermitsRegistryTable(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
-    # ###### ЗАПОВНЕННЯ ТАБЛИЦІ / SET ROWS ######
     def set_rows(self, rows: tuple[WorkPermitWorkspaceRow, ...]) -> None:
         """Перемальовує таблицю за підготовленими рядками.
         Redraws the table with prepared rows.
@@ -42,8 +43,8 @@ class WorkPermitsRegistryTable(QTableWidget):
                     row.permit_number,
                     row.work_kind,
                     row.work_location,
-                    row.starts_at,
-                    row.ends_at,
+                    format_ui_datetime(row.starts_at),
+                    format_ui_datetime(row.ends_at),
                 )
             ):
                 self._set_item(row_index, column, text, row)
@@ -59,8 +60,8 @@ class WorkPermitsRegistryTable(QTableWidget):
                 self._set_item(row_index, column, text, row)
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 5)
 
-    # ###### ВИБІР ПЕРШОГО РЯДКА / SELECT FIRST ######
     def select_first(self) -> None:
         """Виділяє перший рядок, якщо таблиця не порожня.
         Selects the first row when the table is not empty.
@@ -69,7 +70,6 @@ class WorkPermitsRegistryTable(QTableWidget):
         if self.rowCount():
             self.selectRow(0)
 
-    # ###### КОМІРКА / CELL ######
     def _set_item(self, row_index: int, column_index: int, text: str, row: WorkPermitWorkspaceRow) -> None:
         """Додає текстову комірку з візуальним акцентом статусу.
         Adds a text cell with status visual accent.
@@ -85,7 +85,6 @@ class WorkPermitsRegistryTable(QTableWidget):
             item.setForeground(QColor(COLOR["text_muted"]))
         self.setItem(row_index, column_index, item)
 
-    # ###### ПЕРЕДАЧА ВИБОРУ / EMIT SELECTION ######
     def _emit_selected_row(self) -> None:
         """Передає вибраний рядок у detail-pane.
         Emits the selected row to the detail pane.
@@ -98,7 +97,6 @@ class WorkPermitsRegistryTable(QTableWidget):
                 self.row_selected.emit(self._rows[row_index])
 
 
-# ###### ТЕКСТ ПРИЧИНИ / REASON TEXT ######
 def _build_reason_text(row: WorkPermitWorkspaceRow) -> str:
     """Повертає причину статусу разом із конфліктами учасників.
     Returns status reason together with participant conflicts.

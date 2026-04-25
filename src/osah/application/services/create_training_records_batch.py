@@ -1,15 +1,15 @@
-from datetime import date
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.infrastructure.database.commands.insert_training_record import insert_training_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### МАСОВЕ СТВОРЕННЯ ІНСТРУКТАЖІВ / МАССОВОЕ СОЗДАНИЕ ИНСТРУКТАЖЕЙ ######
+# ###### МАСОВЕ СТВОРЕННЯ ІНСТРУКТАЖІВ / CREATE TRAINING RECORDS BATCH ######
 def create_training_records_batch(
     database_path: Path,
     employee_personnel_numbers: tuple[str, ...],
@@ -20,7 +20,7 @@ def create_training_records_batch(
     note_text: str,
 ) -> None:
     """Створює записи інструктажу для кількох працівників одним сценарієм.
-    Создаёт записи инструктажа для нескольких сотрудников одним сценарием.
+    Creates training records for multiple employees in one scenario.
     """
 
     normalized_personnel_numbers = tuple(
@@ -38,8 +38,8 @@ def create_training_records_batch(
     if not normalized_conducted_by:
         raise ValueError("Потрібно вказати, хто проводив інструктаж.")
 
-    event_date = _parse_iso_date(event_date_text)
-    next_control_date = _parse_iso_date(next_control_date_text)
+    event_date = parse_ui_date_text(event_date_text)
+    next_control_date = parse_ui_date_text(next_control_date_text)
     if next_control_date < event_date:
         raise ValueError("Дата наступного контролю не може бути раніше дати проведення.")
 
@@ -63,18 +63,3 @@ def create_training_records_batch(
         sync_control_notifications(connection)
     finally:
         connection.close()
-
-
-# ###### РОЗБІР ISO-ДАТИ ДЛЯ МАСОВОГО ЗАПИСУ / РАЗБОР ISO-ДАТЫ ДЛЯ МАССОВОЙ ЗАПИСИ ######
-def _parse_iso_date(date_text: str) -> date:
-    """Перетворює текст дати формату РРРР-ММ-ДД у об'єкт date.
-    Преобразует текст даты формата ГГГГ-ММ-ДД в объект date.
-    """
-
-    normalized_date_text = date_text.strip()
-    if not normalized_date_text:
-        raise ValueError("Дата обов'язкова у форматі РРРР-ММ-ДД.")
-    try:
-        return date.fromisoformat(normalized_date_text)
-    except ValueError as error:
-        raise ValueError("Дата має бути у форматі РРРР-ММ-ДД.") from error

@@ -4,12 +4,16 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.medical.medical_status_badge import MedicalStatusBadge
 
 
 class MedicalRegistryTable(QTableWidget):
-    """Central medical admission registry."""
+    """Центральний реєстр меддопусків.
+    Central medical admission registry.
+    """
 
     row_selected = Signal(object)
 
@@ -26,7 +30,9 @@ class MedicalRegistryTable(QTableWidget):
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     def set_rows(self, rows: tuple[MedicalWorkspaceRow, ...]) -> None:
-        """###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######"""
+        """Заповнює реєстр підготовленими рядками.
+        Populates the registry with prepared rows.
+        """
 
         self._rows = rows
         self.setRowCount(0)
@@ -38,7 +44,7 @@ class MedicalRegistryTable(QTableWidget):
                     row.department_name,
                     row.position_name,
                     row.decision_label,
-                    row.valid_until,
+                    format_ui_date(row.valid_until),
                     "Так" if row.has_restriction else "Ні",
                 )
             ):
@@ -47,15 +53,20 @@ class MedicalRegistryTable(QTableWidget):
             self._set_item(row_index, 7, row.status_reason, row)
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 6)
 
     def select_first(self) -> None:
-        """###### ВИБІР ПЕРШОГО РЯДКА / SELECT FIRST ROW ######"""
+        """Вибирає перший рядок.
+        Selects the first row.
+        """
 
         if self.rowCount():
             self.selectRow(0)
 
     def _set_item(self, row_index: int, column_index: int, text: str, row: MedicalWorkspaceRow) -> None:
-        """###### КОМІРКА РЕЄСТРУ / REGISTRY CELL ######"""
+        """Створює текстову комірку з кольором за статусом.
+        Creates a text cell with status-based coloring.
+        """
 
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row_index)
@@ -68,7 +79,9 @@ class MedicalRegistryTable(QTableWidget):
         self.setItem(row_index, column_index, item)
 
     def _emit_selected_row(self) -> None:
-        """###### СИГНАЛ ВИБОРУ / SELECTION SIGNAL ######"""
+        """Передає вибраний рядок у detail-pane.
+        Emits the selected row to the detail pane.
+        """
 
         selected = self.selectedItems()
         if selected:

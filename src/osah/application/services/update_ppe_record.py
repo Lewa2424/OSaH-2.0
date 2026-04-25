@@ -1,9 +1,9 @@
-from datetime import date
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.serialize_ppe_record_for_audit import serialize_ppe_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.update_ppe_record_row import update_ppe_record_row
@@ -36,8 +36,8 @@ def update_ppe_record(
     if not normalized_ppe_name:
         raise ValueError("Потрібно вказати назву ЗІЗ.")
     quantity = _parse_quantity(quantity_text.strip())
-    issue_date = _parse_iso_date(issue_date_text)
-    replacement_date = _parse_iso_date(replacement_date_text)
+    issue_date = parse_ui_date_text(issue_date_text)
+    replacement_date = parse_ui_date_text(replacement_date_text)
     if replacement_date < issue_date:
         raise ValueError("Дата заміни не може бути раніше дати видачі.")
 
@@ -80,22 +80,9 @@ def update_ppe_record(
         connection.close()
 
 
-def _parse_iso_date(date_text: str) -> date:
-    """Перетворює текст дати формату YYYY-MM-DD у date.
-    Converts YYYY-MM-DD date text into date.
-    """
-
-    normalized = date_text.strip()
-    if not normalized:
-        raise ValueError("Дата обов'язкова у форматі YYYY-MM-DD.")
-    try:
-        return date.fromisoformat(normalized)
-    except ValueError as error:
-        raise ValueError("Дата має бути у форматі YYYY-MM-DD.") from error
-
-
+# ###### РОЗБІР КІЛЬКОСТІ ЗІЗ / PARSE PPE QUANTITY ######
 def _parse_quantity(quantity_text: str) -> int:
-    """Перетворює кількість у додатне ціле число.
+    """Перетворює кількість у додатнє ціле число.
     Converts quantity into a positive integer.
     """
 

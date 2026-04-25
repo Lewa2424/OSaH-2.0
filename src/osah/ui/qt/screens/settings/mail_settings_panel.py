@@ -2,11 +2,14 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton
 
 from osah.domain.entities.mail_settings import MailSettings
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 
 
 class MailSettingsPanel(SettingsSectionCard):
-    """Mail settings section for Settings screen."""
+    """Поштова секція екрана налаштувань.
+    Mail settings section for Settings screen.
+    """
 
     save_requested = Signal(MailSettings)
 
@@ -42,21 +45,23 @@ class MailSettingsPanel(SettingsSectionCard):
         self._save_button.clicked.connect(self._emit_save)
         layout.addWidget(self._save_button)
 
-        last_sent = mail_settings.last_sent_date or "ще не відправлявся"
+        last_sent = format_ui_date(mail_settings.last_sent_date) if mail_settings.last_sent_date else "ще не відправлявся"
         layout.addWidget(QLabel(f"Остання відправка: {last_sent}"))
         self._apply_read_only()
 
-    # ###### РЕЖИМ READ-ONLY / READ-ONLY MODE ######
     def _apply_read_only(self) -> None:
-        """Applies read-only restrictions for manager role."""
+        """Застосовує обмеження read-only для ролі керівника.
+        Applies read-only restrictions for manager role.
+        """
 
         for field in (self._enabled, self._recipient, self._time, self._sender):
             field.setEnabled(not self._read_only)
         self._save_button.setEnabled(not self._read_only)
 
-    # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / SAVE MAIL SETTINGS ######
     def _emit_save(self) -> None:
-        """Collects values and emits save request."""
+        """Збирає значення та відправляє запит на збереження.
+        Collects values and emits save request.
+        """
 
         self.save_requested.emit(
             MailSettings(

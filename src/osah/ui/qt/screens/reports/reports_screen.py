@@ -9,6 +9,7 @@ from osah.application.services.load_mail_settings import load_mail_settings
 from osah.application.services.save_mail_settings import save_mail_settings
 from osah.domain.entities.mail_settings import MailSettings
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
@@ -77,7 +78,7 @@ class ReportsScreen(QWidget):
         history_title.setProperty("role", "section_title")
         right_layout.addWidget(history_title)
         self.history_table = ReportHistoryTable()
-        right_layout.addWidget(self.history_table)
+        right_layout.addWidget(ScrollableTableFrame(self.history_table))
         splitter.addWidget(right)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)

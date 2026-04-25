@@ -10,6 +10,7 @@ from osah.domain.entities.archive_entry import ArchiveEntry
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.archive.archive_details_pane import ArchiveDetailsPane
@@ -50,7 +51,7 @@ class ArchiveScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self._table = ArchiveRegistryTable()
         self._table.row_selected.connect(self._show_entry)
-        splitter.addWidget(self._table)
+        splitter.addWidget(ScrollableTableFrame(self._table))
         self._details = ArchiveDetailsPane(allow_reactivation=access_role == AccessRole.INSPECTOR)
         self._details.reactivate_requested.connect(self._reactivate_entry)
         splitter.addWidget(self._details)

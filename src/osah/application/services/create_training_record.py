@@ -1,17 +1,17 @@
-from datetime import date
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.serialize_training_record_for_audit import serialize_training_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_training_record import insert_training_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### СТВОРЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / СОЗДАНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
+# ###### СТВОРЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / CREATE TRAINING RECORD ######
 def create_training_record(
     database_path: Path,
     employee_personnel_number: str,
@@ -22,7 +22,7 @@ def create_training_record(
     note_text: str,
 ) -> None:
     """Створює новий запис інструктажу та синхронізує контрольні сповіщення.
-    Создаёт новую запись инструктажа и синхронизирует контрольные уведомления.
+    Creates a new training record and synchronizes control notifications.
     """
 
     normalized_personnel_number = employee_personnel_number.strip()
@@ -36,8 +36,8 @@ def create_training_record(
     if not normalized_conducted_by:
         raise ValueError("Потрібно вказати, хто проводив інструктаж.")
 
-    event_date = _parse_iso_date(event_date_text)
-    next_control_date = _parse_iso_date(next_control_date_text)
+    event_date = parse_ui_date_text(event_date_text)
+    next_control_date = parse_ui_date_text(next_control_date_text)
     if next_control_date < event_date:
         raise ValueError("Дата наступного контролю не може бути раніше дати проведення.")
 
@@ -54,10 +54,7 @@ def create_training_record(
             note_text=normalized_note,
             status=TrainingStatus.CURRENT,
         )
-        insert_training_record(
-            connection,
-            training_record,
-        )
+        insert_training_record(connection, training_record)
         insert_audit_log(
             connection,
             event_type="training.created",
@@ -72,18 +69,3 @@ def create_training_record(
         connection.commit()
     finally:
         connection.close()
-
-
-# ###### РОЗБІР ISO-ДАТИ / РАЗБОР ISO-ДАТЫ ######
-def _parse_iso_date(date_text: str) -> date:
-    """Перетворює текст дати формату РРРР-ММ-ДД у об'єкт date.
-    Преобразует текст даты формата ГГГГ-ММ-ДД в объект date.
-    """
-
-    normalized_date_text = date_text.strip()
-    if not normalized_date_text:
-        raise ValueError("Дата обов'язкова у форматі РРРР-ММ-ДД.")
-    try:
-        return date.fromisoformat(normalized_date_text)
-    except ValueError as error:
-        raise ValueError("Дата має бути у форматі РРРР-ММ-ДД.") from error

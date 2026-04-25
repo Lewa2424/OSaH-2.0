@@ -4,6 +4,9 @@ from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.services.build_medical_status_reason import build_medical_status_reason
 from osah.domain.services.format_medical_decision_label import format_medical_decision_label
 from osah.domain.services.format_medical_status_label import format_medical_status_label
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
@@ -40,8 +43,8 @@ class EmployeeMedicalTab(QWidget):
             row_index = table.rowCount()
             table.insertRow(row_index)
             values = (
-                record.valid_from,
-                record.valid_until,
+                format_ui_date(record.valid_from),
+                format_ui_date(record.valid_until),
                 format_medical_decision_label(record.medical_decision),
                 record.restriction_note or "-",
                 format_medical_status_label(record.status),
@@ -51,10 +54,10 @@ class EmployeeMedicalTab(QWidget):
                 table.setItem(row_index, column, QTableWidgetItem(value))
 
         table.resizeColumnsToContents()
-        layout.addWidget(table)
+        ensure_table_column_width(table, 4)
+        layout.addWidget(ScrollableTableFrame(table))
 
 
-# ###### ФОРМАТУВАННЯ ІСТОРІЇ / HISTORY FORMAT ######
 def build_medical_history_hint(records: tuple[MedicalRecord, ...]) -> str:
     """Повертає коротку підказку про історію медичних записів.
     Returns a short hint about medical record history.

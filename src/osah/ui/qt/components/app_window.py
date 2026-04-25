@@ -1,43 +1,41 @@
 """
-AppWindow — головне вікно нового UI.
-Збирає SideNav, TopCommandBar, StatusStrip і SectionContainer.
-AppWindow — main window assembling all top level shell components.
+Main Qt application shell window.
 """
-from PySide6.QtWidgets import QMainWindow, QSplitter, QVBoxLayout, QWidget
+
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import QMainWindow, QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.application_context import ApplicationContext
-from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
 from osah.application.services.visual.load_visual_alert_state import load_visual_alert_state
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
-from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.side_nav import SideNav
 from osah.ui.qt.components.status_strip import StatusStrip
 from osah.ui.qt.components.top_command_bar import TopCommandBar
 from osah.ui.qt.design.tokens import SIZE
+from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
 from osah.ui.qt.routing.map_notification_source_to_problem_key import map_notification_source_to_problem_key
 from osah.ui.qt.routing.qt_context import QtContext
 from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
-from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
+from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
 
 
 class AppWindow(QMainWindow):
-    """Головне вікно (Shell) застосунку.
-    Main shell window managing the layout of panels and routing.
-    """
+    """Main shell window managing layout, routing and safe back navigation."""
 
     def __init__(self, app_context: ApplicationContext, access_role: AccessRole) -> None:
         super().__init__()
         self._app_context = app_context
         self._access_role = access_role
-        self._pending_navigation_intent: QtNavigationIntent | None = None
+        self._current_section: AppSection | None = None
+        self._current_navigation_intent: QtNavigationIntent | None = None
+        self._navigation_history: list[tuple[AppSection, QtNavigationIntent | None]] = []
 
         self.setWindowTitle("OSaH 2.0")
         self.setMinimumSize(SIZE["window_min_w"], SIZE["window_min_h"])
 
-        # Збираємо скелет / Assemble skeleton
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
@@ -45,19 +43,16 @@ class AppWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # QSplitter для [Навігація | Контент]
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setChildrenCollapsible(False)
 
-        # 1. Ліва панель / Side Nav
         sections = build_available_sections_for_role(access_role)
         visual_alert_state = load_visual_alert_state(self._app_context.database_path)
-        
+
         self._nav = SideNav(sections, access_role, visual_alert_state.section_levels)
         self._nav.section_selected.connect(self._on_section_selected)
         splitter.addWidget(self._nav)
 
-        # 2. Права частина (Верхня панель + Контент)
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
@@ -70,39 +65,67 @@ class AppWindow(QMainWindow):
         right_layout.addWidget(self._content_container)
 
         splitter.addWidget(right_panel)
-        splitter.setStretchFactor(0, 0) # Nav фіксована
-        splitter.setStretchFactor(1, 1) # Контент розтягується
-
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
         main_layout.addWidget(splitter)
 
-        # 3. Нижня смужка / Status Strip
         self._status_strip = StatusStrip(app_context.database_path, access_role)
         main_layout.addWidget(self._status_strip)
 
-        # Стартовий екран
-        self._on_section_selected(AppSection.DASHBOARD)
+        self._install_navigation_shortcuts()
+        self._navigate_to(AppSection.DASHBOARD, record_history=False)
+
+    def _install_navigation_shortcuts(self) -> None:
+        """###### ГАРЯЧІ КЛАВІШІ НАВІГАЦІЇ / NAVIGATION SHORTCUTS ######"""
+
+        escape_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        escape_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        escape_shortcut.activated.connect(self.navigate_back)
+
+        alt_left_shortcut = QShortcut(QKeySequence("Alt+Left"), self)
+        alt_left_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        alt_left_shortcut.activated.connect(self.navigate_back)
 
     def _on_section_selected(self, section: AppSection) -> None:
-        """Перемикає вміст центральної області."""
+        """###### ВИБІР РОЗДІЛУ / SECTION SELECT ######"""
+
+        self._navigate_to(section)
+
+    def _navigate_to(
+        self,
+        section: AppSection,
+        *,
+        intent: QtNavigationIntent | None = None,
+        record_history: bool = True,
+    ) -> None:
+        """###### ПЕРЕХІД ДО РОЗДІЛУ / NAVIGATE TO SECTION ######"""
+
+        effective_intent = intent
+        if record_history and self._current_section is not None:
+            current_state = (self._current_section, self._current_navigation_intent)
+            next_state = (section, effective_intent)
+            if current_state != next_state:
+                self._navigation_history.append(current_state)
+
         self._nav.set_active_section(section)
         self._top_bar.set_section(section)
 
-        # Очищення старого (швидкий спосіб)
         layout = self._content_container.content_layout()
         while layout.count():
             item = layout.takeAt(0)
             if widget := item.widget():
                 widget.deleteLater()
 
-        # Роутинг / Routing
         context = QtContext(
             content_container=self._content_container,
             application_context=self._app_context,
             selected_section=section,
             access_role=self._access_role,
-            navigation_intent=self._pending_navigation_intent,
+            navigation_intent=effective_intent,
         )
-        self._pending_navigation_intent = None
+        self._current_section = section
+        self._current_navigation_intent = effective_intent
+
         screen = build_screen_for_section(context)
         if hasattr(screen, "employee_attention_requested"):
             screen.employee_attention_requested.connect(self._open_employee_attention)
@@ -121,80 +144,70 @@ class AppWindow(QMainWindow):
                     _notification_source_for_section(source),
                 )
             )
-        
+
         from osah.ui.qt.components.animations.fade_in import apply_fade_in
+
         apply_fade_in(screen)
-        
         layout.addWidget(screen)
 
-    # ###### ВІДКРИТТЯ ПРАЦІВНИКА ЗІ СПОВІЩЕННЯ / OPEN EMPLOYEE FROM ALERT ######
+    def navigate_back(self) -> None:
+        """###### НАЗАД ПО ІСТОРІЇ / NAVIGATE BACK ######"""
+
+        if not self._navigation_history:
+            return
+        section, intent = self._navigation_history.pop()
+        self._navigate_to(section, intent=intent, record_history=False)
+
     def _open_employee_attention(self, personnel_number: str, source_module: str) -> None:
-        """Переходить із Dashboard до картки працівника за сигналом проблеми.
-        Navigates from Dashboard to an employee card from a problem signal.
-        """
+        """###### ПЕРЕХІД ДО ПРАЦІВНИКА / OPEN EMPLOYEE ATTENTION ######"""
 
         problem_key = map_notification_source_to_problem_key(source_module)
-        self._pending_navigation_intent = QtNavigationIntent(
+        intent = QtNavigationIntent(
             target_section=AppSection.EMPLOYEES,
             employee_personnel_number=personnel_number,
             problem_key=problem_key,
         )
-        self._on_section_selected(AppSection.EMPLOYEES)
+        self._navigate_to(AppSection.EMPLOYEES, intent=intent)
 
-    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ ІНСТРУКТАЖІВ / OPEN TRAINING ALERTS ######
     def _open_trainings_attention(self, status_filter: str) -> None:
-        """Переходить із Dashboard до відфільтрованого модуля інструктажів.
-        Navigates from Dashboard to filtered trainings module.
-        """
+        """###### ПЕРЕХІД ДО ІНСТРУКТАЖІВ / OPEN TRAININGS ATTENTION ######"""
 
-        self._pending_navigation_intent = QtNavigationIntent(
+        intent = QtNavigationIntent(
             target_section=AppSection.TRAININGS,
             training_status_filter=status_filter,
         )
-        self._on_section_selected(AppSection.TRAININGS)
+        self._navigate_to(AppSection.TRAININGS, intent=intent)
 
-    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ ЗІЗ / OPEN PPE ALERTS ######
     def _open_ppe_attention(self, status_filter: str) -> None:
-        """Переходить із Dashboard до відфільтрованого модуля ЗІЗ.
-        Navigates from Dashboard to filtered PPE module.
-        """
+        """###### ПЕРЕХІД ДО ЗІЗ / OPEN PPE ATTENTION ######"""
 
-        self._pending_navigation_intent = QtNavigationIntent(
+        intent = QtNavigationIntent(
             target_section=AppSection.PPE,
             ppe_status_filter=status_filter,
         )
-        self._on_section_selected(AppSection.PPE)
+        self._navigate_to(AppSection.PPE, intent=intent)
 
-    # ###### ВІДКРИТТЯ ПРОБЛЕМНОЇ МЕДИЦИНИ / OPEN MEDICAL ALERTS ######
     def _open_medical_attention(self, status_filter: str) -> None:
-        """Переходить із Dashboard до відфільтрованого модуля медицини.
-        Navigates from Dashboard to filtered medical module.
-        """
+        """###### ПЕРЕХІД ДО МЕДИЦИНИ / OPEN MEDICAL ATTENTION ######"""
 
-        self._pending_navigation_intent = QtNavigationIntent(
+        intent = QtNavigationIntent(
             target_section=AppSection.MEDICAL,
             medical_status_filter=status_filter,
         )
-        self._on_section_selected(AppSection.MEDICAL)
+        self._navigate_to(AppSection.MEDICAL, intent=intent)
 
-    # ###### ВІДКРИТТЯ ПРОБЛЕМНИХ НАРЯДІВ / OPEN WORK PERMIT ALERTS ######
     def _open_work_permits_attention(self, status_filter: str) -> None:
-        """Переходить із Dashboard до відфільтрованого модуля нарядів-допусків.
-        Navigates from Dashboard to filtered work permits module.
-        """
+        """###### ПЕРЕХІД ДО НАРЯДІВ / OPEN WORK PERMITS ATTENTION ######"""
 
-        self._pending_navigation_intent = QtNavigationIntent(
+        intent = QtNavigationIntent(
             target_section=AppSection.WORK_PERMITS,
             work_permit_status_filter=status_filter,
         )
-        self._on_section_selected(AppSection.WORK_PERMITS)
+        self._navigate_to(AppSection.WORK_PERMITS, intent=intent)
 
 
-# ###### ДЖЕРЕЛО СПОВІЩЕННЯ СЕКЦІЇ / SECTION NOTIFICATION SOURCE ######
 def _notification_source_for_section(section: AppSection) -> str:
-    """Повертає source_module для переходу з профільного модуля до картки працівника.
-    Returns source_module for navigation from a domain module to an employee card.
-    """
+    """###### ДЖЕРЕЛО СПОВІЩЕННЯ СЕКЦІЇ / SECTION NOTIFICATION SOURCE ######"""
 
     if section == AppSection.TRAININGS:
         return "trainings.registry"

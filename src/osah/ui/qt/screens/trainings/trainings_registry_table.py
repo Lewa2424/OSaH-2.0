@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.trainings.training_status_badge import TrainingStatusBadge
 
@@ -27,7 +29,6 @@ class TrainingsRegistryTable(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
-    # ###### ЗАПОВНЕННЯ ТАБЛИЦІ / POPULATE TABLE ######
     def set_rows(self, rows: tuple[TrainingWorkspaceRow, ...]) -> None:
         """Перемальовує таблицю за підготовленими рядками.
         Redraws the table with prepared rows.
@@ -42,8 +43,8 @@ class TrainingsRegistryTable(QTableWidget):
                     row.employee_full_name,
                     row.department_name,
                     row.training_type_label,
-                    row.event_date,
-                    row.next_control_date,
+                    format_ui_date(row.event_date),
+                    format_ui_date(row.next_control_date),
                 )
             ):
                 self._set_item(row_index, column, text, row)
@@ -52,8 +53,8 @@ class TrainingsRegistryTable(QTableWidget):
             self._set_item(row_index, 7, row.status_reason, row)
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 5)
 
-    # ###### ВИБІР РЯДКА / SELECT ROW ######
     def select_first(self) -> None:
         """Виділяє перший рядок, якщо таблиця не порожня.
         Selects the first row when the table is not empty.

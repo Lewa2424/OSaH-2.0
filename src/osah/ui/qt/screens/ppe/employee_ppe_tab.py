@@ -3,6 +3,9 @@ from PySide6.QtWidgets import QAbstractItemView, QLabel, QTableWidget, QTableWid
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.services.build_ppe_status_reason import build_ppe_status_reason
 from osah.domain.services.format_ppe_status_label import format_ppe_status_label
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
@@ -39,10 +42,11 @@ class EmployeePpeTab(QWidget):
                 "Так" if record.is_required else "Ні",
                 "Так" if record.is_issued else "Ні",
                 str(record.quantity),
-                record.replacement_date,
+                format_ui_date(record.replacement_date),
                 f"{format_ppe_status_label(record.status)} - {build_ppe_status_reason(record)}",
             )
             for column, value in enumerate(values):
                 table.setItem(row_index, column, QTableWidgetItem(value))
         table.resizeColumnsToContents()
-        layout.addWidget(table)
+        ensure_table_column_width(table, 5)
+        layout.addWidget(ScrollableTableFrame(table))

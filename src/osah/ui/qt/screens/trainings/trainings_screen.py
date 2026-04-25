@@ -9,6 +9,7 @@ from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.trainings.training_quick_stats import TrainingQuickStats
@@ -65,7 +66,7 @@ class TrainingsScreen(QWidget):
         center_layout.addWidget(self.summary_panel)
         self.registry_table = TrainingsRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        center_layout.addWidget(self.registry_table, stretch=1)
+        center_layout.addWidget(ScrollableTableFrame(self.registry_table), stretch=1)
         splitter.addWidget(center)
 
         self.details_pane = TrainingRecordDetailsPane(database_path, workspace.employees)

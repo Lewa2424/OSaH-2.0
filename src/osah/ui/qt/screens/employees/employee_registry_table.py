@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowStateBadge
 
@@ -47,6 +48,7 @@ class EmployeeRegistryTable(QTableWidget):
             self.setRowHeight(row_index, 38)
 
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 4)
 
     def select_employee(self, personnel_number: str) -> None:
         """###### ВИБІР ПРАЦІВНИКА / SELECT EMPLOYEE ######"""

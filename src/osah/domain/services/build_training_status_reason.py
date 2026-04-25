@@ -1,13 +1,13 @@
 from datetime import date
 
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
-from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.services.format_training_type_label import format_training_type_label
+from osah.domain.services.format_ui_date import format_ui_date
 
 
-# ###### ПРИЧИНА СТАТУСУ ІНСТРУКТАЖУ / TRAINING STATUS REASON ######
+# ###### ПРИЧИНА СТАТУСУ ІНСТРУКТАЖУ / BUILD TRAINING STATUS REASON ######
 def build_training_status_reason(
     status: TrainingStatus | TrainingRegistryFilter,
     training_type: TrainingType | None,
@@ -28,4 +28,4 @@ def build_training_status_reason(
         return f"Критично - {type_label} інструктаж прострочено"
     if status == TrainingStatus.WARNING or status == TrainingRegistryFilter.WARNING:
         return f"Увага - через {remaining_days} дн. спливає строк"
-    return f"Актуально - контроль до {next_control_date}"
+    return f"Актуально - контроль до {format_ui_date(next_control_date)}"

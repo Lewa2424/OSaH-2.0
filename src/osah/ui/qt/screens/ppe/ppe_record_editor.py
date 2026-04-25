@@ -7,6 +7,7 @@ from osah.application.services.create_ppe_record import create_ppe_record
 from osah.application.services.update_ppe_record import update_ppe_record
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
 
@@ -42,18 +43,22 @@ class PpeRecordEditor(QWidget):
         self.required_input = QCheckBox("Положено за нормою")
         self.required_input.setChecked(True)
         form.addRow("Норма", self.required_input)
+
         self.issued_input = QCheckBox("Фактично видано")
         self.issued_input.setChecked(True)
         form.addRow("Факт", self.issued_input)
 
         self.issue_date_input = QLineEdit()
-        self.issue_date_input.setPlaceholderText("YYYY-MM-DD")
+        self.issue_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Дата видачі", self.issue_date_input)
+
         self.replacement_date_input = QLineEdit()
-        self.replacement_date_input.setPlaceholderText("YYYY-MM-DD")
+        self.replacement_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
         form.addRow("Дата заміни", self.replacement_date_input)
+
         self.quantity_input = QLineEdit()
         form.addRow("Кількість", self.quantity_input)
+
         self.note_input = QTextEdit()
         self.note_input.setMaximumHeight(80)
         form.addRow("Примітка", self.note_input)
@@ -66,6 +71,7 @@ class PpeRecordEditor(QWidget):
         self.save_button.setProperty("variant", "accent")
         self.save_button.clicked.connect(self._save_record)
         layout.addWidget(self.save_button)
+
         self.new_button = QPushButton("Новий запис")
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
@@ -81,8 +87,8 @@ class PpeRecordEditor(QWidget):
         self.ppe_input.setCurrentText(row.ppe_name)
         self.required_input.setChecked(row.is_required)
         self.issued_input.setChecked(row.is_issued)
-        self.issue_date_input.setText(row.issue_date)
-        self.replacement_date_input.setText(row.replacement_date)
+        self.issue_date_input.setText(format_ui_date(row.issue_date))
+        self.replacement_date_input.setText(format_ui_date(row.replacement_date))
         self.quantity_input.setText(str(row.quantity))
         self.note_input.setPlainText(row.note_text)
         self.save_button.setText("Зберегти зміни")

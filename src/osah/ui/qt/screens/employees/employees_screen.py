@@ -5,6 +5,7 @@ from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.employees.employee_details_pane import EmployeeDetailsPane
@@ -52,7 +53,7 @@ class EmployeesScreen(QWidget):
 
         self.registry_table = EmployeeRegistryTable()
         self.registry_table.employee_selected.connect(self._show_employee)
-        splitter.addWidget(self.registry_table)
+        splitter.addWidget(ScrollableTableFrame(self.registry_table))
 
         self.details_pane = EmployeeDetailsPane()
         splitter.addWidget(self.details_pane)

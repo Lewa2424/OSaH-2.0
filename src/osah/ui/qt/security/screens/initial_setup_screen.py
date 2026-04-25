@@ -140,6 +140,9 @@ class InitialSetupScreen(QWidget):
         save_button.clicked.connect(self._on_save_clicked)
         right_layout.addWidget(save_button)
 
+        self.setTabOrder(self._inspector_input, self._manager_input)
+        self.setTabOrder(self._manager_input, save_button)
+
         right_card = self._create_card(right_panel)
         main_layout.addWidget(right_card, 6)
 
@@ -164,10 +167,13 @@ class InitialSetupScreen(QWidget):
     def _create_card(self, content: QWidget) -> QFrame:
         """Створює карточку з фоном."""
         card = QFrame()
+        card.setObjectName("initialSetupCard")
         card.setStyleSheet(
+            f"QFrame#initialSetupCard {{ "
             f"background-color: {COLOR['bg_card']}; "
             f"border-radius: 20px; "
-            f"border: 1px solid {COLOR['border_soft']};"
+            f"border: 1px solid {COLOR['border_soft']}; "
+            f"}}"
         )
         
         card_layout = QVBoxLayout(card)
@@ -179,10 +185,13 @@ class InitialSetupScreen(QWidget):
     def _create_info_card(self, title: str, value: str) -> QFrame:
         """Створює інформаційну карточку."""
         card = QFrame()
+        card.setObjectName("initialSetupInfoCard")
         card.setStyleSheet(
+            f"QFrame#initialSetupInfoCard {{ "
             f"background-color: {COLOR['bg_panel']}; "
             f"border-radius: 12px; "
-            f"border: 1px solid {COLOR['border_soft']};"
+            f"border: 1px solid {COLOR['border_soft']}; "
+            f"}}"
         )
         
         card_layout = QVBoxLayout(card)

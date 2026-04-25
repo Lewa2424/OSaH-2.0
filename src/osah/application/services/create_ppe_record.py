@@ -1,14 +1,14 @@
-from datetime import date
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.infrastructure.database.commands.insert_ppe_record import insert_ppe_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### СТВОРЕННЯ ЗАПИСУ ЗІЗ / СОЗДАНИЕ ЗАПИСИ СИЗ ######
+# ###### СТВОРЕННЯ ЗАПИСУ ЗІЗ / CREATE PPE RECORD ######
 def create_ppe_record(
     database_path: Path,
     employee_personnel_number: str,
@@ -21,7 +21,7 @@ def create_ppe_record(
     note_text: str,
 ) -> None:
     """Створює новий запис ЗІЗ та синхронізує контрольні сповіщення.
-    Создаёт новую запись СИЗ и синхронизирует контрольные уведомления.
+    Creates a new PPE record and synchronizes control notifications.
     """
 
     normalized_personnel_number = employee_personnel_number.strip()
@@ -36,8 +36,8 @@ def create_ppe_record(
         raise ValueError("Потрібно вказати кількість.")
 
     quantity = _parse_quantity(normalized_quantity_text)
-    issue_date = _parse_iso_date(issue_date_text)
-    replacement_date = _parse_iso_date(replacement_date_text)
+    issue_date = parse_ui_date_text(issue_date_text)
+    replacement_date = parse_ui_date_text(replacement_date_text)
     if replacement_date < issue_date:
         raise ValueError("Дата заміни не може бути раніше дати видачі.")
 
@@ -64,25 +64,10 @@ def create_ppe_record(
         connection.close()
 
 
-# ###### РОЗБІР ISO-ДАТИ ДЛЯ ЗІЗ / РАЗБОР ISO-ДАТЫ ДЛЯ СИЗ ######
-def _parse_iso_date(date_text: str) -> date:
-    """Перетворює текст дати формату РРРР-ММ-ДД у об'єкт date.
-    Преобразует текст даты формата ГГГГ-ММ-ДД в объект date.
-    """
-
-    normalized_date_text = date_text.strip()
-    if not normalized_date_text:
-        raise ValueError("Дата обов'язкова у форматі РРРР-ММ-ДД.")
-    try:
-        return date.fromisoformat(normalized_date_text)
-    except ValueError as error:
-        raise ValueError("Дата має бути у форматі РРРР-ММ-ДД.") from error
-
-
-# ###### РОЗБІР КІЛЬКОСТІ ЗІЗ / РАЗБОР КОЛИЧЕСТВА СИЗ ######
+# ###### РОЗБІР КІЛЬКОСТІ ЗІЗ / PARSE PPE QUANTITY ######
 def _parse_quantity(quantity_text: str) -> int:
-    """Перетворює текст кількості у додатне ціле число.
-    Преобразует текст количества в положительное целое число.
+    """Перетворює текст кількості у додатнє ціле число.
+    Converts quantity text into a positive integer.
     """
 
     try:

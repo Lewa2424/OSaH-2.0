@@ -1,19 +1,16 @@
 """
-MetricCard — картка метрики для Dashboard.
-Відображає числовий показник з акцентною кольоровою смугою зліва.
-MetricCard — Dashboard metric card with a colored left accent bar.
+Dashboard metric card component.
 """
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from osah.ui.qt.design.tokens import FONT, RADIUS, SPACING
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QFont
+from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QLabel, QVBoxLayout, QWidget
+
+from osah.ui.qt.design.tokens import COLOR, FONT, RADIUS, SPACING
 
 
 class MetricCard(QWidget):
-    """Картка з числовою метрикою та кольоровим акцентом.
-    Metric card with color accent and shadow for dashboard display.
-    """
+    """Compact KPI card for the dashboard top row."""
 
     def __init__(
         self,
@@ -24,68 +21,61 @@ class MetricCard(QWidget):
     ) -> None:
         super().__init__()
 
-        # Зовнішня обгортка з тінню / Outer wrapper with shadow
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Фрейм-картка / Card frame
         card = QFrame()
-        card.setProperty("card", "true")
-        card.setMinimumHeight(110)
+        card.setObjectName("metricCard")
+        card.setMinimumHeight(88)
+        card.setStyleSheet(
+            f"QFrame#metricCard {{ "
+            f"background: {COLOR['metric_card_bg']}; "
+            f"border: 2px solid {accent_color}; "
+            f"border-radius: {RADIUS['xl']}px; "
+            f"}}"
+        )
 
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(16)
+        shadow.setBlurRadius(14)
         shadow.setOffset(0, 2)
-        shadow.setColor(QColor(0, 0, 0, 18))
+        shadow.setColor(QColor(0, 0, 0, 16))
         card.setGraphicsEffect(shadow)
 
         outer_layout.addWidget(card)
 
-        # Горизонтальний layout: [акцент-бар | контент]
-        card_layout = QHBoxLayout(card)
-        card_layout.setContentsMargins(0, 0, 0, 0)
-        card_layout.setSpacing(0)
-
-        # Кольорова вертикальна смуга зліва / Left accent bar
-        bar = QFrame()
-        bar.setFixedWidth(4)
-        bar.setStyleSheet(
-            f"background: {accent_color};"
-            f"border-top-left-radius: {RADIUS['xl']}px;"
-            f"border-bottom-left-radius: {RADIUS['xl']}px;"
-            f"border-top-right-radius: 0px;"
-            f"border-bottom-right-radius: 0px;"
-        )
-        card_layout.addWidget(bar)
-
-        # Контентна зона / Content zone
-        content = QWidget()
-        content.setStyleSheet("background: transparent;")
-        content_layout = QVBoxLayout(content)
+        content_layout = QVBoxLayout(card)
         content_layout.setContentsMargins(
-            SPACING["lg"], SPACING["lg"],
-            SPACING["lg"], SPACING["lg"],
+            SPACING["md"],
+            SPACING["md"],
+            SPACING["md"],
+            SPACING["md"],
         )
-        content_layout.setSpacing(4)
-        card_layout.addWidget(content)
+        content_layout.setSpacing(3)
+        content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Назва / Title
         title_label = QLabel(title)
-        title_label.setProperty("role", "metric_title")
-        content_layout.addWidget(title_label)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet(
+            f"color: {COLOR['metric_card_label']};"
+            "font-size: 11px;"
+            "font-weight: 700;"
+        )
+        content_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Значення / Value
         value_label = QLabel(value)
-        value_label.setProperty("role", "metric_value")
-        value_font = QFont(FONT["metric"][0], FONT["metric"][1])
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_font = QFont(FONT["metric"][0], FONT["metric"][1] + 2)
         value_font.setBold(FONT["metric"][2])
         value_label.setFont(value_font)
-        content_layout.addWidget(value_label)
+        value_label.setStyleSheet(f"color: {accent_color};")
+        content_layout.addWidget(value_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Підпис / Subtitle
-        sub_label = QLabel(subtitle)
-        sub_label.setProperty("role", "metric_subtitle")
-        sub_label.setWordWrap(True)
-        content_layout.addWidget(sub_label)
-
-        content_layout.addStretch()
+        subtitle_label = QLabel(subtitle)
+        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle_label.setWordWrap(True)
+        subtitle_label.setStyleSheet(
+            f"color: {COLOR['text_secondary']};"
+            "font-size: 10px;"
+            "font-weight: 400;"
+        )
+        content_layout.addWidget(subtitle_label, alignment=Qt.AlignmentFlag.AlignCenter)

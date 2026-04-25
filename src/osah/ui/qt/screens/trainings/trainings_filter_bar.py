@@ -6,6 +6,7 @@ from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.services.format_training_type_label import format_training_type_label
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.ui.qt.design.tokens import SPACING
 
 
@@ -100,19 +101,18 @@ class TrainingsFilterBar(QWidget):
         second_row.addWidget(self.employee_filter, stretch=2)
 
         self.date_from_input = QLineEdit()
-        self.date_from_input.setPlaceholderText("Період з: YYYY-MM-DD")
+        self.date_from_input.setPlaceholderText("Період з: ДД.ММ.ГГГГ")
         self.date_from_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         second_row.addWidget(self.date_from_input)
 
         self.date_to_input = QLineEdit()
-        self.date_to_input.setPlaceholderText("Період до: YYYY-MM-DD")
+        self.date_to_input.setPlaceholderText("Період до: ДД.ММ.ГГГГ")
         self.date_to_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         second_row.addWidget(self.date_to_input)
 
         self.active_filters_label = QLabel("Фільтри не активні")
         second_row.addWidget(self.active_filters_label)
 
-    # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def reset_filters(self) -> None:
         """Скидає всі фільтри модуля інструктажів.
         Resets all trainings module filters.
@@ -135,7 +135,6 @@ class TrainingsFilterBar(QWidget):
         self._update_active_filters_label()
         self.filters_changed.emit()
 
-    # ###### ВСТАНОВЛЕННЯ СТАТУСУ / SET STATUS ######
     def set_status_filter(self, status_filter: TrainingRegistryFilter) -> None:
         """Активує фільтр статусу з navigation intent.
         Activates status filter from navigation intent.
@@ -145,7 +144,6 @@ class TrainingsFilterBar(QWidget):
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
-    # ###### ЗНАЧЕННЯ ФІЛЬТРІВ / FILTER VALUES ######
     def values(self) -> dict[str, str]:
         """Повертає поточний стан фільтрів.
         Returns the current filter state.
@@ -161,8 +159,8 @@ class TrainingsFilterBar(QWidget):
             "status": self.status_filter.currentData() or "",
             "conducted_by": self.conducted_by_filter.currentData() or "",
             "employee": self.employee_filter.currentData() or "",
-            "date_from": self.date_from_input.text().strip(),
-            "date_to": self.date_to_input.text().strip(),
+            "date_from": _normalize_filter_date(self.date_from_input.text()),
+            "date_to": _normalize_filter_date(self.date_to_input.text()),
         }
         self._update_active_filters_label()
         return values
@@ -189,3 +187,18 @@ class TrainingsFilterBar(QWidget):
             if value
         )
         self.active_filters_label.setText("Фільтри не активні" if active_count == 0 else f"Активних фільтрів: {active_count}")
+
+
+# ###### НОРМАЛІЗАЦІЯ ДАТИ ФІЛЬТРА / NORMALIZE FILTER DATE ######
+def _normalize_filter_date(date_text: str) -> str:
+    """Нормалізує дату фільтра до ISO для внутрішнього порівняння.
+    Normalizes filter date to ISO for internal comparison.
+    """
+
+    normalized_date_text = date_text.strip()
+    if not normalized_date_text:
+        return ""
+    try:
+        return parse_ui_date_text(normalized_date_text).isoformat()
+    except ValueError:
+        return normalized_date_text

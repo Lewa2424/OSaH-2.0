@@ -10,6 +10,7 @@ from osah.application.services.update_work_permit_record import update_work_perm
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
+from osah.domain.services.format_ui_datetime import format_ui_datetime
 from osah.domain.services.format_work_permit_participant_role_label import format_work_permit_participant_role_label
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import SPACING
@@ -37,12 +38,15 @@ class WorkPermitEditor(QWidget):
         form.addRow("Вид робіт", self.work_kind_input)
         self.work_location_input = QLineEdit()
         form.addRow("Місце", self.work_location_input)
+
         self.starts_at_input = QLineEdit()
-        self.starts_at_input.setPlaceholderText("YYYY-MM-DD HH:MM")
+        self.starts_at_input.setPlaceholderText("ДД.ММ.ГГГГ HH:MM")
         form.addRow("Початок", self.starts_at_input)
+
         self.ends_at_input = QLineEdit()
-        self.ends_at_input.setPlaceholderText("YYYY-MM-DD HH:MM")
+        self.ends_at_input.setPlaceholderText("ДД.ММ.ГГГГ HH:MM")
         form.addRow("Завершення", self.ends_at_input)
+
         self.responsible_input = QLineEdit()
         form.addRow("Відповідальний", self.responsible_input)
         self.issuer_input = QLineEdit()
@@ -53,10 +57,12 @@ class WorkPermitEditor(QWidget):
             if employee.employment_status.strip().lower() == "active":
                 self.employee_input.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
         form.addRow("Учасник", self.employee_input)
+
         self.role_input = QComboBox()
         for role in WorkPermitParticipantRole:
             self.role_input.addItem(format_work_permit_participant_role_label(role), role.value)
         form.addRow("Роль", self.role_input)
+
         self.note_input = QTextEdit()
         self.note_input.setMaximumHeight(70)
         form.addRow("Примітка", self.note_input)
@@ -69,23 +75,26 @@ class WorkPermitEditor(QWidget):
         self.save_button.setProperty("variant", "accent")
         self.save_button.clicked.connect(self._save_record)
         layout.addWidget(self.save_button)
+
         self.close_button = QPushButton("Закрити наряд")
         self.close_button.setProperty("variant", "secondary")
         self.close_button.clicked.connect(self._close_record)
         layout.addWidget(self.close_button)
+
         self.cancel_reason_input = QLineEdit()
         self.cancel_reason_input.setPlaceholderText("Причина скасування")
         layout.addWidget(self.cancel_reason_input)
+
         self.cancel_button = QPushButton("Скасувати наряд")
         self.cancel_button.setProperty("variant", "secondary")
         self.cancel_button.clicked.connect(self._cancel_record)
         layout.addWidget(self.cancel_button)
+
         self.new_button = QPushButton("Новий наряд")
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
         layout.addWidget(self.new_button)
 
-    # ###### ЗАПОВНЕННЯ ФОРМИ / FILL FORM ######
     def set_row(self, row: WorkPermitWorkspaceRow) -> None:
         """Заповнює форму вибраним нарядом-допуском.
         Fills the form with the selected work permit.
@@ -95,8 +104,8 @@ class WorkPermitEditor(QWidget):
         self.permit_number_input.setText(row.permit_number)
         self.work_kind_input.setText(row.work_kind)
         self.work_location_input.setText(row.work_location)
-        self.starts_at_input.setText(row.starts_at)
-        self.ends_at_input.setText(row.ends_at)
+        self.starts_at_input.setText(format_ui_datetime(row.starts_at))
+        self.ends_at_input.setText(format_ui_datetime(row.ends_at))
         self.responsible_input.setText(row.responsible_person)
         self.issuer_input.setText(row.issuer_person)
         if row.record.participants:
@@ -106,19 +115,26 @@ class WorkPermitEditor(QWidget):
         self.note_input.setPlainText(row.record.note_text)
         self.save_button.setText("Зберегти зміни")
 
-    # ###### ОЧИЩЕННЯ ФОРМИ / CLEAR FORM ######
     def clear_form(self) -> None:
         """Готує форму до створення нового наряду.
         Prepares the form for creating a new work permit.
         """
 
         self._current_record_id = None
-        for field in (self.permit_number_input, self.work_kind_input, self.work_location_input, self.starts_at_input, self.ends_at_input, self.responsible_input, self.issuer_input, self.cancel_reason_input):
+        for field in (
+            self.permit_number_input,
+            self.work_kind_input,
+            self.work_location_input,
+            self.starts_at_input,
+            self.ends_at_input,
+            self.responsible_input,
+            self.issuer_input,
+            self.cancel_reason_input,
+        ):
             field.clear()
         self.note_input.clear()
         self.save_button.setText("Створити наряд")
 
-    # ###### ЗБЕРЕЖЕННЯ / SAVE ######
     def _save_record(self) -> None:
         """Зберігає наряд через application service.
         Saves a work permit through application service.
@@ -135,7 +151,6 @@ class WorkPermitEditor(QWidget):
         self.feedback_label.show_success("Наряд-допуск збережено.")
         self.saved.emit()
 
-    # ###### ЗАКРИТТЯ / CLOSE ######
     def _close_record(self) -> None:
         """Закриває вибраний наряд через окреме application service.
         Closes the selected work permit through a dedicated application service.
@@ -152,7 +167,6 @@ class WorkPermitEditor(QWidget):
         self.feedback_label.show_success("Наряд-допуск закрито.")
         self.saved.emit()
 
-    # ###### СКАСУВАННЯ / CANCEL ######
     def _cancel_record(self) -> None:
         """Скасовує вибраний наряд із фіксацією причини.
         Cancels the selected work permit with a reason.
@@ -169,7 +183,6 @@ class WorkPermitEditor(QWidget):
         self.feedback_label.show_success("Наряд-допуск скасовано.")
         self.saved.emit()
 
-    # ###### ЗНАЧЕННЯ ФОРМИ / FORM VALUES ######
     def _form_values(self) -> tuple[str, str, str, str, str, str, str, str, str, str]:
         """Повертає значення форми у порядку application service.
         Returns form values in application service order.

@@ -10,6 +10,7 @@ from osah.domain.entities.contractor_record import ContractorRecord
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.screen_states import EmptyStateWidget
+from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.contractors.contractor_details_pane import ContractorDetailsPane
@@ -51,7 +52,7 @@ class ContractorsScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self._table = ContractorsRegistryTable()
         self._table.row_selected.connect(self._show_record)
-        splitter.addWidget(self._table)
+        splitter.addWidget(ScrollableTableFrame(self._table))
         self._details = ContractorDetailsPane(read_only=self._read_only)
         self._details.save_requested.connect(self._save_record)
         splitter.addWidget(self._details)

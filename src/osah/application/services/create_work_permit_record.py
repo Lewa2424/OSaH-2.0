@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
@@ -6,6 +5,7 @@ from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_work_permit_participant import insert_work_permit_participant
@@ -13,7 +13,7 @@ from osah.infrastructure.database.commands.insert_work_permit_record import inse
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### СТВОРЕННЯ НАРЯДУ-ДОПУСКУ / СОЗДАНИЕ НАРЯДА-ДОПУСКА ######
+# ###### СТВОРЕННЯ НАРЯДУ-ДОПУСКУ / CREATE WORK PERMIT RECORD ######
 def create_work_permit_record(
     database_path: Path,
     permit_number: str,
@@ -28,7 +28,7 @@ def create_work_permit_record(
     note_text: str,
 ) -> None:
     """Створює новий наряд-допуск з першим учасником та синхронізує контрольні сповіщення.
-    Создаёт новый наряд-допуск с первым участником и синхронизирует контрольные уведомления.
+    Creates a new work permit with the first participant and synchronizes control notifications.
     """
 
     normalized_permit_number = permit_number.strip()
@@ -54,8 +54,8 @@ def create_work_permit_record(
     if not normalized_participant_role:
         raise ValueError("Потрібно вибрати роль учасника.")
 
-    starts_at = _parse_iso_datetime(starts_at_text)
-    ends_at = _parse_iso_datetime(ends_at_text)
+    starts_at = parse_ui_datetime_text(starts_at_text)
+    ends_at = parse_ui_datetime_text(ends_at_text)
     if ends_at <= starts_at:
         raise ValueError("Час завершення має бути пізніше часу початку.")
 
@@ -99,18 +99,3 @@ def create_work_permit_record(
         connection.commit()
     finally:
         connection.close()
-
-
-# ###### РОЗБІР ISO-ДАТИ Й ЧАСУ НАРЯДУ / РАЗБОР ISO-ДАТЫ И ВРЕМЕНИ НАРЯДА ######
-def _parse_iso_datetime(datetime_text: str) -> datetime:
-    """Перетворює текст дати й часу формату РРРР-ММ-ДД ГГ:ХХ у об'єкт datetime.
-    Преобразует текст даты и времени формата ГГГГ-ММ-ДД ЧЧ:ММ в объект datetime.
-    """
-
-    normalized_datetime_text = datetime_text.strip()
-    if not normalized_datetime_text:
-        raise ValueError("Дата й час обов'язкові у форматі РРРР-ММ-ДД ГГ:ХХ.")
-    try:
-        return datetime.fromisoformat(normalized_datetime_text)
-    except ValueError as error:
-        raise ValueError("Дата й час мають бути у форматі РРРР-ММ-ДД ГГ:ХХ.") from error
