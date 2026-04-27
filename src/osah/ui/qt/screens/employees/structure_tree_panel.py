@@ -1,5 +1,5 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
@@ -13,6 +13,7 @@ class StructureTreePanel(QWidget):
     """
 
     node_selected = Signal(str, str)
+    create_employee_requested = Signal()
 
     def __init__(self, workspace: EmployeeWorkspace) -> None:
         super().__init__()
@@ -24,6 +25,11 @@ class StructureTreePanel(QWidget):
         layout.setContentsMargins(0, 0, SPACING["md"], 0)
         layout.setSpacing(SPACING["sm"])
 
+        create_button = QPushButton("Додати працівника")
+        create_button.setProperty("variant", "accent")
+        create_button.clicked.connect(self.create_employee_requested.emit)
+        layout.addWidget(create_button)
+
         title = QLabel("Структура")
         title.setStyleSheet("font-size: 14px; font-weight: 900;")
         layout.addWidget(title)
@@ -32,6 +38,15 @@ class StructureTreePanel(QWidget):
         self.tree.setHeaderHidden(True)
         self.tree.itemSelectionChanged.connect(self._emit_selected_node)
         layout.addWidget(self.tree)
+        self.refresh()
+
+    # ###### ОНОВЛЕННЯ WORKSPACE / UPDATE WORKSPACE ######
+    def set_workspace(self, workspace: EmployeeWorkspace) -> None:
+        """Оновлює джерело даних дерева і перебудовує вузли.
+        Updates tree data source and rebuilds nodes.
+        """
+
+        self._workspace = workspace
         self.refresh()
 
     # ###### ОНОВЛЕННЯ ДЕРЕВА / REFRESH TREE ######
@@ -74,30 +89,8 @@ class StructureTreePanel(QWidget):
 
     # ###### ПІДПИС ВУЗЛА / NODE LABEL ######
     def _format_node(self, name: str, rows: tuple) -> str:
-        """Формує текст вузла з кількістю працівників і проблем.
-        Builds node text with employee and problem counters.
+        """Формує текст вузла з кількістю працівників.
+        Builds node text with employee count.
         """
 
-        critical_count = sum(1 for row in rows if row.status_level == EmployeeStatusLevel.CRITICAL)
-        warning_count = sum(1 for row in rows if row.status_level == EmployeeStatusLevel.WARNING)
-        restricted_count = sum(1 for row in rows if row.status_level == EmployeeStatusLevel.RESTRICTED)
-        worst = max((row.status_level for row in rows), key=rank_employee_status_level, default=EmployeeStatusLevel.NORMAL)
-        marker = _marker_for_level(worst)
-        problem_text = f" | !{critical_count} i{warning_count} ~{restricted_count}" if rows else ""
-        return f"{marker} {name} ({len(rows)}){problem_text}"
-
-
-def _marker_for_level(level: EmployeeStatusLevel) -> str:
-    """Повертає текстовий маркер найгіршого статусу вузла дерева.
-    Returns a textual marker for the worst tree node status.
-    """
-
-    if level == EmployeeStatusLevel.CRITICAL:
-        return "!"
-    if level == EmployeeStatusLevel.WARNING:
-        return "i"
-    if level == EmployeeStatusLevel.RESTRICTED:
-        return "~"
-    if level == EmployeeStatusLevel.ARCHIVED:
-        return "-"
-    return "ok"
+        return f"{name} ({len(rows)})"

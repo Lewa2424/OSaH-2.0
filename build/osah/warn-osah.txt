@@ -1,0 +1,32 @@
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean this module is required for running your program. Python and
+Python 3rd-party packages include a lot of conditional or optional modules. For
+example the module 'ntpath' only exists on Windows, whereas the module
+'posixpath' only exists on Posix systems.
+
+Types if import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+            tracking down the missing module yourself. Thanks!
+
+missing module named pwd - imported by posixpath (delayed, conditional, optional), shutil (delayed, optional), tarfile (optional), pathlib (delayed, optional), subprocess (delayed, conditional, optional), netrc (delayed, conditional), getpass (delayed)
+missing module named grp - imported by shutil (delayed, optional), tarfile (optional), pathlib (delayed, optional), subprocess (delayed, conditional, optional)
+missing module named posix - imported by posixpath (optional), shutil (conditional), importlib._bootstrap_external (conditional), os (conditional, optional)
+missing module named resource - imported by posix (top-level)
+missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional)
+excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional)
+missing module named _scproxy - imported by urllib.request (conditional)
+missing module named termios - imported by getpass (optional)
+missing module named readline - imported by code (delayed, conditional, optional)
+missing module named sqlite3.Connection - imported by sqlite3 (top-level), osah.infrastructure.database.commands.insert_audit_log (top-level), osah.application.services.load_dashboard_snapshot (top-level), osah.infrastructure.database.queries.count_employees (top-level), osah.infrastructure.database.queries.count_unread_news_items (top-level), osah.infrastructure.database.queries.list_news_items (top-level), osah.infrastructure.database.queries.list_notifications (top-level), osah.infrastructure.database.commands.upsert_app_settings_batch (top-level), osah.infrastructure.database.commands.upsert_app_setting (top-level), osah.infrastructure.database.queries.list_app_settings (top-level), osah.application.services.sync_control_notifications (top-level), osah.infrastructure.database.commands.replace_notifications (top-level), osah.infrastructure.database.queries.list_employees (top-level), osah.infrastructure.database.queries.list_medical_records (top-level), osah.infrastructure.database.queries.list_ppe_records (top-level), osah.infrastructure.database.queries.list_training_records (top-level), osah.infrastructure.database.queries.list_work_permit_records (top-level), osah.infrastructure.database.schema.ensure_core_schema (top-level), osah.infrastructure.database.seed.seed_demo_employees (top-level), osah.infrastructure.database.queries.list_news_sources (top-level), osah.infrastructure.database.queries.list_user_table_names (top-level), osah.infrastructure.database.queries.list_audit_log_entries (top-level), osah.infrastructure.database.commands.upsert_employee_row (top-level), osah.infrastructure.database.commands.insert_medical_record (top-level), osah.infrastructure.database.commands.update_medical_record_row (top-level), osah.infrastructure.database.queries.get_medical_record_by_id (top-level), osah.infrastructure.database.commands.mark_import_batch_as_applied (top-level), osah.infrastructure.database.queries.list_employee_import_drafts_by_batch (top-level), osah.infrastructure.database.commands.insert_employee_import_draft (top-level), osah.infrastructure.database.commands.insert_import_batch (top-level), osah.infrastructure.database.commands.update_news_source_last_checked_at (top-level), osah.infrastructure.database.commands.upsert_news_item_row (top-level), osah.infrastructure.database.commands.mark_news_item_as_read_row (top-level), osah.infrastructure.database.commands.insert_ppe_record (top-level), osah.infrastructure.database.commands.update_ppe_record_row (top-level), osah.infrastructure.database.queries.get_ppe_record_by_id (top-level), osah.infrastructure.database.commands.upsert_news_source_row (top-level), osah.infrastructure.database.commands.delete_news_source_row (top-level), osah.infrastructure.database.queries.get_latest_import_batch_summary (top-level), osah.infrastructure.database.commands.insert_training_record (top-level), osah.infrastructure.database.commands.update_training_record_row (top-level), osah.infrastructure.database.queries.get_training_record_by_id (top-level), osah.infrastructure.database.commands.cancel_work_permit_record_row (top-level), osah.infrastructure.database.commands.close_work_permit_record_row (top-level), osah.infrastructure.database.commands.insert_work_permit_participant (top-level), osah.infrastructure.database.commands.insert_work_permit_record (top-level), osah.infrastructure.database.commands.delete_work_permit_participants (top-level), osah.infrastructure.database.commands.update_work_permit_record_row (top-level)
+missing module named _posixsubprocess - imported by subprocess (conditional)
+missing module named fcntl - imported by subprocess (optional)
+missing module named vms_lib - imported by platform (delayed, optional)
+missing module named 'java.lang' - imported by platform (delayed, optional)
+missing module named java - imported by platform (delayed)
+missing module named _winreg - imported by platform (delayed, optional)

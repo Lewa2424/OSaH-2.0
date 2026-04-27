@@ -3,10 +3,11 @@ Dashboard metric card component.
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QLabel, QVBoxLayout, QWidget
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from osah.ui.qt.design.tokens import COLOR, FONT, RADIUS, SPACING
+from osah.ui.qt.components.animated_metric_border_frame import AnimatedMetricBorderFrame
+from osah.ui.qt.design.tokens import COLOR, FONT, SPACING
 
 
 class MetricCard(QWidget):
@@ -20,30 +21,18 @@ class MetricCard(QWidget):
         accent_color: str,
     ) -> None:
         super().__init__()
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
 
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
 
-        card = QFrame()
-        card.setObjectName("metricCard")
-        card.setMinimumHeight(88)
-        card.setStyleSheet(
-            f"QFrame#metricCard {{ "
-            f"background: {COLOR['metric_card_bg']}; "
-            f"border: 2px solid {accent_color}; "
-            f"border-radius: {RADIUS['xl']}px; "
-            f"}}"
-        )
+        self._card = AnimatedMetricBorderFrame(accent_color)
+        self._card.setObjectName("metricCard")
+        self._card.setMinimumHeight(88)
 
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(14)
-        shadow.setOffset(0, 2)
-        shadow.setColor(QColor(0, 0, 0, 16))
-        card.setGraphicsEffect(shadow)
+        outer_layout.addWidget(self._card)
 
-        outer_layout.addWidget(card)
-
-        content_layout = QVBoxLayout(card)
+        content_layout = QVBoxLayout(self._card)
         content_layout.setContentsMargins(
             SPACING["md"],
             SPACING["md"],

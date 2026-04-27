@@ -1,6 +1,11 @@
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
+from pathlib import Path
 
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QMessageBox, QSplitter, QVBoxLayout, QWidget
+
+from osah.application.services.archive_employee import archive_employee
+from osah.application.services.load_employee_workspace import load_employee_workspace
+from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
@@ -8,6 +13,8 @@ from osah.ui.qt.components.screen_states import EmptyStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.screens.employees.create_employee_dialog import CreateEmployeeDialog
+from osah.ui.qt.screens.employees.edit_employee_dialog import EditEmployeeDialog
 from osah.ui.qt.screens.employees.employee_details_pane import EmployeeDetailsPane
 from osah.ui.qt.screens.employees.employee_registry_table import EmployeeRegistryTable
 from osah.ui.qt.screens.employees.employees_filter_bar import EmployeesFilterBar
@@ -17,13 +24,17 @@ from osah.ui.qt.screens.employees.structure_tree_panel import StructureTreePanel
 class EmployeesScreen(QWidget):
     """Full Qt screen for employees module."""
 
+    module_navigation_requested = Signal(AppSection, str)
+
     def __init__(
         self,
+        database_path: Path,
         workspace: EmployeeWorkspace,
         initial_personnel_number: str | None = None,
         initial_problem_key: str | None = None,
     ) -> None:
         super().__init__()
+        self._database_path = database_path
         self._workspace = workspace
         self._initial_personnel_number = initial_personnel_number
         self._initial_problem_key = initial_problem_key
@@ -49,6 +60,7 @@ class EmployeesScreen(QWidget):
 
         self.structure_tree = StructureTreePanel(workspace)
         self.structure_tree.node_selected.connect(self._apply_tree_intent)
+        self.structure_tree.create_employee_requested.connect(self._open_create_employee_dialog)
         splitter.addWidget(self.structure_tree)
 
         self.registry_table = EmployeeRegistryTable()
@@ -56,6 +68,9 @@ class EmployeesScreen(QWidget):
         splitter.addWidget(ScrollableTableFrame(self.registry_table))
 
         self.details_pane = EmployeeDetailsPane()
+        self.details_pane.edit_requested.connect(self._open_edit_employee_dialog)
+        self.details_pane.archive_requested.connect(self._archive_employee)
+        self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
         splitter.addWidget(self.details_pane)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
@@ -120,6 +135,61 @@ class EmployeesScreen(QWidget):
 
         if self._initial_personnel_number:
             self.registry_table.select_employee(self._initial_personnel_number)
+
+    # ###### ДІАЛОГ СТВОРЕННЯ ПРАЦІВНИКА / CREATE EMPLOYEE DIALOG ######
+    def _open_create_employee_dialog(self) -> None:
+        """Відкриває модальне вікно додавання нового працівника.
+        Opens modal dialog for adding a new employee.
+        """
+
+        dialog = CreateEmployeeDialog(self._database_path, self._workspace, self)
+        dialog.employee_created.connect(self._reload_workspace_after_create)
+        dialog.exec()
+
+    # ###### ДІАЛОГ РЕДАГУВАННЯ / EDIT EMPLOYEE DIALOG ######
+    def _open_edit_employee_dialog(self, row: EmployeeWorkspaceRow) -> None:
+        """Відкриває модальне вікно редагування працівника."""
+
+        dialog = EditEmployeeDialog(self._database_path, self._workspace, row, self)
+        dialog.employee_updated.connect(self._reload_workspace_after_create)
+        dialog.exec()
+
+    # ###### АРХІВУВАННЯ ПРАЦІВНИКА / ARCHIVE EMPLOYEE ######
+    def _archive_employee(self, row: EmployeeWorkspaceRow) -> None:
+        """Переміщує працівника в архів з підтвердженням."""
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Підтвердження")
+        box.setText(f"Ви впевнені, що хочете перемістити працівника '{row.employee.full_name}' в архів?")
+        
+        yes_btn = box.addButton("Архівувати", QMessageBox.ButtonRole.AcceptRole)
+        yes_btn.setStyleSheet("color: #d32f2f; font-weight: bold; padding: 6px 16px; border: 1px solid #ffcdd2; background: #fff0f0; border-radius: 4px;")
+        
+        no_btn = box.addButton("Скасувати", QMessageBox.ButtonRole.RejectRole)
+        no_btn.setStyleSheet("padding: 6px 16px; font-weight: bold; background: #f1f3f5; border: 1px solid #dee2e6; border-radius: 4px; color: #495057;")
+        
+        box.setDefaultButton(no_btn)
+        
+        from osah.ui.qt.design.tokens import COLOR
+        box.setStyleSheet(f"QMessageBox {{ background: {COLOR['bg_card']}; }} QLabel {{ font-size: 14px; margin-bottom: 10px; }}")
+        
+        box.exec()
+        if box.clickedButton() == yes_btn:
+            archive_employee(self._database_path, row.employee.personnel_number)
+            self._reload_workspace_after_create("")
+
+    # ###### ОНОВЛЕННЯ ПІСЛЯ СТВОРЕННЯ / RELOAD AFTER CREATE ######
+    def _reload_workspace_after_create(self, personnel_number: str) -> None:
+        """Оновлює workspace після збереження нового працівника.
+        Reloads workspace after a new employee is saved.
+        """
+
+        self._workspace = load_employee_workspace(self._database_path)
+        self.filter_bar.set_workspace(self._workspace)
+        self.structure_tree.set_workspace(self._workspace)
+        self._apply_filters()
+        if personnel_number:
+            self.registry_table.select_employee(personnel_number)
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######

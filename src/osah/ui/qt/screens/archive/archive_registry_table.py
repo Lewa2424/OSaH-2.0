@@ -4,6 +4,20 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 from osah.domain.entities.archive_entry import ArchiveEntry
 
 
+_TYPE_MAP = {
+    "employee": "Працівник",
+    "work_permit": "Наряд-допуск",
+}
+
+_STATUS_MAP = {
+    "archived": "В архіві",
+    "inactive": "Неактивний",
+    "dismissed": "Звільнено",
+    "closed": "Закрито",
+    "canceled": "Скасовано",
+}
+
+
 class ArchiveRegistryTable(QTableWidget):
     """Archive registry table."""
 
@@ -29,10 +43,14 @@ class ArchiveRegistryTable(QTableWidget):
         self.setRowCount(0)
         for row_index, row in enumerate(rows):
             self.insertRow(row_index)
-            self.setItem(row_index, 0, QTableWidgetItem(row.entry_type.value))
+            
+            type_label = _TYPE_MAP.get(row.entry_type.value, row.entry_type.value)
+            status_label = _STATUS_MAP.get(row.status_label.lower(), row.status_label)
+            
+            self.setItem(row_index, 0, QTableWidgetItem(type_label))
             self.setItem(row_index, 1, QTableWidgetItem(row.title))
             self.setItem(row_index, 2, QTableWidgetItem(row.subtitle))
-            self.setItem(row_index, 3, QTableWidgetItem(row.status_label))
+            self.setItem(row_index, 3, QTableWidgetItem(status_label))
             self.setItem(row_index, 4, QTableWidgetItem(row.reason_text))
         self.resizeColumnsToContents()
 

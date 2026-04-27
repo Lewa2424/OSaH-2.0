@@ -64,6 +64,39 @@ class EmployeesFilterBar(QWidget):
         reset_button.clicked.connect(self.reset_filters)
         layout.addWidget(reset_button)
 
+    # ###### ОНОВЛЕННЯ WORKSPACE / UPDATE WORKSPACE ######
+    def set_workspace(self, workspace: EmployeeWorkspace) -> None:
+        """Оновлює списки фільтрів підрозділів і посад із нового workspace.
+        Updates department and position filter choices from a new workspace.
+        """
+
+        current_search = self.search_input.text()
+        current_department = self.department_filter.currentData() or ""
+        current_position = self.position_filter.currentData() or ""
+
+        self.department_filter.blockSignals(True)
+        self.position_filter.blockSignals(True)
+        self.department_filter.clear()
+        self.position_filter.clear()
+
+        self.department_filter.addItem("Усі підрозділи", "")
+        for department_name in sorted({row.department_name for row in workspace.rows}):
+            self.department_filter.addItem(department_name, department_name)
+
+        self.position_filter.addItem("Усі посади", "")
+        for position_name in sorted({row.position_name for row in workspace.rows}):
+            self.position_filter.addItem(position_name, position_name)
+
+        department_index = self.department_filter.findData(current_department)
+        self.department_filter.setCurrentIndex(department_index if department_index >= 0 else 0)
+
+        position_index = self.position_filter.findData(current_position)
+        self.position_filter.setCurrentIndex(position_index if position_index >= 0 else 0)
+
+        self.department_filter.blockSignals(False)
+        self.position_filter.blockSignals(False)
+        self.search_input.setText(current_search)
+
     # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def reset_filters(self) -> None:
         """Повертає всі фільтри до початкового стану.

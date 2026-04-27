@@ -25,9 +25,10 @@ def upsert_employee_row(connection: Connection, employee: Employee) -> None:
                 full_name,
                 position_name,
                 department_name,
-                employment_status
+                employment_status,
+                photo_path
             )
-            VALUES (?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?);
             """,
             (
                 employee.personnel_number,
@@ -35,6 +36,7 @@ def upsert_employee_row(connection: Connection, employee: Employee) -> None:
                 employee.position_name,
                 employee.department_name,
                 employee.employment_status,
+                employee.photo_path,
             ),
         )
         return
@@ -46,7 +48,8 @@ def upsert_employee_row(connection: Connection, employee: Employee) -> None:
             full_name = ?,
             position_name = ?,
             department_name = ?,
-            employment_status = ?
+            employment_status = ?,
+            photo_path = ?
         WHERE personnel_number = ?;
         """,
         (
@@ -54,6 +57,7 @@ def upsert_employee_row(connection: Connection, employee: Employee) -> None:
             employee.position_name,
             employee.department_name,
             employee.employment_status,
+            employee.photo_path,
             employee.personnel_number,
         ),
     )

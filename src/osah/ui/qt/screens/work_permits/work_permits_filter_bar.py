@@ -103,6 +103,15 @@ class WorkPermitsFilterBar(QWidget):
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
+    def set_employee_filter(self, personnel_number: str) -> None:
+        """Активує фільтр працівника з navigation intent.
+        Activates employee filter from navigation intent.
+        """
+
+        index = self.employee_filter.findData(personnel_number)
+        if index >= 0:
+            self.employee_filter.setCurrentIndex(index)
+
     # ###### ЗНАЧЕННЯ ФІЛЬТРІВ / FILTER VALUES ######
     def values(self) -> dict[str, str | bool]:
         """Повертає поточний стан фільтрів.

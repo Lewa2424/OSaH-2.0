@@ -16,6 +16,7 @@ def ensure_core_schema(connection: Connection) -> None:
             position_name TEXT NOT NULL,
             department_name TEXT NOT NULL,
             employment_status TEXT NOT NULL,
+            photo_path TEXT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -204,3 +205,18 @@ def _ensure_work_permit_cancel_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE work_permits ADD COLUMN canceled_at TEXT NULL;")
     if "cancel_reason_text" not in columns:
         connection.execute("ALTER TABLE work_permits ADD COLUMN cancel_reason_text TEXT NOT NULL DEFAULT '';")
+    _ensure_employee_photo_column(connection)
+
+
+# ###### МІГРАЦІЯ ПОЛЯ ФОТО ПРАЦІВНИКА / EMPLOYEE PHOTO COLUMN MIGRATION ######
+def _ensure_employee_photo_column(connection: Connection) -> None:
+    """Додає nullable-поле photo_path у employees для локальних баз попередніх версій.
+    Adds nullable photo_path column in employees for previous local databases.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(employees);").fetchall()
+    }
+    if "photo_path" not in columns:
+        connection.execute("ALTER TABLE employees ADD COLUMN photo_path TEXT NULL;")

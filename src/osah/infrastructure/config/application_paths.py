@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,9 +20,18 @@ class ApplicationPaths:
 def build_application_paths(project_root: Path | None = None) -> ApplicationPaths:
     """Будує всі основні шляхи зберігання для локального застосунку.
     Строит все основные пути хранения для локального приложения.
+    Підтримує запуск у вигляді exe-файлу (PyInstaller frozen mode).
     """
 
-    resolved_root = project_root or Path(__file__).resolve().parents[4]
+    if project_root is not None:
+        resolved_root = project_root
+    elif getattr(sys, "frozen", False):
+        # PyInstaller frozen: exe знаходиться у папці програми
+        resolved_root = Path(sys.executable).resolve().parent
+    else:
+        # Звичайний запуск із вихідного коду
+        resolved_root = Path(__file__).resolve().parents[4]
+
     data_directory = resolved_root / "data"
     log_directory = resolved_root / "logs"
     return ApplicationPaths(

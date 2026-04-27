@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from osah.domain.entities.employee import Employee
 from osah.application.services.load_employee_registry import load_employee_registry
 from osah.application.services.load_medical_registry import load_medical_registry
 from osah.application.services.load_ppe_registry import load_ppe_registry
@@ -23,7 +24,7 @@ def load_employee_workspace(database_path: Path) -> EmployeeWorkspace:
 
     rows = tuple(
         build_employee_workspace_row(
-            employee=employee,
+            employee=_resolve_employee_photo_path(database_path, employee),
             training_records=(
                 record for record in trainings if record.employee_personnel_number == employee.personnel_number
             ),
@@ -44,3 +45,20 @@ def load_employee_workspace(database_path: Path) -> EmployeeWorkspace:
     )
 
     return EmployeeWorkspace(enterprise_name="OSaH Demo Plant", rows=rows)
+
+
+def _resolve_employee_photo_path(database_path: Path, employee: Employee) -> Employee:
+    photo_path = employee.photo_path.strip() if employee.photo_path else ""
+    if photo_path:
+        resolved_photo_path = Path(photo_path)
+        if not resolved_photo_path.is_absolute():
+            resolved_photo_path = database_path.parent / photo_path
+        return employee.__class__(
+            personnel_number=employee.personnel_number,
+            full_name=employee.full_name,
+            position_name=employee.position_name,
+            department_name=employee.department_name,
+            employment_status=employee.employment_status,
+            photo_path=str(resolved_photo_path),
+        )
+    return employee

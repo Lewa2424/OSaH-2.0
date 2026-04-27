@@ -60,7 +60,7 @@ def build_employee_workspace_row(
         department_name=employee.department_name,
         site_name=_infer_site_name(employee.department_name),
         position_name=employee.position_name,
-        photo_path=None,
+        photo_path=employee.photo_path,
         training_records=training_records_tuple,
         ppe_records=ppe_records_tuple,
         medical_records=medical_records_tuple,

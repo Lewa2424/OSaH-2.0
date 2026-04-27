@@ -6,9 +6,11 @@ from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, 
 from PySide6.QtCore import QObject
 
 from osah.application.services.create_news_source import create_news_source
+from osah.application.services.delete_news_source import delete_news_source
 from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
 from osah.application.services.save_mail_settings import save_mail_settings
+from osah.application.services.save_news_refresh_time import save_news_refresh_time
 from osah.application.services.save_system_behavior_settings import save_system_behavior_settings
 from osah.application.services.toggle_news_source_activity import toggle_news_source_activity
 from osah.domain.entities.access_role import AccessRole
@@ -27,6 +29,7 @@ from osah.ui.qt.screens.settings.security_settings_panel import SecuritySettings
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 from osah.ui.qt.workers.backup_create_worker import BackupCreateWorker
 from osah.ui.qt.workers.import_worker import ImportWorker
+from osah.ui.qt.workers.news_refresh_worker import NewsRefreshWorker
 from osah.ui.qt.workers.restore_backup_worker import RestoreBackupWorker
 from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
 
@@ -97,9 +100,16 @@ class SettingsScreen(QWidget):
         mail_panel.save_requested.connect(self._save_mail_settings)
         self._content_layout.addWidget(mail_panel)
 
-        sources_panel = NewsSourcesSettingsPanel(self._workspace.news_sources, self._read_only)
+        sources_panel = NewsSourcesSettingsPanel(
+            self._workspace.news_sources,
+            self._read_only,
+            news_refresh_time=self._workspace.news_refresh_time,
+        )
         sources_panel.source_created.connect(self._create_news_source)
         sources_panel.source_toggled.connect(self._toggle_source_activity)
+        sources_panel.sources_deleted.connect(self._delete_news_sources)
+        sources_panel.refresh_now_requested.connect(self._start_news_refresh)
+        sources_panel.refresh_time_saved.connect(self._save_news_refresh_schedule)
         self._content_layout.addWidget(sources_panel)
 
         backup_panel = BackupSettingsPanel(
@@ -212,6 +222,46 @@ class SettingsScreen(QWidget):
             self._rebuild_sections()
             return
         self._feedback.show_success("Стан джерела оновлено.")
+        self._rebuild_sections()
+
+    # ###### ВИДАЛЕННЯ ДЖЕРЕЛ НОВИН / DELETE NEWS SOURCES ######
+    def _delete_news_sources(self, source_ids: list) -> None:
+        """Deletes selected trusted sources through application service."""
+
+        if self._read_only:
+            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            return
+        errors: list[str] = []
+        for source_id in source_ids:
+            try:
+                delete_news_source(self._database_path, source_id)
+            except Exception as error:  # noqa: BLE001
+                errors.append(str(error))
+        if errors:
+            self._feedback.show_error(f"Помилки при видаленні: {'; '.join(errors)}")
+        else:
+            self._feedback.show_success(f"Видалено джерел: {len(source_ids)}.")
+        self._rebuild_sections()
+
+    # ###### НЕГАЙНА ПЕРЕВІРКА НОВИН / START NEWS REFRESH NOW ######
+    def _start_news_refresh(self) -> None:
+        """Starts immediate news refresh in background."""
+
+        self._start_task("news.refresh", NewsRefreshWorker(self._database_path))
+
+    # ###### ЗБЕРЕЖЕННЯ РОЗКЛАДУ ПЕРЕВІРКИ / SAVE NEWS REFRESH SCHEDULE ######
+    def _save_news_refresh_schedule(self, refresh_time: str) -> None:
+        """Saves daily news refresh time through application service."""
+
+        if self._read_only:
+            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            return
+        try:
+            save_news_refresh_time(self._database_path, refresh_time)
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося зберегти розклад: {error}")
+            return
+        self._feedback.show_success(f"Розклад перевірки збережено: щодня о {refresh_time}.")
         self._rebuild_sections()
 
     # ###### ЗБЕРЕЖЕННЯ НАЛАШТУВАНЬ БЕКАПУ / SAVE BACKUP PREFERENCES ######
@@ -383,6 +433,12 @@ class SettingsScreen(QWidget):
                 self._feedback.show_success(f"Партію імпорту #{payload.get('batch_id')} застосовано.")
             else:
                 self._feedback.show_success("Партію імпорту застосовано.")
+            self._rebuild_sections()
+            return
+
+        if self._active_task_name == "news.refresh":
+            count = payload if isinstance(payload, int) else 0
+            self._feedback.show_success(f"Перевірку завершено. Знайдено нових матеріалів: {count}.")
             self._rebuild_sections()
             return
 

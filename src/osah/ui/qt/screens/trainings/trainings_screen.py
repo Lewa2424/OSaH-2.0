@@ -26,7 +26,13 @@ class TrainingsScreen(QWidget):
 
     employee_open_requested = Signal(str)
 
-    def __init__(self, database_path: Path, workspace: TrainingWorkspace, initial_status: str | None = None) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        workspace: TrainingWorkspace,
+        initial_status: str | None = None,
+        initial_personnel_number: str | None = None,
+    ) -> None:
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
@@ -86,6 +92,8 @@ class TrainingsScreen(QWidget):
 
         if initial_status:
             self._apply_initial_status(initial_status)
+        if initial_personnel_number:
+            self.filter_bar.set_employee_filter(initial_personnel_number)
         self._apply_filters()
 
     # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######

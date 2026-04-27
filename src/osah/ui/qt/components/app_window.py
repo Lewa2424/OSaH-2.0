@@ -2,11 +2,12 @@
 Main Qt application shell window.
 """
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMainWindow, QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.application_context import ApplicationContext
+from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
 from osah.application.services.visual.load_visual_alert_state import load_visual_alert_state
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
@@ -20,6 +21,8 @@ from osah.ui.qt.routing.map_notification_source_to_problem_key import map_notifi
 from osah.ui.qt.routing.qt_context import QtContext
 from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
 from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
+from osah.ui.qt.workers.news_refresh_worker import NewsRefreshWorker
+from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
 
 
 class AppWindow(QMainWindow):
@@ -74,6 +77,8 @@ class AppWindow(QMainWindow):
 
         self._install_navigation_shortcuts()
         self._navigate_to(AppSection.DASHBOARD, record_history=False)
+        self._news_task_controller = WorkerTaskController()
+        self._schedule_news_refresh()
 
     def _install_navigation_shortcuts(self) -> None:
         """###### ГАРЯЧІ КЛАВІШІ НАВІГАЦІЇ / NAVIGATION SHORTCUTS ######"""
@@ -137,6 +142,8 @@ class AppWindow(QMainWindow):
             screen.medical_attention_requested.connect(self._open_medical_attention)
         if hasattr(screen, "work_permits_attention_requested"):
             screen.work_permits_attention_requested.connect(self._open_work_permits_attention)
+        if hasattr(screen, "module_navigation_requested"):
+            screen.module_navigation_requested.connect(self._open_module_for_employee)
         if hasattr(screen, "employee_open_requested"):
             screen.employee_open_requested.connect(
                 lambda personnel_number, source=section: self._open_employee_attention(
@@ -204,6 +211,47 @@ class AppWindow(QMainWindow):
             work_permit_status_filter=status_filter,
         )
         self._navigate_to(AppSection.WORK_PERMITS, intent=intent)
+
+    def _open_module_for_employee(self, target_section: AppSection, personnel_number: str) -> None:
+        """###### ПЕРЕХІД ДО МОДУЛЯ ДЛЯ ПРАЦІВНИКА / OPEN MODULE FOR EMPLOYEE ######"""
+
+        intent = QtNavigationIntent(
+            target_section=target_section,
+            employee_personnel_number=personnel_number,
+        )
+        self._navigate_to(target_section, intent=intent)
+
+    # ###### ПЛАНУВАЛЬНИК НОВИН / NEWS REFRESH SCHEDULER ######
+    def _schedule_news_refresh(self) -> None:
+        """Schedules daily automatic news refresh based on saved settings."""
+
+        from datetime import datetime, timedelta
+
+        try:
+            workspace = load_system_settings_workspace(self._app_context.database_path)
+            refresh_time_str = workspace.news_refresh_time or "09:00"
+            hour, minute = (int(p) for p in refresh_time_str.split(":"))
+        except Exception:  # noqa: BLE001
+            hour, minute = 9, 0
+
+        now = datetime.now()
+        next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if next_run <= now:
+            next_run += timedelta(days=1)
+
+        delay_ms = int((next_run - now).total_seconds() * 1000)
+
+        self._news_timer = QTimer(self)
+        self._news_timer.setSingleShot(True)
+        self._news_timer.timeout.connect(self._run_scheduled_news_refresh)
+        self._news_timer.start(delay_ms)
+
+    # ###### ЗАПУСК ЗАПЛАНОВАНОЇ ПЕРЕВІРКИ / RUN SCHEDULED NEWS REFRESH ######
+    def _run_scheduled_news_refresh(self) -> None:
+        """Runs the scheduled news refresh and re-schedules the next one."""
+
+        self._news_task_controller.start_worker(NewsRefreshWorker(self._app_context.database_path))
+        self._schedule_news_refresh()
 
 
 def _notification_source_for_section(section: AppSection) -> str:

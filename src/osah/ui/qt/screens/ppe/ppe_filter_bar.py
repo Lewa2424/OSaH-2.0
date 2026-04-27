@@ -114,6 +114,15 @@ class PpeFilterBar(QWidget):
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
+    def set_employee_filter(self, personnel_number: str) -> None:
+        """Активує фільтр працівника з navigation intent.
+        Activates employee filter from navigation intent.
+        """
+
+        index = self.employee_filter.findData(personnel_number)
+        if index >= 0:
+            self.employee_filter.setCurrentIndex(index)
+
     def values(self) -> dict[str, str]:
         """Повертає поточний стан фільтрів.
         Returns the current filter state.

@@ -12,3 +12,4 @@ class Employee:
     position_name: str
     department_name: str
     employment_status: str
+    photo_path: str | None = None
