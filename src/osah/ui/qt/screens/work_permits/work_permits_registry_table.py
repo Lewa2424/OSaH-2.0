@@ -26,7 +26,7 @@ class WorkPermitsRegistryTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
-        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setStretchLastSection(False)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     def set_rows(self, rows: tuple[WorkPermitWorkspaceRow, ...]) -> None:
@@ -61,6 +61,7 @@ class WorkPermitsRegistryTable(QTableWidget):
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 5)
+        ensure_table_column_width(self, 8, max_width=520)
 
     def select_first(self) -> None:
         """Виділяє перший рядок, якщо таблиця не порожня.
@@ -77,6 +78,7 @@ class WorkPermitsRegistryTable(QTableWidget):
 
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row_index)
+        item.setToolTip(text)
         if row.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID} or row.has_conflicts:
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status == WorkPermitStatus.WARNING:

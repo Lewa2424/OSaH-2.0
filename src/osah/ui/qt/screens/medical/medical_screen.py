@@ -63,7 +63,7 @@ class MedicalScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self.registry_table = MedicalRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        splitter.addWidget(ScrollableTableFrame(self.registry_table))
+        splitter.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True))
 
         self.details_pane = MedicalRecordDetailsPane(database_path, workspace.employees)
         self.details_pane.editor.saved.connect(self._reload_workspace)

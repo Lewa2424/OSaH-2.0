@@ -17,7 +17,8 @@ def list_employees(connection: Connection) -> tuple[Employee, ...]:
             position_name,
             department_name,
             employment_status,
-            photo_path
+            photo_path,
+            created_at
         FROM employees
         ORDER BY full_name ASC;
         """
@@ -30,6 +31,7 @@ def list_employees(connection: Connection) -> tuple[Employee, ...]:
             department_name=row["department_name"],
             employment_status=row["employment_status"],
             photo_path=row["photo_path"],
+            created_at_text=row["created_at"],
         )
         for row in rows
     )

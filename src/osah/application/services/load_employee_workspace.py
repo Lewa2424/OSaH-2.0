@@ -60,5 +60,6 @@ def _resolve_employee_photo_path(database_path: Path, employee: Employee) -> Emp
             department_name=employee.department_name,
             employment_status=employee.employment_status,
             photo_path=str(resolved_photo_path),
+            created_at_text=employee.created_at_text,
         )
     return employee

@@ -63,7 +63,7 @@ class WorkPermitsScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self.registry_table = WorkPermitsRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        splitter.addWidget(ScrollableTableFrame(self.registry_table))
+        splitter.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True))
         self.details_pane = WorkPermitDetailsPane(database_path, workspace.employees)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)

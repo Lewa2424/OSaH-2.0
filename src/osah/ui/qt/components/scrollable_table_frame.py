@@ -17,10 +17,11 @@ _ICON_DIR = Path(__file__).resolve().parents[1] / "assets" / "icons"
 class ScrollableTableFrame(QWidget):
     """Wrapper that adds a top scrollbar and column-step buttons to a table."""
 
-    def __init__(self, table: QTableWidget) -> None:
+    def __init__(self, table: QTableWidget, snap_to_columns: bool = False) -> None:
         super().__init__()
         self._table = table
         self._is_syncing = False
+        self._snap_to_columns = snap_to_columns
 
         self._table.setHorizontalScrollMode(QTableWidget.ScrollMode.ScrollPerPixel)
         self._style_native_scrollbar()
@@ -140,6 +141,9 @@ class ScrollableTableFrame(QWidget):
         Moves the table left by roughly one column width.
         """
 
+        if self._snap_to_columns:
+            self._scroll_to_adjacent_column(-1)
+            return
         current = self._table.horizontalScrollBar().value()
         self._table.horizontalScrollBar().setValue(max(0, current - self._current_column_step()))
 
@@ -150,6 +154,9 @@ class ScrollableTableFrame(QWidget):
         Moves the table right by roughly one column width.
         """
 
+        if self._snap_to_columns:
+            self._scroll_to_adjacent_column(1)
+            return
         scrollbar = self._table.horizontalScrollBar()
         scrollbar.setValue(min(scrollbar.maximum(), scrollbar.value() + self._current_column_step()))
 
@@ -173,6 +180,48 @@ class ScrollableTableFrame(QWidget):
             width_sum += column_width
 
         return fallback_width
+
+    def _scroll_to_adjacent_column(self, direction: int) -> None:
+        """###### ПРОКРУТКА ДО СУСІДНЬОЇ КОЛОНКИ / SCROLL TO ADJACENT COLUMN ######
+
+        Зсуває таблицю до початку попередньої або наступної видимої колонки.
+        Moves the table to the start of the previous or next visible column.
+        """
+
+        header = self._table.horizontalHeader()
+        visible_columns = [index for index in range(self._table.columnCount()) if not self._table.isColumnHidden(index)]
+        if not visible_columns:
+            return
+
+        current_column = self._first_visible_column_index()
+        if current_column not in visible_columns:
+            current_column = visible_columns[0]
+        current_position = visible_columns.index(current_column)
+        target_position = max(0, min(len(visible_columns) - 1, current_position + direction))
+        target_column = visible_columns[target_position]
+        self._table.horizontalScrollBar().setValue(header.sectionPosition(target_column))
+
+    def _first_visible_column_index(self) -> int:
+        """###### ПЕРША ВИДИМА КОЛОНКА / FIRST VISIBLE COLUMN ######
+
+        Повертає індекс першої колонки, яка хоча б частково видима у viewport таблиці.
+        Returns the index of the first column at least partially visible in the table viewport.
+        """
+
+        header = self._table.horizontalHeader()
+        viewport_width = self._table.viewport().width()
+        fallback_column = 0
+
+        for column_index in range(self._table.columnCount()):
+            if self._table.isColumnHidden(column_index):
+                continue
+            fallback_column = column_index
+            position = header.sectionViewportPosition(column_index)
+            width = self._table.columnWidth(column_index)
+            if position + width > 0 and position < viewport_width:
+                return column_index
+
+        return fallback_column
 
     def _update_button_state(self) -> None:
         """###### СТАН КНОПОК / BUTTON STATE ######

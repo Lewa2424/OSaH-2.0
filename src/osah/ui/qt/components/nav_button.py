@@ -4,7 +4,7 @@ NavButton — кнопка навігаційного меню.
 NavButton — navigation menu button with full state support.
 """
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.notification_level import NotificationLevel
@@ -37,13 +37,6 @@ class NavButton(QWidget):
         self._btn.clicked.connect(lambda: self.clicked.emit(self._section))
         layout.addWidget(self._btn)
 
-        # Значок-індикатор (кружечок) для warning/critical
-        self._badge = QLabel()
-        self._badge.setFixedSize(8, 8)
-        self._badge.hide()
-        layout.addWidget(self._badge)
-        layout.setAlignment(self._badge, Qt.AlignmentFlag.AlignVCenter)
-
         self._apply_alert_style()
 
     # ──────────────────────────────────────────────────────────────
@@ -66,21 +59,10 @@ class NavButton(QWidget):
     def _apply_alert_style(self) -> None:
         if self._alert_level == NotificationLevel.CRITICAL:
             self._btn.setProperty("alert", "critical")
-            self._badge.setStyleSheet(self._badge_style(NotificationLevel.CRITICAL))
-            if not self._active:
-                self._badge.show()
-            else:
-                self._badge.hide()
         elif self._alert_level == NotificationLevel.WARNING:
             self._btn.setProperty("alert", "warning")
-            self._badge.setStyleSheet(self._badge_style(NotificationLevel.WARNING))
-            if not self._active:
-                self._badge.show()
-            else:
-                self._badge.hide()
         else:
             self._btn.setProperty("alert", "")
-            self._badge.hide()
             
         self._btn.style().unpolish(self._btn)
         self._btn.style().polish(self._btn)
@@ -90,8 +72,3 @@ class NavButton(QWidget):
         if self._alert_level != alert_level:
             self._alert_level = alert_level
             self._apply_alert_style()
-
-    @staticmethod
-    def _badge_style(level: NotificationLevel) -> str:
-        c = COLOR["critical"] if level == NotificationLevel.CRITICAL else COLOR["warning"]
-        return f"background: {c}; border-radius: 4px;"

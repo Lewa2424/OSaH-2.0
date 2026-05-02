@@ -1,7 +1,12 @@
 from PySide6.QtWidgets import QTableWidget
 
 
-def ensure_table_column_width(table: QTableWidget, column_index: int, extra_padding: int = 28) -> None:
+def ensure_table_column_width(
+    table: QTableWidget,
+    column_index: int,
+    extra_padding: int = 28,
+    max_width: int | None = None,
+) -> None:
     """###### ШИРИНА КОЛОНКИ ТАБЛИЦІ / ENSURE TABLE COLUMN WIDTH ######
 
     Гарантує, що колонка таблиці достатньо широка для заголовка, тексту або cell-widget.
@@ -24,4 +29,7 @@ def ensure_table_column_width(table: QTableWidget, column_index: int, extra_padd
             item_width = table.fontMetrics().horizontalAdvance(item.text()) + extra_padding
             content_width = max(content_width, item_width)
 
-    table.setColumnWidth(column_index, max(header_width, content_width))
+    resolved_width = max(header_width, content_width)
+    if max_width is not None:
+        resolved_width = min(resolved_width, max_width)
+    table.setColumnWidth(column_index, resolved_width)

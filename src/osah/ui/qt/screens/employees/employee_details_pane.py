@@ -69,8 +69,6 @@ class EmployeeDetailsPane(QScrollArea):
         tabs.addTab(_stub_tab("Історія", "Історія буде прив'язана до audit-журналу."), "Історія")
         layout.addWidget(tabs)
 
-        layout.addStretch()
-
         actions_layout = QHBoxLayout()
         
         edit_button = QPushButton("Редагувати картку")

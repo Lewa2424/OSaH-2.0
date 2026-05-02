@@ -15,6 +15,8 @@ a = Analysis(
     datas=[
         # Включаємо теми та шрифти (якщо є)
         (str(src_root / "osah" / "ui" / "qt" / "design"), "osah/ui/qt/design"),
+        # Включаємо іконки та інші статичні UI-ресурси
+        (str(src_root / "osah" / "ui" / "qt" / "assets"), "osah/ui/qt/assets"),
     ],
     hiddenimports=[
         "osah",

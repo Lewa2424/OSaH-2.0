@@ -51,7 +51,7 @@ class ArchiveScreen(QWidget):
         splitter.setChildrenCollapsible(False)
         self._table = ArchiveRegistryTable()
         self._table.row_selected.connect(self._show_entry)
-        splitter.addWidget(ScrollableTableFrame(self._table))
+        splitter.addWidget(ScrollableTableFrame(self._table, snap_to_columns=True))
         self._details = ArchiveDetailsPane(allow_reactivation=access_role == AccessRole.INSPECTOR)
         self._details.reactivate_requested.connect(self._reactivate_entry)
         splitter.addWidget(self._details)

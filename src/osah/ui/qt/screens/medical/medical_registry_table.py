@@ -26,7 +26,7 @@ class MedicalRegistryTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
-        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setStretchLastSection(False)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     def set_rows(self, rows: tuple[MedicalWorkspaceRow, ...]) -> None:
@@ -54,6 +54,7 @@ class MedicalRegistryTable(QTableWidget):
             self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 6)
+        ensure_table_column_width(self, 7, max_width=500)
 
     def select_first(self) -> None:
         """Вибирає перший рядок.
@@ -70,6 +71,7 @@ class MedicalRegistryTable(QTableWidget):
 
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row_index)
+        item.setToolTip(text)
         if row.status in {MedicalStatus.EXPIRED, MedicalStatus.NOT_FIT}:
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status == MedicalStatus.WARNING:

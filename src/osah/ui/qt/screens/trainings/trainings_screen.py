@@ -72,7 +72,7 @@ class TrainingsScreen(QWidget):
         center_layout.addWidget(self.summary_panel)
         self.registry_table = TrainingsRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
-        center_layout.addWidget(ScrollableTableFrame(self.registry_table), stretch=1)
+        center_layout.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True), stretch=1)
         splitter.addWidget(center)
 
         self.details_pane = TrainingRecordDetailsPane(database_path, workspace.employees)

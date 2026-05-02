@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QMessageBox, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.archive_employee import archive_employee
 from osah.application.services.load_employee_workspace import load_employee_workspace
@@ -9,6 +9,7 @@ from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
+from osah.domain.services.build_employee_topbar_summary import build_employee_topbar_summary
 from osah.ui.qt.components.screen_states import EmptyStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
@@ -60,18 +61,28 @@ class EmployeesScreen(QWidget):
 
         self.structure_tree = StructureTreePanel(workspace)
         self.structure_tree.node_selected.connect(self._apply_tree_intent)
-        self.structure_tree.create_employee_requested.connect(self._open_create_employee_dialog)
         splitter.addWidget(self.structure_tree)
 
         self.registry_table = EmployeeRegistryTable()
         self.registry_table.employee_selected.connect(self._show_employee)
         splitter.addWidget(ScrollableTableFrame(self.registry_table))
 
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(SPACING["sm"], 0, 0, 0)
+        right_layout.setSpacing(SPACING["sm"])
+
+        create_button = QPushButton("Додати працівника")
+        create_button.setProperty("variant", "accent")
+        create_button.clicked.connect(self._open_create_employee_dialog)
+        right_layout.addWidget(create_button)
+
         self.details_pane = EmployeeDetailsPane()
         self.details_pane.edit_requested.connect(self._open_edit_employee_dialog)
         self.details_pane.archive_requested.connect(self._archive_employee)
         self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
-        splitter.addWidget(self.details_pane)
+        right_layout.addWidget(self.details_pane, stretch=1)
+        splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
@@ -91,6 +102,12 @@ class EmployeesScreen(QWidget):
         self._initial_problem_key = problem_key
         self.filter_bar.reset_filters()
         self.registry_table.select_employee(personnel_number)
+
+    # ###### KPI ДЛЯ ВЕРХНЬОЇ ПАНЕЛІ / TOPBAR KPI ######
+    def topbar_summary(self):
+        """Returns compact employee KPI summary for the shell topbar."""
+
+        return build_employee_topbar_summary(self._workspace)
 
     # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:

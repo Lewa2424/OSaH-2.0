@@ -13,3 +13,4 @@ class Employee:
     department_name: str
     employment_status: str
     photo_path: str | None = None
+    created_at_text: str = ""

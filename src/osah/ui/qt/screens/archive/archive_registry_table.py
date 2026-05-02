@@ -1,7 +1,8 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 from osah.domain.entities.archive_entry import ArchiveEntry
+from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
 
 
 _TYPE_MAP = {
@@ -32,7 +33,7 @@ class ArchiveRegistryTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
-        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setStretchLastSection(False)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     # ###### ЗАПОВНЕННЯ ТАБЛИЦІ АРХІВУ / SET ARCHIVE ROWS ######
@@ -47,12 +48,13 @@ class ArchiveRegistryTable(QTableWidget):
             type_label = _TYPE_MAP.get(row.entry_type.value, row.entry_type.value)
             status_label = _STATUS_MAP.get(row.status_label.lower(), row.status_label)
             
-            self.setItem(row_index, 0, QTableWidgetItem(type_label))
-            self.setItem(row_index, 1, QTableWidgetItem(row.title))
-            self.setItem(row_index, 2, QTableWidgetItem(row.subtitle))
-            self.setItem(row_index, 3, QTableWidgetItem(status_label))
-            self.setItem(row_index, 4, QTableWidgetItem(row.reason_text))
+            for column_index, text in enumerate((type_label, row.title, row.subtitle, status_label, row.reason_text)):
+                item = QTableWidgetItem(text)
+                item.setData(Qt.ItemDataRole.UserRole, row_index)
+                item.setToolTip(text)
+                self.setItem(row_index, column_index, item)
         self.resizeColumnsToContents()
+        ensure_table_column_width(self, 4, max_width=500)
 
     # ###### ВИДІЛЕННЯ ПЕРШОГО РЯДКА / SELECT FIRST ROW ######
     def select_first(self) -> None:
