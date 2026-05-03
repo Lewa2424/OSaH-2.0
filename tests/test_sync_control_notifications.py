@@ -11,14 +11,13 @@ from osah.infrastructure.logging.shutdown_logging import shut_down_logging
 
 
 class SyncControlNotificationsTests(unittest.TestCase):
-    """Тести синхронізації контрольних сповіщень.
-    Тесты синхронизации контрольных уведомлений.
+    """Тесты синхронизации контрольных уведомлений.
+    Tests for control-notification synchronization.
     """
 
-    # ###### ПЕРЕВІРКА ЗБЕРЕЖЕННЯ СПОВІЩЕНЬ / ПРОВЕРКА СОХРАНЕНИЯ УВЕДОМЛЕНИЙ ######
     def test_sync_control_notifications_persists_active_notifications(self) -> None:
-        """Перевіряє, що синхронізація записує активні сповіщення в БД.
-        Проверяет, что синхронизация записывает активные уведомления в БД.
+        """Проверяет, что синхронизация записывает активные уведомления в БД.
+        Checks that synchronization writes active notifications into the database.
         """
 
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -45,7 +44,7 @@ class SyncControlNotificationsTests(unittest.TestCase):
 
             connection.close()
             self.assertTrue(any(notification.title_text == "Не заповнений підрозділ" for notification in notifications))
-            self.assertTrue(any(notification.title_text == "Відсутні записи інструктажів" for notification in notifications))
+            self.assertTrue(any(notification.title_text == "Відсутній первинний інструктаж" for notification in notifications))
             shut_down_logging()
 
 

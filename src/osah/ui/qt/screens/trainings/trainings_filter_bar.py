@@ -23,49 +23,56 @@ class TrainingsFilterBar(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(SPACING["xs"])
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(SPACING["sm"])
-        outer.addLayout(layout)
+        first_row = QHBoxLayout()
+        first_row.setContentsMargins(0, 0, 0, 0)
+        first_row.setSpacing(SPACING["sm"])
+        outer.addLayout(first_row)
 
         self.mode_filter = QComboBox()
         self.mode_filter.addItem("По записах", TrainingWorkspaceMode.BY_RECORDS.value)
         self.mode_filter.addItem("По працівниках", TrainingWorkspaceMode.BY_EMPLOYEES.value)
         self.mode_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.mode_filter)
+        first_row.addWidget(self.mode_filter)
 
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Пошук: ПІБ, табельний, підрозділ, посада, відповідальний")
-        self.search_input.textChanged.connect(lambda _text: self.filters_changed.emit())
-        layout.addWidget(self.search_input, stretch=3)
+        self.employee_filter = QComboBox()
+        self.employee_filter.addItem("Усі працівники", "")
+        for employee in workspace.employees:
+            self.employee_filter.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
+        self.employee_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
+        first_row.addWidget(self.employee_filter, stretch=2)
 
         self.type_filter = QComboBox()
         self.type_filter.addItem("Усі типи", "")
         for training_type in TrainingType:
             self.type_filter.addItem(format_training_type_label(training_type), training_type.value)
         self.type_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.type_filter)
+        first_row.addWidget(self.type_filter)
 
         self.department_filter = QComboBox()
         self.department_filter.addItem("Усі підрозділи", "")
         for department in sorted({row.department_name for row in workspace.rows}):
             self.department_filter.addItem(department, department)
         self.department_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.department_filter)
+        first_row.addWidget(self.department_filter)
 
         self.site_filter = QComboBox()
         self.site_filter.addItem("Усі участки", "")
         for site in sorted({row.site_name for row in workspace.rows}):
             self.site_filter.addItem(site, site)
         self.site_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.site_filter)
+        first_row.addWidget(self.site_filter)
+
+        second_row = QHBoxLayout()
+        second_row.setContentsMargins(0, 0, 0, 0)
+        second_row.setSpacing(SPACING["sm"])
+        outer.addLayout(second_row)
 
         self.position_filter = QComboBox()
         self.position_filter.addItem("Усі посади", "")
         for position in sorted({row.position_name for row in workspace.rows}):
             self.position_filter.addItem(position, position)
         self.position_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.position_filter)
+        second_row.addWidget(self.position_filter)
 
         self.status_filter = QComboBox()
         self.status_filter.addItem("Усі статуси", "")
@@ -74,44 +81,43 @@ class TrainingsFilterBar(QWidget):
         self.status_filter.addItem("Критично", TrainingRegistryFilter.OVERDUE.value)
         self.status_filter.addItem("Відсутній", TrainingRegistryFilter.MISSING.value)
         self.status_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.status_filter)
+        second_row.addWidget(self.status_filter)
 
         self.conducted_by_filter = QComboBox()
         self.conducted_by_filter.addItem("Усі відповідальні", "")
         for conducted_by in sorted({row.conducted_by for row in workspace.rows if row.conducted_by != "-"}):
             self.conducted_by_filter.addItem(conducted_by, conducted_by)
         self.conducted_by_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        layout.addWidget(self.conducted_by_filter)
+        second_row.addWidget(self.conducted_by_filter)
 
         reset_button = QPushButton("Скинути")
         reset_button.setProperty("variant", "secondary")
         reset_button.clicked.connect(self.reset_filters)
-        layout.addWidget(reset_button)
-
-        second_row = QHBoxLayout()
-        second_row.setContentsMargins(0, 0, 0, 0)
-        second_row.setSpacing(SPACING["sm"])
-        outer.addLayout(second_row)
-
-        self.employee_filter = QComboBox()
-        self.employee_filter.addItem("Усі працівники", "")
-        for employee in workspace.employees:
-            self.employee_filter.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
-        self.employee_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
-        second_row.addWidget(self.employee_filter, stretch=2)
-
-        self.date_from_input = QLineEdit()
-        self.date_from_input.setPlaceholderText("Період з: ДД.ММ.ГГГГ")
-        self.date_from_input.textChanged.connect(lambda _text: self.filters_changed.emit())
-        second_row.addWidget(self.date_from_input)
-
-        self.date_to_input = QLineEdit()
-        self.date_to_input.setPlaceholderText("Період до: ДД.ММ.ГГГГ")
-        self.date_to_input.textChanged.connect(lambda _text: self.filters_changed.emit())
-        second_row.addWidget(self.date_to_input)
+        second_row.addWidget(reset_button)
 
         self.active_filters_label = QLabel("Фільтри не активні")
         second_row.addWidget(self.active_filters_label)
+        second_row.addStretch(1)
+
+        third_row = QHBoxLayout()
+        third_row.setContentsMargins(0, 0, 0, 0)
+        third_row.setSpacing(SPACING["sm"])
+        outer.addLayout(third_row)
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Пошук: ПІБ, табельний, підрозділ, посада, відповідальний")
+        self.search_input.textChanged.connect(lambda _text: self.filters_changed.emit())
+        third_row.addWidget(self.search_input, stretch=3)
+
+        self.date_from_input = QLineEdit()
+        self.date_from_input.setPlaceholderText("Період з: ДД.ММ.РРРР")
+        self.date_from_input.textChanged.connect(lambda _text: self.filters_changed.emit())
+        third_row.addWidget(self.date_from_input)
+
+        self.date_to_input = QLineEdit()
+        self.date_to_input.setPlaceholderText("Період до: ДД.ММ.РРРР")
+        self.date_to_input.textChanged.connect(lambda _text: self.filters_changed.emit())
+        third_row.addWidget(self.date_to_input)
 
     def reset_filters(self) -> None:
         """Скидає всі фільтри модуля інструктажів.

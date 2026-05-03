@@ -38,7 +38,8 @@ class WorkerTaskController(QObject):
         worker.success.connect(self.success.emit)  # type: ignore[attr-defined]
         worker.error.connect(self.error.emit)  # type: ignore[attr-defined]
         worker.finished.connect(thread.quit)  # type: ignore[attr-defined]
-        worker.finished.connect(self._cleanup_after_finish)  # type: ignore[attr-defined]
+        worker.finished.connect(worker.deleteLater)  # type: ignore[attr-defined]
+        thread.finished.connect(self._cleanup_after_finish)
         thread.finished.connect(thread.deleteLater)
 
         thread.start()
@@ -47,7 +48,7 @@ class WorkerTaskController(QObject):
 
     # ###### ЗАВЕРШЕННЯ І ПРИБИРАННЯ / FINISH AND CLEANUP ######
     def _cleanup_after_finish(self) -> None:
-        """Clears worker/thread references after task finish."""
+        """Clears worker/thread references after the thread has fully stopped."""
 
         self._worker = None
         self._thread = None

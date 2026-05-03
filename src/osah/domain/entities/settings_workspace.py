@@ -17,6 +17,7 @@ class SettingsWorkspace:
     backup_max_copies: int
     backup_auto_enabled: bool
     ppe_warning_days: int
+    training_warning_days: int
     news_refresh_time: str
     app_version: str
     database_path: str

@@ -151,6 +151,10 @@ class SettingsScreen(QWidget):
         self._ppe_warning_days.setPlaceholderText("Поріг попередження ЗІЗ (днів)")
         self._ppe_warning_days.setReadOnly(self._read_only)
         row.addWidget(self._ppe_warning_days)
+        self._training_warning_days = QLineEdit(str(self._workspace.training_warning_days))
+        self._training_warning_days.setPlaceholderText("РџРѕСЂС–Рі РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏ С–РЅСЃС‚СЂСѓРєС‚Р°Р¶С–РІ (РґРЅС–РІ)")
+        self._training_warning_days.setReadOnly(self._read_only)
+        row.addWidget(self._training_warning_days)
         save_button = QPushButton("Зберегти пороги")
         save_button.setProperty("variant", "secondary")
         save_button.setEnabled(not self._read_only)
@@ -283,9 +287,13 @@ class SettingsScreen(QWidget):
             return
         try:
             ppe_warning_days = int(self._ppe_warning_days.text() or str(self._workspace.ppe_warning_days))
+            training_warning_days = int(
+                self._training_warning_days.text() or str(self._workspace.training_warning_days)
+            )
             save_system_behavior_settings(
                 self._database_path,
                 ppe_warning_days=ppe_warning_days,
+                training_warning_days=training_warning_days,
                 backup_auto_enabled=backup_auto_enabled
                 if backup_auto_enabled is not None
                 else self._workspace.backup_auto_enabled,

@@ -1,16 +1,16 @@
 from datetime import date, timedelta
 
 
-# ###### ПОБУДОВА ДЕМО-ЗАПИСІВ ІНСТРУКТАЖІВ / BUILD DEMO TRAINING ROWS ######
+# ###### ПОСТРОЕНИЕ ДЕМО-ЗАПИСЕЙ ИНСТРУКТАЖЕЙ / BUILD DEMO TRAINING ROWS ######
 def build_demo_training_rows(
     employee_rows: list[tuple[str, str, str, str, str]],
-) -> list[tuple[str, str, str, str, str, str, str, str]]:
-    """Повертає демонстраційні записи інструктажів з різними статусними сценаріями.
+) -> list[tuple[str, str, str, str, str, str, str, int, str, str]]:
+    """Возвращает демонстрационные записи инструктажей с разными сценариями статусов.
     Returns demo training records with different status scenarios.
     """
 
     today = date.today()
-    rows: list[tuple[str, str, str, str, str, str, str, str]] = []
+    rows: list[tuple[str, str, str, str, str, str, str, int, str, str]] = []
     active_employees = [row for row in employee_rows if row[4] == "active"]
 
     for index, employee_row in enumerate(active_employees):
@@ -33,6 +33,8 @@ def build_demo_training_rows(
                 next_control_date.isoformat(),
                 "Коваль Олена Вікторівна",
                 "Плановий контроль знань з охорони праці.",
+                "own_employee",
+                1,
                 "regular",
                 "manual",
             )
@@ -48,6 +50,8 @@ def build_demo_training_rows(
                     (extra_event_date + timedelta(days=180)).isoformat(),
                     "Іваненко Сергій Петрович",
                     "Позаплановий інструктаж після зміни технології робіт.",
+                    "own_employee",
+                    1,
                     "regular",
                     "manual",
                 )

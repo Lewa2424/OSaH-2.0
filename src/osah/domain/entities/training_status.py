@@ -9,3 +9,6 @@ class TrainingStatus(StrEnum):
     CURRENT = "current"
     WARNING = "warning"
     OVERDUE = "overdue"
+    MISSING = "missing"
+    NOT_REQUIRED = "not_required"
+    CLOSED_BY_PRIMARY = "closed_by_primary"

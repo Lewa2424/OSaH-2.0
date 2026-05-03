@@ -7,20 +7,25 @@ from osah.application.services.create_training_record import create_training_rec
 from osah.application.services.update_training_record import update_training_record
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
+from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
+from osah.domain.services.build_default_primary_requirement_for_person_category import (
+    build_default_primary_requirement_for_person_category,
+)
+from osah.domain.services.format_training_person_category_label import format_training_person_category_label
 from osah.domain.services.format_training_type_label import format_training_type_label
 from osah.domain.services.format_training_work_risk_category_label import format_training_work_risk_category_label
 from osah.domain.services.format_ui_date import format_ui_date
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, SPACING
 
 
 class TrainingRecordEditor(QWidget):
-    """Форма створення і редагування одного запису інструктажу.
+    """Форма создания и редактирования одного запису інструктажу.
     Form for creating and editing one training record.
     """
 
@@ -49,6 +54,19 @@ class TrainingRecordEditor(QWidget):
         self.type_input.currentIndexChanged.connect(lambda _index: self._sync_scenario_fields())
         form.addRow("Тип", self.type_input)
 
+        self.person_category_input = QComboBox()
+        for person_category in TrainingPersonCategory:
+            self.person_category_input.addItem(
+                format_training_person_category_label(person_category),
+                person_category.value,
+            )
+        self.person_category_input.currentIndexChanged.connect(lambda _index: self._sync_scenario_fields())
+        form.addRow("Категорія особи", self.person_category_input)
+
+        self.requires_primary_input = QCheckBox("Потребує первинного інструктажу на робочому місці")
+        self.requires_primary_input.toggled.connect(lambda _checked: self._sync_scenario_fields())
+        form.addRow("", self.requires_primary_input)
+
         self.event_date_input = QLineEdit()
         self.event_date_input.setPlaceholderText("ДД.ММ.РРРР")
         self.event_date_input.textChanged.connect(lambda _text: self._sync_scenario_fields())
@@ -65,7 +83,9 @@ class TrainingRecordEditor(QWidget):
         self.risk_input.currentIndexChanged.connect(lambda _index: self._sync_scenario_fields())
         form.addRow(self.risk_label, self.risk_input)
 
-        self.affects_repeated_input = QCheckBox("Перенести план повторного від дати цього інструктажу")
+        self.affects_repeated_input = QCheckBox(
+            "Внутрішнім рішенням підприємства перенести дату повторного контролю від дати цього інструктажу"
+        )
         self.affects_repeated_input.toggled.connect(lambda _checked: self._sync_scenario_fields())
         form.addRow("", self.affects_repeated_input)
 
@@ -78,12 +98,17 @@ class TrainingRecordEditor(QWidget):
         self.next_date_input.setPlaceholderText("ДД.ММ.РРРР")
         form.addRow(self.next_date_label, self.next_date_input)
 
+        self.scenario_hint = QLabel()
+        self.scenario_hint.setWordWrap(True)
+        self.scenario_hint.setStyleSheet(f"color: {COLOR['text_secondary']};")
+        form.addRow("", self.scenario_hint)
+
         self.conducted_by_input = QLineEdit()
         form.addRow("Проводив", self.conducted_by_input)
 
         self.note_input = QTextEdit()
         self.note_input.setMaximumHeight(80)
-        form.addRow("Примітка", self.note_input)
+        form.addRow("Коментар", self.note_input)
         layout.addLayout(form)
 
         self.feedback_label = FormFeedbackLabel()
@@ -98,11 +123,11 @@ class TrainingRecordEditor(QWidget):
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
         layout.addWidget(self.new_button)
-        self._sync_scenario_fields()
+        self.clear_form()
 
     def set_row(self, row: TrainingWorkspaceRow) -> None:
-        """Заповнює форму вибраним записом або шаблоном для відсутнього запису.
-        Fills the form with selected record or a template for a missing record.
+        """Заполняет форму выбранной записью или шаблоном отсутствующего инструктажа.
+        Fills the form with the selected record or a missing-training template.
         """
 
         self._is_updating = True
@@ -110,6 +135,8 @@ class TrainingRecordEditor(QWidget):
         self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(row.employee_personnel_number)))
         if row.training_type:
             self.type_input.setCurrentIndex(max(0, self.type_input.findData(row.training_type.value)))
+        self.person_category_input.setCurrentIndex(max(0, self.person_category_input.findData(row.person_category.value)))
+        self.requires_primary_input.setChecked(row.requires_primary_on_workplace)
         self.event_date_input.setText("" if row.event_date == "-" else format_ui_date(row.event_date))
         self.next_date_input.setText("" if row.next_control_date == "-" else format_ui_date(row.next_control_date))
         self.risk_input.setCurrentIndex(max(0, self.risk_input.findData(row.work_risk_category.value)))
@@ -125,12 +152,19 @@ class TrainingRecordEditor(QWidget):
         self._sync_scenario_fields(recalculate=False)
 
     def clear_form(self) -> None:
-        """Готує форму до створення нового запису.
+        """Готовит форму к созданию новой записи.
         Prepares the form for creating a new record.
         """
 
         self._is_updating = True
         self._current_record_id = None
+        self.type_input.setCurrentIndex(max(0, self.type_input.findData(TrainingType.INTRODUCTORY.value)))
+        self.person_category_input.setCurrentIndex(
+            max(0, self.person_category_input.findData(TrainingPersonCategory.OWN_EMPLOYEE.value))
+        )
+        self.requires_primary_input.setChecked(
+            build_default_primary_requirement_for_person_category(TrainingPersonCategory.OWN_EMPLOYEE)
+        )
         self.event_date_input.clear()
         self.next_date_input.clear()
         self.risk_input.setCurrentIndex(max(0, self.risk_input.findData(TrainingWorkRiskCategory.NOT_APPLICABLE.value)))
@@ -143,24 +177,35 @@ class TrainingRecordEditor(QWidget):
         self._sync_scenario_fields()
 
     def _sync_scenario_fields(self, recalculate: bool = True) -> None:
-        """Оновлює доступність полів за сценарієм вибраного типу інструктажу.
-        Updates field availability for the selected training type scenario.
+        """Обновляет доступность полей по сценарию выбранного типа инструктажа.
+        Updates field availability according to the selected training scenario.
         """
 
         if self._is_updating:
             return
 
         training_type = TrainingType(str(self.type_input.currentData()))
+        person_category = TrainingPersonCategory(str(self.person_category_input.currentData()))
         is_repeated_base = training_type in {TrainingType.PRIMARY, TrainingType.REPEATED}
         is_optional_transfer = training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED}
         should_transfer = is_repeated_base or (is_optional_transfer and self.affects_repeated_input.isChecked())
 
+        if person_category == TrainingPersonCategory.VISITOR:
+            self.requires_primary_input.setChecked(False)
+            self.requires_primary_input.setEnabled(False)
+        else:
+            self.requires_primary_input.setEnabled(True)
+
         self.affects_repeated_input.setVisible(is_optional_transfer)
-        self.manual_date_input.setVisible(should_transfer)
+        self.manual_date_input.setVisible(training_type == TrainingType.INTRODUCTORY or should_transfer)
         self.risk_label.setVisible(should_transfer)
         self.risk_input.setVisible(should_transfer)
         self.risk_input.setEnabled(should_transfer)
-        self.next_date_label.setText("Первинний потрібен до" if training_type == TrainingType.INTRODUCTORY else "Наступний контроль")
+        self.next_date_label.setText(
+            "Первинний потрібен до"
+            if training_type == TrainingType.INTRODUCTORY and self.requires_primary_input.isChecked()
+            else "Наступний контроль"
+        )
 
         if should_transfer and self.risk_input.currentData() == TrainingWorkRiskCategory.NOT_APPLICABLE.value:
             self.risk_input.setCurrentIndex(max(0, self.risk_input.findData(TrainingWorkRiskCategory.REGULAR.value)))
@@ -168,12 +213,18 @@ class TrainingRecordEditor(QWidget):
         if not should_transfer:
             self.risk_input.setCurrentIndex(max(0, self.risk_input.findData(TrainingWorkRiskCategory.NOT_APPLICABLE.value)))
 
-        self.next_date_input.setReadOnly(not self.manual_date_input.isVisible() or not self.manual_date_input.isChecked())
+        if training_type == TrainingType.INTRODUCTORY:
+            self.manual_date_input.setVisible(False)
+            self.next_date_input.setReadOnly(True)
+        else:
+            self.next_date_input.setReadOnly(not self.manual_date_input.isVisible() or not self.manual_date_input.isChecked())
+
+        self.scenario_hint.setText(self._build_scenario_hint(training_type, person_category))
         if not recalculate:
             return
 
         if training_type == TrainingType.INTRODUCTORY:
-            self.next_date_input.setText(self.event_date_input.text().strip())
+            self.next_date_input.setText(self.event_date_input.text().strip() if self.requires_primary_input.isChecked() else "")
             return
         if not should_transfer:
             self.next_date_input.clear()
@@ -186,6 +237,8 @@ class TrainingRecordEditor(QWidget):
             next_control_date, _, _ = resolve_training_next_control_date(
                 training_type,
                 event_date,
+                person_category,
+                self.requires_primary_input.isChecked(),
                 TrainingWorkRiskCategory(str(self.risk_input.currentData())),
                 None,
                 self.affects_repeated_input.isChecked(),
@@ -196,12 +249,35 @@ class TrainingRecordEditor(QWidget):
             return
         self.next_date_input.setText(format_ui_date(next_control_date))
 
+    def _build_scenario_hint(
+        self,
+        training_type: TrainingType,
+        person_category: TrainingPersonCategory,
+    ) -> str:
+        """Возвращает короткое пояснение активного сценария формы.
+        Returns a short explanation of the active form scenario.
+        """
+
+        if training_type == TrainingType.INTRODUCTORY:
+            if self.requires_primary_input.isChecked():
+                return "Після вступного потрібен первинний інструктаж на робочому місці."
+            if person_category == TrainingPersonCategory.CONTRACTOR:
+                return "Вступний інструктаж зафіксовано. Первинний у системі підприємства не потрібен."
+            return "Вступний інструктаж зафіксовано без вимоги первинного у системі підприємства."
+        if training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED} and self.affects_repeated_input.isChecked():
+            return "Повторний контроль буде перенесено лише як внутрішнє рішення підприємства."
+        if training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED}:
+            return "Цей запис не змінює план повторного контролю за замовчуванням."
+        return "Наступний повторний контроль розраховується автоматично за категорією робіт."
+
     def _save_record(self) -> None:
-        """Зберігає запис через application service і повідомляє екран про оновлення.
-        Saves the record through application service and notifies the screen to refresh.
+        """Сохраняет запись через application service и уведомляет экран об обновлении.
+        Saves the record through the application service and notifies the screen to refresh.
         """
 
         training_type = TrainingType(str(self.type_input.currentData()))
+        person_category = str(self.person_category_input.currentData())
+        requires_primary_on_workplace = self.requires_primary_input.isChecked()
         should_update_repeated_control = (
             training_type in {TrainingType.PRIMARY, TrainingType.REPEATED}
             or (
@@ -226,6 +302,8 @@ class TrainingRecordEditor(QWidget):
                     self.next_date_input.text(),
                     self.conducted_by_input.text(),
                     self.note_input.toPlainText(),
+                    person_category,
+                    requires_primary_on_workplace,
                     work_risk_category,
                     should_update_repeated_control,
                     use_manual_next_control_date,
@@ -240,12 +318,17 @@ class TrainingRecordEditor(QWidget):
                     self.next_date_input.text(),
                     self.conducted_by_input.text(),
                     self.note_input.toPlainText(),
+                    person_category,
+                    requires_primary_on_workplace,
                     work_risk_category,
                     should_update_repeated_control,
                     use_manual_next_control_date,
                 )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
+            return
+        except Exception as error:  # noqa: BLE001
+            self.feedback_label.show_error(f"Не вдалося зберегти запис інструктажу: {error}")
             return
 
         self.feedback_label.show_success("Запис інструктажу збережено.")

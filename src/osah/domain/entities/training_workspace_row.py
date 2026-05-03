@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
+from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
@@ -28,5 +29,7 @@ class TrainingWorkspaceRow:
     conducted_by: str
     note_text: str
     is_missing: bool
+    person_category: TrainingPersonCategory = TrainingPersonCategory.OWN_EMPLOYEE
+    requires_primary_on_workplace: bool = False
     work_risk_category: TrainingWorkRiskCategory = TrainingWorkRiskCategory.NOT_APPLICABLE
     next_control_basis: TrainingNextControlBasis = TrainingNextControlBasis.MANUAL

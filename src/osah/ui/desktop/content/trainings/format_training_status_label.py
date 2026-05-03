@@ -1,14 +1,20 @@
 from osah.domain.entities.training_status import TrainingStatus
 
 
-# ###### ФОРМАТУВАННЯ СТАТУСУ ІНСТРУКТАЖУ / ФОРМАТИРОВАНИЕ СТАТУСА ИНСТРУКТАЖА ######
+# ###### ФОРМАТИРОВАНИЕ СТАТУСА ИНСТРУКТАЖА / FORMAT TRAINING STATUS LABEL ######
 def format_training_status_label(training_status: TrainingStatus) -> str:
-    """Повертає локалізовану мітку статусу інструктажу.
-    Возвращает локализованную метку статуса инструктажа.
+    """Возвращает локализованную метку статуса инструктажа.
+    Returns a localized label for a training status.
     """
 
     if training_status == TrainingStatus.CURRENT:
         return "Актуально"
+    if training_status == TrainingStatus.NOT_REQUIRED:
+        return "Не потрібно"
+    if training_status == TrainingStatus.CLOSED_BY_PRIMARY:
+        return "Закрито"
     if training_status == TrainingStatus.WARNING:
         return "Увага"
+    if training_status == TrainingStatus.MISSING:
+        return "Відсутній"
     return "Прострочено"

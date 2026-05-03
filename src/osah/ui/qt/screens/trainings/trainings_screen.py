@@ -10,11 +10,9 @@ from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
-from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.trainings.training_quick_stats import TrainingQuickStats
 from osah.ui.qt.screens.trainings.training_record_details_pane import TrainingRecordDetailsPane
-from osah.ui.qt.screens.trainings.training_summary_panel import TrainingSummaryPanel
 from osah.ui.qt.screens.trainings.trainings_filter_bar import TrainingsFilterBar
 from osah.ui.qt.screens.trainings.trainings_registry_table import TrainingsRegistryTable
 from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
@@ -49,12 +47,6 @@ class TrainingsScreen(QWidget):
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        self._section_header = SectionHeader(
-            "Інструктажі",
-            "Контроль строків, прострочок, відсутніх записів і відповідальних осіб.",
-        )
-        layout.addWidget(self._section_header)
-
         self.quick_stats = TrainingQuickStats(workspace.summary)
         layout.addWidget(self.quick_stats)
 
@@ -68,8 +60,6 @@ class TrainingsScreen(QWidget):
         center = QWidget()
         center_layout = QVBoxLayout(center)
         center_layout.setContentsMargins(0, 0, 0, 0)
-        self.summary_panel = TrainingSummaryPanel()
-        center_layout.addWidget(self.summary_panel)
         self.registry_table = TrainingsRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
         center_layout.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True), stretch=1)
@@ -133,7 +123,6 @@ class TrainingsScreen(QWidget):
     def _show_row(self, row: TrainingWorkspaceRow) -> None:
         """Shows selected row in summary and details pane."""
 
-        self.summary_panel.set_row(row)
         self.details_pane.show_row(row)
 
     # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######

@@ -7,6 +7,7 @@ from osah.domain.services.build_training_notifications import build_training_not
 from osah.domain.services.build_work_permit_notifications import build_work_permit_notifications
 from osah.infrastructure.database.commands.replace_notifications import replace_notifications
 from osah.infrastructure.database.queries.list_employees import list_employees
+from osah.infrastructure.database.queries.list_app_settings import list_app_settings
 from osah.infrastructure.database.queries.list_medical_records import list_medical_records
 from osah.infrastructure.database.queries.list_ppe_records import list_ppe_records
 from osah.infrastructure.database.queries.list_training_records import list_training_records
@@ -20,7 +21,9 @@ def sync_control_notifications(connection: Connection) -> None:
     """
 
     employees = list_employees(connection)
-    training_records = list_training_records(connection)
+    app_settings = list_app_settings(connection)
+    training_warning_days = int(app_settings.get("behavior.training_warning_days", "30") or "30")
+    training_records = list_training_records(connection, warning_days=max(1, min(training_warning_days, 90)))
     ppe_records = list_ppe_records(connection)
     medical_records = list_medical_records(connection)
     work_permit_records = list_work_permit_records(connection)

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
@@ -14,7 +15,7 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.get_training_record_by_id import get_training_record_by_id
 
 
-# ###### ОНОВЛЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / UPDATE TRAINING RECORD ######
+# ###### ОБНОВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА / UPDATE TRAINING RECORD ######
 def update_training_record(
     database_path: Path,
     record_id: int,
@@ -24,18 +25,21 @@ def update_training_record(
     next_control_date_text: str,
     conducted_by: str,
     note_text: str,
+    person_category: str = "own_employee",
+    requires_primary_on_workplace: bool = True,
     work_risk_category: str = "not_applicable",
     should_update_repeated_control: bool = False,
     use_manual_next_control_date: bool = False,
 ) -> None:
-    """Оновлює запис інструктажу, синхронізує сповіщення і пише audit.
-    Updates a training record, synchronizes notifications and writes audit.
+    """Обновляет запись инструктажа, синхронизирует уведомления и пишет audit.
+    Updates a training record, synchronizes notifications, and writes audit.
     """
 
     normalized_personnel_number = employee_personnel_number.strip()
     normalized_training_type = training_type.strip()
     normalized_conducted_by = conducted_by.strip()
     normalized_note = note_text.strip()
+    normalized_person_category = person_category.strip() or "own_employee"
     normalized_work_risk_category = work_risk_category.strip() or "not_applicable"
     if not normalized_personnel_number:
         raise ValueError("Потрібно вибрати працівника.")
@@ -50,6 +54,8 @@ def update_training_record(
     resolved_next_control_date, next_control_basis, resolved_work_risk_category = resolve_training_next_control_date(
         training_type_value,
         event_date,
+        TrainingPersonCategory(normalized_person_category),
+        requires_primary_on_workplace,
         TrainingWorkRiskCategory(normalized_work_risk_category),
         manual_next_control_date,
         should_update_repeated_control,
@@ -74,6 +80,8 @@ def update_training_record(
             conducted_by=normalized_conducted_by,
             note_text=normalized_note,
             status=TrainingStatus.CURRENT,
+            person_category=TrainingPersonCategory(normalized_person_category),
+            requires_primary_on_workplace=requires_primary_on_workplace,
             work_risk_category=resolved_work_risk_category,
             next_control_basis=next_control_basis,
         )

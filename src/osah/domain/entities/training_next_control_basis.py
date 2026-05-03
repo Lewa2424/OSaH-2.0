@@ -8,6 +8,7 @@ class TrainingNextControlBasis(StrEnum):
 
     MANUAL = "manual"
     REQUIRES_PRIMARY_AFTER_INTRODUCTORY = "requires_primary_after_introductory"
+    INTRODUCTORY_PRIMARY_NOT_REQUIRED = "introductory_primary_not_required"
     CALCULATED_AFTER_PRIMARY_3M = "calculated_after_primary_3m"
     CALCULATED_AFTER_PRIMARY_6M = "calculated_after_primary_6m"
     CALCULATED_AFTER_REPEATED_3M = "calculated_after_repeated_3m"

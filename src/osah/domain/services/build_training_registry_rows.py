@@ -6,13 +6,13 @@ from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.services.format_training_type_label import format_training_type_label
 
 
-# ###### ПОБУДОВА РЯДКІВ РЕЄСТРУ ІНСТРУКТАЖІВ / ПОСТРОЕНИЕ СТРОК РЕЕСТРА ИНСТРУКТАЖЕЙ ######
+# ###### ПОСТРОЕНИЕ СТРОК РЕЕСТРА ИНСТРУКТАЖЕЙ / BUILD TRAINING REGISTRY ROWS ######
 def build_training_registry_rows(
     employees: tuple[Employee, ...],
     training_records: tuple[TrainingRecord, ...],
 ) -> tuple[TrainingRegistryRow, ...]:
-    """Повертає повний набір рядків реєстру, включно зі станом відсутності записів.
-    Возвращает полный набор строк реестра, включая состояние отсутствия записей.
+    """Возвращает полный набор строк реестра, включая отсутствие записей.
+    Returns the full set of registry rows including missing records state.
     """
 
     rows: list[TrainingRegistryRow] = []
@@ -30,7 +30,7 @@ def build_training_registry_rows(
                 TrainingRegistryRow(
                     employee_personnel_number=employee.personnel_number,
                     employee_full_name=employee.full_name,
-                    training_type_label="Немає записів",
+                    training_type_label="Первинний",
                     event_date_label="-",
                     next_control_date_label="-",
                     status_label="Відсутній",
@@ -57,27 +57,35 @@ def build_training_registry_rows(
     return tuple(rows)
 
 
-# ###### ФОРМАТУВАННЯ СТАТУСУ РЯДКА / ФОРМАТИРОВАНИЕ СТАТУСА СТРОКИ ######
+# ###### ФОРМАТИРОВАНИЕ СТАТУСА СТРОКИ / FORMAT TRAINING REGISTRY STATUS ######
 def _format_training_status(training_status: TrainingStatus) -> str:
-    """Повертає локалізовану мітку статусу для рядка реєстру.
-    Возвращает локализованную метку статуса для строки реестра.
+    """Возвращает локализованную подпись статуса для строки реестра.
+    Returns a localized status label for a registry row.
     """
 
     if training_status == TrainingStatus.CURRENT:
         return "Актуально"
+    if training_status == TrainingStatus.NOT_REQUIRED:
+        return "Не потрібно"
+    if training_status == TrainingStatus.CLOSED_BY_PRIMARY:
+        return "Закрито"
     if training_status == TrainingStatus.WARNING:
         return "Увага"
+    if training_status == TrainingStatus.MISSING:
+        return "Відсутній"
     return "Прострочено"
 
 
-# ###### ВІДПОВІДНІСТЬ СТАТУСУ ФІЛЬТРУ / СООТВЕТСТВИЕ СТАТУСА ФИЛЬТРУ ######
+# ###### СООТВЕТСТВИЕ СТАТУСА ФИЛЬТРУ / MAP TRAINING STATUS TO FILTER ######
 def _map_status_to_filter(training_status: TrainingStatus) -> TrainingRegistryFilter:
-    """Повертає фільтр, якому відповідає статус інструктажу.
-    Возвращает фильтр, которому соответствует статус инструктажа.
+    """Возвращает фильтр, соответствующий статусу инструктажа.
+    Returns the registry filter that matches the training status.
     """
 
-    if training_status == TrainingStatus.CURRENT:
+    if training_status in {TrainingStatus.CURRENT, TrainingStatus.NOT_REQUIRED, TrainingStatus.CLOSED_BY_PRIMARY}:
         return TrainingRegistryFilter.CURRENT
     if training_status == TrainingStatus.WARNING:
         return TrainingRegistryFilter.WARNING
+    if training_status == TrainingStatus.MISSING:
+        return TrainingRegistryFilter.MISSING
     return TrainingRegistryFilter.OVERDUE

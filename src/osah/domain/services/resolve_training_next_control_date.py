@@ -1,28 +1,38 @@
 from datetime import date
 
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
+from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.calculate_next_training_control_date import calculate_next_training_control_date
+from osah.domain.services.does_training_context_require_primary import does_training_context_require_primary
 
 
 # ###### ОПРЕДЕЛЕНИЕ КОНТРОЛЬНОЙ ДАТЫ ИНСТРУКТАЖА / RESOLVE TRAINING CONTROL DATE ######
 def resolve_training_next_control_date(
     training_type: TrainingType,
     event_date: date,
+    person_category: TrainingPersonCategory,
+    requires_primary_on_workplace: bool,
     work_risk_category: TrainingWorkRiskCategory,
     manual_next_control_date: date | None,
     should_update_repeated_control: bool,
     use_manual_next_control_date: bool,
 ) -> tuple[str, TrainingNextControlBasis, TrainingWorkRiskCategory]:
     """Возвращает контрольную дату, основание расчёта и категорию работ для записи инструктажа.
-    Returns the control date, calculation basis and work category for a training record.
+    Returns the control date, calculation basis, and work category for a training record.
     """
 
     if training_type == TrainingType.INTRODUCTORY:
+        if does_training_context_require_primary(person_category, requires_primary_on_workplace):
+            return (
+                event_date.isoformat(),
+                TrainingNextControlBasis.REQUIRES_PRIMARY_AFTER_INTRODUCTORY,
+                TrainingWorkRiskCategory.NOT_APPLICABLE,
+            )
         return (
-            event_date.isoformat(),
-            TrainingNextControlBasis.REQUIRES_PRIMARY_AFTER_INTRODUCTORY,
+            "",
+            TrainingNextControlBasis.INTRODUCTORY_PRIMARY_NOT_REQUIRED,
             TrainingWorkRiskCategory.NOT_APPLICABLE,
         )
 
@@ -78,7 +88,7 @@ def _resolve_manual_next_control_date(
     """
 
     if manual_next_control_date is None:
-        raise ValueError("Нужно указать дату следующего контроля.")
+        raise ValueError("Потрібно вказати дату наступного контролю.")
     return (
         manual_next_control_date.isoformat(),
         TrainingNextControlBasis.MANUAL,

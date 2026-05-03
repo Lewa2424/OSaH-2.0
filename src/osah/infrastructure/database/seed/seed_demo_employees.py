@@ -45,10 +45,12 @@ def seed_demo_employees(connection: Connection) -> None:
             next_control_date,
             conducted_by,
             note_text,
+            person_category,
+            requires_primary_on_workplace,
             work_risk_category,
             next_control_basis
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         training_rows,
     )

@@ -12,7 +12,7 @@ from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee_topbar_summary import EmployeeTopbarSummary
 from osah.domain.entities.notification_level import NotificationLevel
 from osah.domain.services.security.format_access_role_label import format_access_role_label
-from osah.ui.qt.design.tokens import COLOR, FONT, SIZE, SPACING
+from osah.ui.qt.design.tokens import COLOR, FONT, SPACING
 
 
 class TopCommandBar(QWidget):
@@ -24,22 +24,25 @@ class TopCommandBar(QWidget):
         super().__init__()
         self.setProperty("role", "topbar")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(76)
+        self.setFixedHeight(84)
 
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(SPACING["xl"], SPACING["sm"], SPACING["xl"], SPACING["sm"])
         self._layout.setSpacing(SPACING["lg"])
 
-        # Текстова частина: Заголовок і підзаголовок
         text_layout = QVBoxLayout()
         text_layout.setContentsMargins(0, 0, 0, 0)
         text_layout.setSpacing(0)
 
+        self._default_title_font = QFont(FONT["title_xl"][0], FONT["title_xl"][1])
+        self._default_title_font.setBold(FONT["title_xl"][2])
+        self._composed_title_font = QFont(FONT["title_xl"][0], 20)
+        self._composed_title_font.setBold(True)
+
         self._title_label = QLabel()
         self._title_label.setProperty("role", "title")
-        title_font = QFont(FONT["title_xl"][0], FONT["title_xl"][1])
-        title_font.setBold(FONT["title_xl"][2])
-        self._title_label.setFont(title_font)
+        self._title_label.setFont(self._default_title_font)
+        self._title_label.setTextFormat(Qt.TextFormat.RichText)
         text_layout.addWidget(self._title_label)
 
         self._subtitle_label = QLabel()
@@ -56,7 +59,6 @@ class TopCommandBar(QWidget):
         self._layout.addWidget(self._kpi_panel, 3)
         self._layout.addStretch()
 
-        # Права частина: Роль або статус
         self._role_label = QLabel(f"Роль: {format_access_role_label(access_role)}")
         self._role_label.setStyleSheet(
             f"background: {COLOR['role_tag_bg']}; "
@@ -72,27 +74,37 @@ class TopCommandBar(QWidget):
 
     def set_section(self, section: AppSection, alert_level: NotificationLevel | None = None) -> None:
         """Оновлює заголовок відповідно до вибраного розділу."""
-        self._title_label.setText(section.value)
+
+        self._title_label.setFont(self._composed_title_font)
         self._title_label.show()
-        self._subtitle_label.show()
+        self._subtitle_label.hide()
         self._clear_kpis()
         self._kpi_panel.hide()
 
-        # Можна потім винести підзаголовки у словник
-        subtitles = {
-            AppSection.DASHBOARD: "Огляд ключових показників та сигналів",
-            AppSection.EMPLOYEES: "Реєстр кадрового контуру",
-            AppSection.TRAININGS: "Контроль проведення інструктажів",
-            AppSection.PPE: "Забезпечення засобами захисту",
-            AppSection.MEDICAL: "Контроль медоглядів",
-            AppSection.WORK_PERMITS: "Облік нарядів-допусків",
-            AppSection.REPORTS: "Щоденний звіт, SMTP-доставка та службові помилки",
-            AppSection.NEWS_NPA: "Довірені джерела НПА та новин",
+        descriptions = {
+            AppSection.DASHBOARD: "огляд сигналів і стану системи",
+            AppSection.EMPLOYEES: "реєстр персоналу, фільтри та картка працівника",
+            AppSection.TRAININGS: "облік проведення, строків повторення та проблемних записів",
+            AppSection.PPE: "норми, видача, строки заміни та критичні відхилення",
+            AppSection.MEDICAL: "меддопуск, строки дії та робочі обмеження",
+            AppSection.WORK_PERMITS: "активні, прострочені та проблемні допуски до робіт",
+            AppSection.CONTRACTORS: "облік підрядників і контроль їхнього допуску",
+            AppSection.ARCHIVE: "архів подій, записів і службових підстав",
+            AppSection.REPORTS: "щоденний звіт, доставка та службові помилки",
+            AppSection.NEWS_NPA: "довірені джерела НПА та новин",
+            AppSection.SETTINGS: "резервні копії, імпорт, журнал і параметри системи",
+            AppSection.ABOUT: "версія, склад системи та технічний контекст",
         }
-        self._subtitle_label.setText(subtitles.get(section, "Керування розділом"))
+        description_text = descriptions.get(section, "керування розділом")
+        self._title_label.setText(
+            f"<span style='font-size:20pt; font-weight:700;'>{section.value}</span> "
+            f"<span style='font-size:16pt; font-weight:400;'>({description_text})</span>"
+        )
 
     def set_employee_summary(self, summary: EmployeeTopbarSummary) -> None:
-        """Оновлює topbar кадровими KPI. Updates topbar with employee KPIs."""
+        """Оновлює topbar кадровими KPI.
+        Updates topbar with employee KPIs.
+        """
 
         self._title_label.hide()
         self._subtitle_label.hide()
@@ -104,7 +116,9 @@ class TopCommandBar(QWidget):
         self._kpi_panel.show()
 
     def _clear_kpis(self) -> None:
-        """Очищує KPI-чипи topbar. Clears topbar KPI chips."""
+        """Очищує KPI-чіпи topbar.
+        Clears topbar KPI chips.
+        """
 
         while self._kpi_layout.count():
             item = self._kpi_layout.takeAt(0)
@@ -112,9 +126,9 @@ class TopCommandBar(QWidget):
                 widget.deleteLater()
 
 
-# ###### KPI-ЧИП ВЕРХНЬОЇ ПАНЕЛІ / TOPBAR KPI CHIP ######
+# ###### KPI-ЧІП ВЕРХНЬОЇ ПАНЕЛІ / TOPBAR KPI CHIP ######
 def _build_kpi_chip(title: str, value: str) -> QFrame:
-    """Створює компактний KPI-чип для верхньої панелі.
+    """Створює компактний KPI-чіп для верхньої панелі.
     Creates a compact KPI chip for the top command bar.
     """
 

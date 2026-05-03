@@ -13,7 +13,6 @@ from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.ppe.ppe_filter_bar import PpeFilterBar
-from osah.ui.qt.screens.ppe.ppe_problem_breakdown import PpeProblemBreakdown
 from osah.ui.qt.screens.ppe.ppe_record_details_pane import PpeRecordDetailsPane
 from osah.ui.qt.screens.ppe.ppe_registry_table import PpeRegistryTable
 from osah.ui.qt.screens.ppe.ppe_summary_panel import PpeSummaryPanel
@@ -64,8 +63,6 @@ class PpeScreen(QWidget):
         center = QWidget()
         center_layout = QVBoxLayout(center)
         center_layout.setContentsMargins(0, 0, 0, 0)
-        self.problem_breakdown = PpeProblemBreakdown()
-        center_layout.addWidget(self.problem_breakdown)
         self.registry_table = PpeRegistryTable()
         self.registry_table.row_selected.connect(self._show_row)
         center_layout.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True), stretch=1)
@@ -129,7 +126,6 @@ class PpeScreen(QWidget):
     def _show_row(self, row: PpeWorkspaceRow) -> None:
         """Shows selected row in right pane and summary."""
 
-        self.problem_breakdown.set_row(row)
         self.details_pane.show_row(row)
 
     # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######

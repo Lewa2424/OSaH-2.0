@@ -1,10 +1,10 @@
 from sqlite3 import Connection
 
 
-# ###### СТВОРЕННЯ БАЗОВОЇ СХЕМИ / СОЗДАНИЕ БАЗОВОЙ СХЕМЫ ######
+# ###### СОЗДАНИЕ БАЗОВОЙ СХЕМЫ / ENSURE CORE SCHEMA ######
 def ensure_core_schema(connection: Connection) -> None:
-    """Створює мінімальну робочу схему для першого зрізу застосунку.
-    Создаёт минимальную рабочую схему для первого среза приложения.
+    """Создаёт минимальную рабочую схему для локальной базы.
+    Creates the minimal working schema for the local database.
     """
 
     connection.executescript(
@@ -54,6 +54,8 @@ def ensure_core_schema(connection: Connection) -> None:
             next_control_date TEXT NOT NULL,
             conducted_by TEXT NOT NULL,
             note_text TEXT NOT NULL DEFAULT '',
+            person_category TEXT NOT NULL DEFAULT 'own_employee',
+            requires_primary_on_workplace INTEGER NOT NULL DEFAULT 1,
             work_risk_category TEXT NOT NULL DEFAULT 'not_applicable',
             next_control_basis TEXT NOT NULL DEFAULT 'manual',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -194,10 +196,10 @@ def ensure_core_schema(connection: Connection) -> None:
     connection.commit()
 
 
-# ###### МІГРАЦІЯ ПОЛІВ СКАСУВАННЯ НАРЯДУ / WORK PERMIT CANCEL COLUMNS MIGRATION ######
+# ###### МИГРАЦИЯ ПОЛЕЙ ОТМЕНЫ НАРЯДА / WORK PERMIT CANCEL COLUMNS MIGRATION ######
 def _ensure_work_permit_cancel_columns(connection: Connection) -> None:
-    """Додає nullable-поля скасування наряду до вже існуючих локальних баз.
-    Adds nullable work permit cancel fields to already existing local databases.
+    """Добавляет nullable-поля отмены наряда в уже существующие базы.
+    Adds nullable work-permit cancel fields to already existing databases.
     """
 
     columns = {
@@ -211,10 +213,10 @@ def _ensure_work_permit_cancel_columns(connection: Connection) -> None:
     _ensure_employee_photo_column(connection)
 
 
-# ###### МІГРАЦІЯ ПОЛЯ ФОТО ПРАЦІВНИКА / EMPLOYEE PHOTO COLUMN MIGRATION ######
+# ###### МИГРАЦИЯ ПОЛЯ ФОТО СОТРУДНИКА / EMPLOYEE PHOTO COLUMN MIGRATION ######
 def _ensure_employee_photo_column(connection: Connection) -> None:
-    """Додає nullable-поле photo_path у employees для локальних баз попередніх версій.
-    Adds nullable photo_path column in employees for previous local databases.
+    """Добавляет поле photo_path в employees для старых локальных баз.
+    Adds the photo_path column in employees for older local databases.
     """
 
     columns = {
@@ -225,16 +227,24 @@ def _ensure_employee_photo_column(connection: Connection) -> None:
         connection.execute("ALTER TABLE employees ADD COLUMN photo_path TEXT NULL;")
 
 
-# ###### МИГРАЦИЯ ПОЛЕЙ РАСЧЁТА ИНСТРУКТАЖЕЙ / TRAINING CONTROL COLUMNS MIGRATION ######
+# ###### МИГРАЦИЯ ПОЛЕЙ КОНТЕКСТА ИНСТРУКТАЖА / TRAINING CONTEXT COLUMNS MIGRATION ######
 def _ensure_training_control_columns(connection: Connection) -> None:
-    """Добавляет поля основания расчёта инструктажей в уже существующие локальные базы.
-    Adds training calculation basis fields to already existing local databases.
+    """Добавляет поля контекста и расчёта инструктажей в уже существующие базы.
+    Adds training context and calculation columns to already existing databases.
     """
 
     columns = {
         str(row["name"])
         for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
     }
+    if "person_category" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN person_category TEXT NOT NULL DEFAULT 'own_employee';"
+        )
+    if "requires_primary_on_workplace" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN requires_primary_on_workplace INTEGER NOT NULL DEFAULT 1;"
+        )
     if "work_risk_category" not in columns:
         connection.execute(
             "ALTER TABLE trainings ADD COLUMN work_risk_category TEXT NOT NULL DEFAULT 'not_applicable';"

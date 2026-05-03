@@ -9,12 +9,14 @@ from osah.infrastructure.database.create_database_connection import create_datab
 def save_system_behavior_settings(
     database_path: Path,
     ppe_warning_days: int,
+    training_warning_days: int,
     backup_auto_enabled: bool,
     backup_max_copies: int,
 ) -> None:
     """Persists behavior and backup preferences in app settings."""
 
     normalized_warning_days = min(max(ppe_warning_days, 1), 90)
+    normalized_training_warning_days = min(max(training_warning_days, 1), 90)
     normalized_backup_max_copies = min(max(backup_max_copies, 1), 200)
 
     connection = create_database_connection(database_path)
@@ -23,6 +25,7 @@ def save_system_behavior_settings(
             connection,
             {
                 "behavior.ppe_warning_days": str(normalized_warning_days),
+                "behavior.training_warning_days": str(normalized_training_warning_days),
                 "backup.auto_enabled": "1" if backup_auto_enabled else "0",
                 "backup.max_copies": str(normalized_backup_max_copies),
             },

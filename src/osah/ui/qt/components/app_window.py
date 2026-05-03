@@ -132,8 +132,6 @@ class AppWindow(QMainWindow):
         self._current_navigation_intent = effective_intent
 
         screen = build_screen_for_section(context)
-        if section == AppSection.EMPLOYEES and hasattr(screen, "topbar_summary"):
-            self._top_bar.set_employee_summary(screen.topbar_summary())
         if hasattr(screen, "employee_attention_requested"):
             screen.employee_attention_requested.connect(self._open_employee_attention)
         if hasattr(screen, "trainings_attention_requested"):

@@ -20,6 +20,7 @@ class SectionHeader(QWidget):
         self._subtitle.setProperty("role", "section_header_subtitle")
         self._subtitle.setVisible(bool(subtitle_text.strip()))
         layout.addWidget(self._subtitle)
+        self.hide()
 
     # ###### ОНОВЛЕННЯ ПІДЗАГОЛОВКА / UPDATE SUBTITLE ######
     def set_subtitle(self, subtitle_text: str) -> None:
