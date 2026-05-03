@@ -14,6 +14,8 @@ def serialize_training_record_for_audit(training_record: TrainingRecord) -> str:
         f"type={format_training_type_label(training_record.training_type)}; "
         f"event_date={training_record.event_date}; "
         f"next_control={training_record.next_control_date}; "
+        f"risk={training_record.work_risk_category.value}; "
+        f"basis={training_record.next_control_basis.value}; "
         f"conducted_by={training_record.conducted_by}; "
         f"note={training_record.note_text}"
     )

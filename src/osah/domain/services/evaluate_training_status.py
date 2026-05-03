@@ -1,5 +1,6 @@
 from datetime import date
 
+from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 
@@ -15,6 +16,11 @@ def evaluate_training_status(
     """
 
     current_date = today or date.today()
+    if (
+        not training_record.next_control_date.strip()
+        or training_record.next_control_basis == TrainingNextControlBasis.DOES_NOT_CHANGE_REPEATED_CONTROL
+    ):
+        return TrainingStatus.CURRENT
     next_control = date.fromisoformat(training_record.next_control_date)
     remaining_days = (next_control - current_date).days
     if remaining_days < 0:

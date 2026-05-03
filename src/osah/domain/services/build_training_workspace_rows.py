@@ -29,7 +29,7 @@ def build_training_workspace_rows(
         if not employee_records:
             rows.append(_build_missing_row(employee))
             continue
-        for record in sorted(employee_records, key=lambda item: (item.next_control_date, item.record_id or 0)):
+        for record in sorted(employee_records, key=lambda item: (item.next_control_date or "9999-12-31", item.record_id or 0)):
             rows.append(_build_record_row(record, employees_by_number[record.employee_personnel_number]))
     return tuple(rows)
 
@@ -82,6 +82,8 @@ def _build_record_row(record: TrainingRecord, employee: Employee) -> TrainingWor
         conducted_by=record.conducted_by,
         note_text=record.note_text,
         is_missing=False,
+        work_risk_category=record.work_risk_category,
+        next_control_basis=record.next_control_basis,
     )
 
 

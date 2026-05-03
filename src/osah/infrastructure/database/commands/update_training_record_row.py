@@ -18,7 +18,9 @@ def update_training_record_row(connection: Connection, training_record: Training
             event_date = ?,
             next_control_date = ?,
             conducted_by = ?,
-            note_text = ?
+            note_text = ?,
+            work_risk_category = ?,
+            next_control_basis = ?
         WHERE id = ?;
         """,
         (
@@ -28,6 +30,8 @@ def update_training_record_row(connection: Connection, training_record: Training
             training_record.next_control_date,
             training_record.conducted_by,
             training_record.note_text,
+            training_record.work_risk_category.value,
+            training_record.next_control_basis.value,
             training_record.record_id,
         ),
     )

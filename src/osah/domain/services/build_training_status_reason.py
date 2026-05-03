@@ -21,6 +21,8 @@ def build_training_status_reason(
     type_label = format_training_type_label(training_type) if training_type else "обов'язковий"
     if status == TrainingRegistryFilter.MISSING:
         return f"Критично - {type_label} інструктаж відсутній"
+    if not next_control_date.strip() or next_control_date == "-":
+        return "Актуально - запис не переносить план повторного інструктажу"
 
     current_date = today or date.today()
     remaining_days = (date.fromisoformat(next_control_date) - current_date).days

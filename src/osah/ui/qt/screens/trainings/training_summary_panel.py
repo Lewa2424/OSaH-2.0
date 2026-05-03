@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
+from osah.domain.services.format_training_next_control_basis_label import format_training_next_control_basis_label
+from osah.domain.services.format_training_work_risk_category_label import format_training_work_risk_category_label
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
@@ -35,4 +37,8 @@ class TrainingSummaryPanel(QFrame):
         """
 
         self._title.setText(f"{row.employee_full_name} / {row.training_type_label}")
-        self._body.setText(row.status_reason)
+        self._body.setText(
+            f"{row.status_reason}\n"
+            f"Категорія робіт: {format_training_work_risk_category_label(row.work_risk_category)}\n"
+            f"Підстава дати: {format_training_next_control_basis_label(row.next_control_basis)}"
+        )

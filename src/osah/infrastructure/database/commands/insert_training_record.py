@@ -17,9 +17,11 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             event_date,
             next_control_date,
             conducted_by,
-            note_text
+            note_text,
+            work_risk_category,
+            next_control_basis
         )
-        VALUES (?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             training_record.employee_personnel_number,
@@ -28,5 +30,7 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             training_record.next_control_date,
             training_record.conducted_by,
             training_record.note_text,
+            training_record.work_risk_category.value,
+            training_record.next_control_basis.value,
         ),
     )

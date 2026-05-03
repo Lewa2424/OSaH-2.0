@@ -44,9 +44,11 @@ def seed_demo_employees(connection: Connection) -> None:
             event_date,
             next_control_date,
             conducted_by,
-            note_text
+            note_text,
+            work_risk_category,
+            next_control_basis
         )
-        VALUES (?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """,
         training_rows,
     )

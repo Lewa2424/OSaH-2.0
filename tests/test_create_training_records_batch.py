@@ -30,7 +30,8 @@ class CreateTrainingRecordsBatchTests(unittest.TestCase):
                 employee_personnel_numbers=("0001", "0002"),
                 training_type="repeated",
                 event_date_text="2026-04-10",
-                next_control_date_text="2026-08-10",
+                next_control_date_text="",
+                work_risk_category="high_risk",
                 conducted_by="Інспектор з ОП",
                 note_text="Масовий запис",
             )

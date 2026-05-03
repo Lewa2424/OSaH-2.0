@@ -1,8 +1,10 @@
 from sqlite3 import Connection
 
 from osah.domain.entities.training_record import TrainingRecord
+from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.evaluate_training_status import evaluate_training_status
 
 
@@ -22,7 +24,9 @@ def list_training_records(connection: Connection) -> tuple[TrainingRecord, ...]:
             trainings.event_date,
             trainings.next_control_date,
             trainings.conducted_by,
-            trainings.note_text
+            trainings.note_text,
+            trainings.work_risk_category,
+            trainings.next_control_basis
         FROM trainings
         INNER JOIN employees
             ON employees.personnel_number = trainings.employee_personnel_number
@@ -42,6 +46,8 @@ def list_training_records(connection: Connection) -> tuple[TrainingRecord, ...]:
             conducted_by=row["conducted_by"],
             note_text=row["note_text"] or "",
             status=TrainingStatus.CURRENT,
+            work_risk_category=TrainingWorkRiskCategory(row["work_risk_category"] or "not_applicable"),
+            next_control_basis=TrainingNextControlBasis(row["next_control_basis"] or "manual"),
         )
         records.append(
             TrainingRecord(
@@ -54,6 +60,8 @@ def list_training_records(connection: Connection) -> tuple[TrainingRecord, ...]:
                 conducted_by=training_record.conducted_by,
                 note_text=training_record.note_text,
                 status=evaluate_training_status(training_record),
+                work_risk_category=training_record.work_risk_category,
+                next_control_basis=training_record.next_control_basis,
             )
         )
 

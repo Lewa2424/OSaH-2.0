@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
+from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 
 
 @dataclass(slots=True)
@@ -26,3 +28,5 @@ class TrainingWorkspaceRow:
     conducted_by: str
     note_text: str
     is_missing: bool
+    work_risk_category: TrainingWorkRiskCategory = TrainingWorkRiskCategory.NOT_APPLICABLE
+    next_control_basis: TrainingNextControlBasis = TrainingNextControlBasis.MANUAL

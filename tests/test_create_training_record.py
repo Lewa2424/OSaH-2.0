@@ -31,9 +31,10 @@ class CreateTrainingRecordTests(unittest.TestCase):
             create_training_record(
                 database_path=context.database_path,
                 employee_personnel_number="0001",
-                training_type="introductory",
+                training_type="primary",
                 event_date_text="2026-04-10",
-                next_control_date_text="2026-06-10",
+                next_control_date_text="",
+                work_risk_category="regular",
                 conducted_by="Інспектор з ОП",
                 note_text="Початковий запис",
             )
@@ -45,6 +46,7 @@ class CreateTrainingRecordTests(unittest.TestCase):
             self.assertTrue(
                 any(
                     training_record.employee_personnel_number == "0001"
+                    and training_record.next_control_date == "2026-10-10"
                     and training_record.note_text == "Початковий запис"
                     for training_record in training_records
                 )

@@ -28,9 +28,10 @@ class UpdateTrainingRecordTests(unittest.TestCase):
             create_training_record(
                 database_path=context.database_path,
                 employee_personnel_number="0001",
-                training_type="introductory",
+                training_type="primary",
                 event_date_text="2026-04-10",
-                next_control_date_text="2026-06-10",
+                next_control_date_text="",
+                work_risk_category="regular",
                 conducted_by="Інспектор з ОП",
                 note_text="Початковий запис",
             )
@@ -46,7 +47,8 @@ class UpdateTrainingRecordTests(unittest.TestCase):
                 employee_personnel_number="0001",
                 training_type="repeated",
                 event_date_text="2026-04-12",
-                next_control_date_text="2026-07-12",
+                next_control_date_text="",
+                work_risk_category="high_risk",
                 conducted_by="Головний інспектор",
                 note_text="Оновлений запис",
             )
@@ -64,6 +66,7 @@ class UpdateTrainingRecordTests(unittest.TestCase):
 
             self.assertEqual(updated_record.conducted_by, "Головний інспектор")
             self.assertEqual(updated_record.note_text, "Оновлений запис")
+            self.assertEqual(updated_record.next_control_date, "2026-07-12")
             self.assertEqual(len(audit_events), 1)
             shut_down_logging()
 

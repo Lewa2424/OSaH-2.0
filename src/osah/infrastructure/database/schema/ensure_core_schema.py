@@ -54,6 +54,8 @@ def ensure_core_schema(connection: Connection) -> None:
             next_control_date TEXT NOT NULL,
             conducted_by TEXT NOT NULL,
             note_text TEXT NOT NULL DEFAULT '',
+            work_risk_category TEXT NOT NULL DEFAULT 'not_applicable',
+            next_control_basis TEXT NOT NULL DEFAULT 'manual',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (employee_personnel_number)
                 REFERENCES employees(personnel_number)
@@ -188,6 +190,7 @@ def ensure_core_schema(connection: Connection) -> None:
         """
     )
     _ensure_work_permit_cancel_columns(connection)
+    _ensure_training_control_columns(connection)
     connection.commit()
 
 
@@ -220,3 +223,23 @@ def _ensure_employee_photo_column(connection: Connection) -> None:
     }
     if "photo_path" not in columns:
         connection.execute("ALTER TABLE employees ADD COLUMN photo_path TEXT NULL;")
+
+
+# ###### МИГРАЦИЯ ПОЛЕЙ РАСЧЁТА ИНСТРУКТАЖЕЙ / TRAINING CONTROL COLUMNS MIGRATION ######
+def _ensure_training_control_columns(connection: Connection) -> None:
+    """Добавляет поля основания расчёта инструктажей в уже существующие локальные базы.
+    Adds training calculation basis fields to already existing local databases.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
+    }
+    if "work_risk_category" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN work_risk_category TEXT NOT NULL DEFAULT 'not_applicable';"
+        )
+    if "next_control_basis" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN next_control_basis TEXT NOT NULL DEFAULT 'manual';"
+        )

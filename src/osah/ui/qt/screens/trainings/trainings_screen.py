@@ -217,9 +217,9 @@ def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
         return False
     if values["employee"] and row.employee_personnel_number != values["employee"]:
         return False
-    if values["date_from"] and row.next_control_date != "-" and row.next_control_date < values["date_from"]:
+    if values["date_from"] and row.next_control_date not in {"", "-"} and row.next_control_date < values["date_from"]:
         return False
-    if values["date_to"] and row.next_control_date != "-" and row.next_control_date > values["date_to"]:
+    if values["date_to"] and row.next_control_date not in {"", "-"} and row.next_control_date > values["date_to"]:
         return False
     return True
 

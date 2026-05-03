@@ -40,7 +40,7 @@ def build_training_registry_rows(
             )
             continue
 
-        for training_record in sorted(employee_records, key=lambda current_record: current_record.next_control_date):
+        for training_record in sorted(employee_records, key=lambda current_record: current_record.next_control_date or "9999-12-31"):
             rows.append(
                 TrainingRegistryRow(
                     employee_personnel_number=training_record.employee_personnel_number,
