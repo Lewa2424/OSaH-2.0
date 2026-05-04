@@ -1,22 +1,22 @@
 from datetime import datetime, timedelta
 
 
-# ###### ПОБУДОВА ДЕМО-НАРЯДІВ-ДОПУСКІВ / ПОСТРОЕНИЕ ДЕМО-НАРЯДОВ-ДОПУСКОВ ######
+# ###### ПОБУДОВА ДЕМО-НАРЯДІВ-ДОПУСКІВ / BUILD DEMO WORK PERMIT ROWS ######
 def build_demo_work_permit_rows(
-    employee_rows: list[tuple[str, str, str, str, str]]
-) -> tuple[list[tuple[str, str, str, str, str, str, str, str | None]], list[tuple[str, str, str]]]:
-    """Повертає демонстраційні наряди-допуски та їх учасників для виробничого підприємства.
-    Возвращает демонстрационные наряды-допуски и их участников для производственного предприятия.
+    employee_rows: list[tuple[str, str, str, str, str]],
+) -> tuple[list[tuple[str, str, str, str, str, str, str, str, str | None, str, str, str, str, str, str]], list[tuple[str, str, str]]]:
+    """Возвращает демонстрационные наряды-допуски и участников на новой схеме.
+    Returns demo work permits and participants using the new schema.
     """
 
     active_employees = [row for row in employee_rows if row[4] == "active"]
     now = datetime.now().replace(microsecond=0, second=0)
-    permit_rows: list[tuple[str, str, str, str, str, str, str, str | None]] = []
+    permit_rows: list[tuple[str, str, str, str, str, str, str, str, str | None, str, str, str, str, str, str]] = []
     participant_rows: list[tuple[str, str, str]] = []
     work_kinds = (
         ("ND-2026-001", "Ремонт електрошафи 0,4 кВ", "Енергетична служба / щитова №2"),
         ("ND-2026-002", "Газополум'яні роботи на трубопроводі", "Зварювальна дільниця"),
-        ("ND-2026-003", "Роботи на висоті при ревізії кран-балки", "Механоскладальний цех"),
+        ("ND-2026-003", "Роботи на висоті при ревізії кран-балки", "Механоcкладальний цех"),
         ("ND-2026-004", "Очищення резервуара після промивки", "Склад і логістика"),
         ("ND-2026-005", "Заміна кабелю живлення компресора", "Енергетична служба"),
         ("ND-2026-006", "Зварювання опорної рами", "Зварювальна дільниця"),
@@ -39,6 +39,12 @@ def build_demo_work_permit_rows(
                 "Коваль Олена Вікторівна",
                 "Контрольований демонстраційний наряд-допуск для типової виробничої ситуації.",
                 closed_at,
+                "required_not_done" if index < 3 else "done",
+                starts_at.date().isoformat() if index >= 3 else "",
+                "Старший виробник робіт" if index >= 3 else "",
+                "Відмітка про цільовий інструктаж у наряді." if index >= 3 else "",
+                "Наряд-допуск підприємства",
+                "",
             )
         )
         for offset in range(3):

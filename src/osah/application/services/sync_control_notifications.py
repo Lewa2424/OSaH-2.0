@@ -22,7 +22,7 @@ def sync_control_notifications(connection: Connection) -> None:
 
     employees = list_employees(connection)
     app_settings = list_app_settings(connection)
-    training_warning_days = int(app_settings.get("behavior.training_warning_days", "30") or "30")
+    training_warning_days = int(app_settings.get("behavior.training_warning_days", "7") or "7")
     training_records = list_training_records(connection, warning_days=max(1, min(training_warning_days, 90)))
     ppe_records = list_ppe_records(connection)
     medical_records = list_medical_records(connection)

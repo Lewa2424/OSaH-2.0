@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QWidget
 
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee_module_status_summary import EmployeeModuleStatusSummary
+from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.screens.employees.employee_problem_summary import EmployeeProblemSummary
@@ -37,7 +38,7 @@ class EmployeeOverviewTab(QWidget):
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        answer = QLabel(f"Чи можна працювати: {row.status_label}. Причина: {row.status_reason}.")
+        answer = QLabel(_build_admission_headline(row))
         answer.setWordWrap(True)
         answer.setStyleSheet("font-size: 14px; font-weight: 800;")
         layout.addWidget(answer)
@@ -94,3 +95,13 @@ class _ModuleSummaryCard(QFrame):
         if event.button() == Qt.MouseButton.LeftButton and self._target_section:
             self.clicked.emit(self._target_section)
         super().mousePressEvent(event)
+
+
+def _build_admission_headline(row: EmployeeWorkspaceRow) -> str:
+    """Будує короткий дворядковий висновок для вкладки огляду працівника.
+    Builds a short two-line admission summary for the employee overview tab.
+    """
+
+    if row.status_level == EmployeeStatusLevel.NORMAL:
+        return "Зауважень не виявлено\nДопуск: до робіт допущений."
+    return f"Увага! Немає допуску до робіт\nПричина: {row.status_reason}."

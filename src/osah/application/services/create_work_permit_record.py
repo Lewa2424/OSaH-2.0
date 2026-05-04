@@ -5,6 +5,8 @@ from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -13,7 +15,7 @@ from osah.infrastructure.database.commands.insert_work_permit_record import inse
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### СТВОРЕННЯ НАРЯДУ-ДОПУСКУ / CREATE WORK PERMIT RECORD ######
+# ###### СОЗДАНИЕ НАРЯДА-ДОПУСКА / CREATE WORK PERMIT RECORD ######
 def create_work_permit_record(
     database_path: Path,
     permit_number: str,
@@ -26,9 +28,15 @@ def create_work_permit_record(
     employee_personnel_number: str,
     participant_role: str,
     note_text: str,
+    target_training_status: str = "legacy_not_tracked",
+    target_training_date_text: str = "",
+    target_training_conducted_by: str = "",
+    target_training_note: str = "",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> None:
-    """Створює новий наряд-допуск з першим учасником та синхронізує контрольні сповіщення.
-    Creates a new work permit with the first participant and synchronizes control notifications.
+    """Создаёт новый наряд-допуск с первым участником и синхронизирует уведомления.
+    Creates a new work permit with the first participant and synchronizes notifications.
     """
 
     normalized_permit_number = permit_number.strip()
@@ -59,6 +67,10 @@ def create_work_permit_record(
     if ends_at <= starts_at:
         raise ValueError("Час завершення має бути пізніше часу початку.")
 
+    target_training_date = ""
+    if target_training_date_text.strip():
+        target_training_date = parse_ui_date_text(target_training_date_text.strip()).isoformat()
+
     work_permit_record = WorkPermitRecord(
         record_id=None,
         permit_number=normalized_permit_number,
@@ -78,6 +90,12 @@ def create_work_permit_record(
             ),
         ),
         status=WorkPermitStatus.ACTIVE,
+        target_training_status=WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked"),
+        target_training_date=target_training_date,
+        target_training_conducted_by=target_training_conducted_by.strip(),
+        target_training_note=target_training_note.strip(),
+        basis_text=basis_text.strip(),
+        basis_note=basis_note.strip(),
     )
 
     connection = create_database_connection(database_path)

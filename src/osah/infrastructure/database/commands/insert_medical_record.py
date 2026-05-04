@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.medical_record import MedicalRecord
 
 
-# ###### ДОДАВАННЯ МЕДИЧНОГО ЗАПИСУ / ДОБАВЛЕНИЕ МЕДИЦИНСКОЙ ЗАПИСИ ######
+# ###### ДОБАВЛЕНИЕ МЕДИЦИНСКОЙ ЗАПИСИ / INSERT MEDICAL RECORD ######
 def insert_medical_record(connection: Connection, medical_record: MedicalRecord) -> None:
-    """Зберігає новий медичний запис у локальній базі.
-    Сохраняет новую медицинскую запись в локальной базе.
+    """Сохраняет новую медицинскую запись с основанием и примечанием.
+    Persists a new medical record with basis and note fields.
     """
 
     connection.execute(
@@ -16,9 +16,12 @@ def insert_medical_record(connection: Connection, medical_record: MedicalRecord)
             valid_from,
             valid_until,
             medical_decision,
-            restriction_note
+            restriction_note,
+            medical_exam_basis,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             medical_record.employee_personnel_number,
@@ -26,5 +29,8 @@ def insert_medical_record(connection: Connection, medical_record: MedicalRecord)
             medical_record.valid_until,
             medical_record.medical_decision.value,
             medical_record.restriction_note,
+            medical_record.medical_exam_basis.value,
+            medical_record.basis_text,
+            medical_record.basis_note,
         ),
     )

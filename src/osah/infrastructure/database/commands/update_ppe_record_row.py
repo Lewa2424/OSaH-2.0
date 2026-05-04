@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.ppe_record import PpeRecord
 
 
-# ###### ОНОВЛЕННЯ ЗАПИСУ ЗІЗ / UPDATE PPE RECORD ######
+# ###### ОБНОВЛЕНИЕ ЗАПИСИ СИЗ / UPDATE PPE RECORD ######
 def update_ppe_record_row(connection: Connection, ppe_record: PpeRecord) -> None:
-    """Оновлює існуючий запис ЗІЗ у локальній базі.
-    Updates an existing PPE record in the local database.
+    """Обновляет существующую запись СИЗ со всеми новыми полями.
+    Updates an existing PPE record including all new fields.
     """
 
     connection.execute(
@@ -20,7 +20,11 @@ def update_ppe_record_row(connection: Connection, ppe_record: PpeRecord) -> None
             issue_date = ?,
             replacement_date = ?,
             quantity = ?,
-            note_text = ?
+            note_text = ?,
+            provision_status = ?,
+            compliance_check_state = ?,
+            basis_text = ?,
+            basis_note = ?
         WHERE id = ?;
         """,
         (
@@ -32,6 +36,10 @@ def update_ppe_record_row(connection: Connection, ppe_record: PpeRecord) -> None
             ppe_record.replacement_date,
             ppe_record.quantity,
             ppe_record.note_text,
+            ppe_record.provision_status.value,
+            ppe_record.compliance_check_state.value,
+            ppe_record.basis_text,
+            ppe_record.basis_note,
             ppe_record.record_id,
         ),
     )

@@ -8,6 +8,7 @@ from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.entities.medical_workspace import MedicalWorkspace
 from osah.domain.entities.medical_workspace_mode import MedicalWorkspaceMode
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
+from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
@@ -31,10 +32,13 @@ class MedicalScreen(QWidget):
         workspace: MedicalWorkspace,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
+        initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
+        self._initial_personnel_number = initial_personnel_number
+        self._initial_record_id = initial_record_id
 
         self._reload_task_controller = WorkerTaskController()
         self._reload_task_controller.started.connect(self._on_reload_started)
@@ -71,6 +75,7 @@ class MedicalScreen(QWidget):
         splitter.addWidget(self.details_pane)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
+        configure_detail_splitter(splitter, self.details_pane, detail_fraction=0.42, detail_min_width=460, detail_max_width=740)
         layout.addWidget(splitter, stretch=1)
 
         self.loading_state = LoadingStateWidget()
@@ -116,7 +121,8 @@ class MedicalScreen(QWidget):
                 "Немає медичних записів за активними фільтрами.",
                 "Змініть параметри пошуку або перевірте актуальність записів.",
             )
-        self.registry_table.select_first()
+        if rows and not self._restore_initial_selection():
+            self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: MedicalWorkspaceRow) -> None:
@@ -172,6 +178,19 @@ class MedicalScreen(QWidget):
         self.loading_state.hide()
         self.filter_bar.setEnabled(True)
         self.details_pane.setEnabled(True)
+
+    def _restore_initial_selection(self) -> bool:
+        """Відновлює стартове виділення за записом або працівником.
+        Restores initial selection by record or employee.
+        """
+
+        restored = False
+        if self._initial_record_id is not None:
+            restored = self.registry_table.select_record(self._initial_record_id)
+        if not restored and self._initial_personnel_number:
+            restored = self.registry_table.select_employee(self._initial_personnel_number)
+        self._initial_record_id = None
+        return restored
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######

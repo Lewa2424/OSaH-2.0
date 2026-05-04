@@ -13,6 +13,10 @@ class QtNavigationIntent:
     employee_personnel_number: str | None = None
     problem_key: str | None = None
     training_status_filter: str | None = None
+    training_record_id: int | None = None
     ppe_status_filter: str | None = None
+    ppe_record_id: int | None = None
     medical_status_filter: str | None = None
+    medical_record_id: int | None = None
     work_permit_status_filter: str | None = None
+    work_permit_record_id: int | None = None

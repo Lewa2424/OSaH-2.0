@@ -11,7 +11,7 @@ def evaluate_training_status(
     training_record: TrainingRecord,
     related_training_records: tuple[TrainingRecord, ...] = (),
     today: date | None = None,
-    warning_days: int = 30,
+    warning_days: int = 7,
 ) -> TrainingStatus:
     """Возвращает статус записи инструктажа по дате контроля и связанным записям.
     Returns the status of a training record using its control date and related records.

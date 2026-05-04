@@ -58,6 +58,11 @@ def ensure_core_schema(connection: Connection) -> None:
             requires_primary_on_workplace INTEGER NOT NULL DEFAULT 1,
             work_risk_category TEXT NOT NULL DEFAULT 'not_applicable',
             next_control_basis TEXT NOT NULL DEFAULT 'manual',
+            knowledge_check_result TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            work_admission_status TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            knowledge_check_note TEXT NOT NULL DEFAULT '',
+            basis_text TEXT NOT NULL DEFAULT '',
+            basis_note TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (employee_personnel_number)
                 REFERENCES employees(personnel_number)
@@ -75,6 +80,10 @@ def ensure_core_schema(connection: Connection) -> None:
             replacement_date TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             note_text TEXT NOT NULL DEFAULT '',
+            provision_status TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            compliance_check_state TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            basis_text TEXT NOT NULL DEFAULT '',
+            basis_note TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (employee_personnel_number)
                 REFERENCES employees(personnel_number)
@@ -89,6 +98,9 @@ def ensure_core_schema(connection: Connection) -> None:
             valid_until TEXT NOT NULL,
             medical_decision TEXT NOT NULL,
             restriction_note TEXT NOT NULL DEFAULT '',
+            medical_exam_basis TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            basis_text TEXT NOT NULL DEFAULT '',
+            basis_note TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (employee_personnel_number)
                 REFERENCES employees(personnel_number)
@@ -107,6 +119,12 @@ def ensure_core_schema(connection: Connection) -> None:
             issuer_person TEXT NOT NULL,
             note_text TEXT NOT NULL DEFAULT '',
             closed_at TEXT NULL,
+            target_training_status TEXT NOT NULL DEFAULT 'legacy_not_tracked',
+            target_training_date TEXT NOT NULL DEFAULT '',
+            target_training_conducted_by TEXT NOT NULL DEFAULT '',
+            target_training_note TEXT NOT NULL DEFAULT '',
+            basis_text TEXT NOT NULL DEFAULT '',
+            basis_note TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -193,6 +211,10 @@ def ensure_core_schema(connection: Connection) -> None:
     )
     _ensure_work_permit_cancel_columns(connection)
     _ensure_training_control_columns(connection)
+    _ensure_training_normative_columns(connection)
+    _ensure_ppe_normative_columns(connection)
+    _ensure_medical_normative_columns(connection)
+    _ensure_work_permit_target_training_columns(connection)
     connection.commit()
 
 
@@ -253,3 +275,113 @@ def _ensure_training_control_columns(connection: Connection) -> None:
         connection.execute(
             "ALTER TABLE trainings ADD COLUMN next_control_basis TEXT NOT NULL DEFAULT 'manual';"
         )
+
+
+def _ensure_training_normative_columns(connection: Connection) -> None:
+    """Добавляет новые поля инструктажей без искажения старых записей.
+    Adds training normative fields without distorting legacy records.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
+    }
+    if "knowledge_check_result" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN knowledge_check_result TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+    if "work_admission_status" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN work_admission_status TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+    if "knowledge_check_note" not in columns:
+        connection.execute(
+            "ALTER TABLE trainings ADD COLUMN knowledge_check_note TEXT NOT NULL DEFAULT '';"
+        )
+    if "basis_text" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
+    if "basis_note" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_ppe_normative_columns(connection: Connection) -> None:
+    """Добавляет и безопасно инициализирует новые поля СИЗ.
+    Adds and safely initializes new PPE fields.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(ppe_records);").fetchall()
+    }
+    if "provision_status" not in columns:
+        connection.execute(
+            "ALTER TABLE ppe_records ADD COLUMN provision_status TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+        connection.execute(
+            """
+            UPDATE ppe_records
+            SET provision_status = CASE
+                WHEN is_required = 1 AND is_issued = 0 THEN 'required_not_issued'
+                WHEN is_required = 0 THEN 'not_required'
+                ELSE 'issued'
+            END;
+            """
+        )
+    if "compliance_check_state" not in columns:
+        connection.execute(
+            "ALTER TABLE ppe_records ADD COLUMN compliance_check_state TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+    if "basis_text" not in columns:
+        connection.execute("ALTER TABLE ppe_records ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
+    if "basis_note" not in columns:
+        connection.execute("ALTER TABLE ppe_records ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_medical_normative_columns(connection: Connection) -> None:
+    """Добавляет новые поля медицины без ложных выводов по старым данным.
+    Adds medical normative fields without false assumptions for legacy data.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(medical_records);").fetchall()
+    }
+    if "medical_exam_basis" not in columns:
+        connection.execute(
+            "ALTER TABLE medical_records ADD COLUMN medical_exam_basis TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+    if "basis_text" not in columns:
+        connection.execute("ALTER TABLE medical_records ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
+    if "basis_note" not in columns:
+        connection.execute("ALTER TABLE medical_records ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_work_permit_target_training_columns(connection: Connection) -> None:
+    """Добавляет поля целевого инструктажа и основания для нарядов-допусков.
+    Adds targeted-training and basis fields for work permits.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(work_permits);").fetchall()
+    }
+    if "target_training_status" not in columns:
+        connection.execute(
+            "ALTER TABLE work_permits ADD COLUMN target_training_status TEXT NOT NULL DEFAULT 'legacy_not_tracked';"
+        )
+    if "target_training_date" not in columns:
+        connection.execute(
+            "ALTER TABLE work_permits ADD COLUMN target_training_date TEXT NOT NULL DEFAULT '';"
+        )
+    if "target_training_conducted_by" not in columns:
+        connection.execute(
+            "ALTER TABLE work_permits ADD COLUMN target_training_conducted_by TEXT NOT NULL DEFAULT '';"
+        )
+    if "target_training_note" not in columns:
+        connection.execute(
+            "ALTER TABLE work_permits ADD COLUMN target_training_note TEXT NOT NULL DEFAULT '';"
+        )
+    if "basis_text" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
+    if "basis_note" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")

@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from osah.domain.entities.ppe_record import PpeRecord
@@ -14,8 +15,11 @@ class EmployeePpeTab(QWidget):
     Real PPE tab inside an employee card.
     """
 
+    record_requested = Signal(str, int)
+
     def __init__(self, records: tuple[PpeRecord, ...]) -> None:
         super().__init__()
+        self._records = records
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["md"])
@@ -31,9 +35,13 @@ class EmployeePpeTab(QWidget):
             return
 
         table = QTableWidget(0, 6)
+        self._table = table
         table.setHorizontalHeaderLabels(["ЗІЗ", "Положено", "Видано", "К-сть", "Заміна", "Статус"])
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.itemClicked.connect(self._emit_record_request)
         for record in records:
             row_index = table.rowCount()
             table.insertRow(row_index)
@@ -46,7 +54,21 @@ class EmployeePpeTab(QWidget):
                 f"{format_ppe_status_label(record.status)} - {build_ppe_status_reason(record)}",
             )
             for column, value in enumerate(values):
-                table.setItem(row_index, column, QTableWidgetItem(value))
+                item = QTableWidgetItem(value)
+                item.setData(Qt.ItemDataRole.UserRole, row_index)
+                table.setItem(row_index, column, item)
         table.resizeColumnsToContents()
         ensure_table_column_width(table, 5)
         layout.addWidget(ScrollableTableFrame(table))
+
+    def _emit_record_request(self, item: QTableWidgetItem) -> None:
+        """Переходить до конкретного запису ЗІЗ за кліком у картці працівника.
+        Navigates to a concrete PPE record on click from the employee card.
+        """
+
+        row_index_data = item.data(Qt.ItemDataRole.UserRole)
+        row_index = int(row_index_data) if row_index_data is not None else -1
+        if 0 <= row_index < len(self._records):
+            record = self._records[row_index]
+            if record.record_id is not None:
+                self.record_requested.emit(record.employee_personnel_number, record.record_id)

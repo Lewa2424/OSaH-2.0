@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from osah.domain.entities.medical_decision import MedicalDecision
+from osah.domain.entities.medical_exam_basis import MedicalExamBasis
 from osah.domain.entities.medical_status import MedicalStatus
 
 
@@ -25,3 +26,6 @@ class MedicalWorkspaceRow:
     status: MedicalStatus
     status_label: str
     status_reason: str
+    medical_exam_basis: MedicalExamBasis = MedicalExamBasis.LEGACY_NOT_TRACKED
+    basis_text: str = ""
+    basis_note: str = ""

@@ -6,12 +6,12 @@ from osah.domain.services.format_medical_decision_label import format_medical_de
 from osah.domain.services.format_medical_status_label import format_medical_status_label
 
 
-# ###### ПОБУДОВА РЯДКІВ МЕДИЦИНИ / BUILD MEDICAL ROWS ######
+# ###### ПОСТРОЕНИЕ РЯДОВ МЕДИЦИНЫ / BUILD MEDICAL ROWS ######
 def build_medical_workspace_rows(
     employees: tuple[Employee, ...],
     medical_records: tuple[MedicalRecord, ...],
 ) -> tuple[MedicalWorkspaceRow, ...]:
-    """Будує рядки реєстру меддопусків із реальних працівників і записів.
+    """Строит строки реестра меддопусков из реальных сотрудников и записей.
     Builds medical registry rows from real employees and records.
     """
 
@@ -38,16 +38,15 @@ def build_medical_workspace_rows(
                 status=record.status,
                 status_label=format_medical_status_label(record.status),
                 status_reason=build_medical_status_reason(record),
+                medical_exam_basis=record.medical_exam_basis,
+                basis_text=record.basis_text,
+                basis_note=record.basis_note,
             )
         )
     return tuple(rows)
 
 
 def _infer_site_name(department_name: str) -> str:
-    """Виводить участок із назви підрозділу для фільтрів першої версії.
-    Infers a site name from department for first-version filters.
-    """
-
     lowered = department_name.lower()
     if "дільниц" in lowered:
         return department_name

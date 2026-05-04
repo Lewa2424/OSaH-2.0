@@ -22,7 +22,7 @@ def load_system_settings_workspace(database_path: Path) -> SettingsWorkspace:
 
     backup_snapshots = load_backup_registry(database_path)
     ppe_warning_days = int(app_settings.get("behavior.ppe_warning_days", "7") or "7")
-    training_warning_days = int(app_settings.get("behavior.training_warning_days", "30") or "30")
+    training_warning_days = int(app_settings.get("behavior.training_warning_days", "7") or "7")
     backup_max_copies = int(app_settings.get("backup.max_copies", "20") or "20")
     backup_auto_enabled = app_settings.get("backup.auto_enabled", "1") == "1"
     news_refresh_time = app_settings.get("news.refresh_time", "09:00") or "09:00"

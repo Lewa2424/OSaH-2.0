@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.training_record import TrainingRecord
 
 
-# ###### ОНОВЛЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / ОБНОВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
+# ###### ОБНОВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА / UPDATE TRAINING RECORD ######
 def update_training_record_row(connection: Connection, training_record: TrainingRecord) -> None:
-    """Оновлює існуючий запис інструктажу в локальній базі.
-    Обновляет существующую запись инструктажа в локальной базе.
+    """Обновляет существующую запись инструктажа со всеми новыми полями.
+    Updates an existing training record with all new fields.
     """
 
     connection.execute(
@@ -22,7 +22,12 @@ def update_training_record_row(connection: Connection, training_record: Training
             person_category = ?,
             requires_primary_on_workplace = ?,
             work_risk_category = ?,
-            next_control_basis = ?
+            next_control_basis = ?,
+            knowledge_check_result = ?,
+            work_admission_status = ?,
+            knowledge_check_note = ?,
+            basis_text = ?,
+            basis_note = ?
         WHERE id = ?;
         """,
         (
@@ -36,6 +41,11 @@ def update_training_record_row(connection: Connection, training_record: Training
             int(training_record.requires_primary_on_workplace),
             training_record.work_risk_category.value,
             training_record.next_control_basis.value,
+            training_record.knowledge_check_result.value,
+            training_record.work_admission_status.value,
+            training_record.knowledge_check_note,
+            training_record.basis_text,
+            training_record.basis_note,
             training_record.record_id,
         ),
     )

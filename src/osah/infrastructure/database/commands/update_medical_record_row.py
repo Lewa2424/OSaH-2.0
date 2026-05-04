@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.medical_record import MedicalRecord
 
 
-# ###### ОНОВЛЕННЯ МЕДИЧНОГО ЗАПИСУ / UPDATE MEDICAL RECORD ######
+# ###### ОБНОВЛЕНИЕ МЕДИЦИНСКОЙ ЗАПИСИ / UPDATE MEDICAL RECORD ######
 def update_medical_record_row(connection: Connection, medical_record: MedicalRecord) -> None:
-    """Оновлює існуючий медичний запис у локальній базі.
-    Updates an existing medical record in the local database.
+    """Обновляет существующую медицинскую запись с новыми полями основания.
+    Updates an existing medical record including the new basis fields.
     """
 
     connection.execute(
@@ -17,7 +17,10 @@ def update_medical_record_row(connection: Connection, medical_record: MedicalRec
             valid_from = ?,
             valid_until = ?,
             medical_decision = ?,
-            restriction_note = ?
+            restriction_note = ?,
+            medical_exam_basis = ?,
+            basis_text = ?,
+            basis_note = ?
         WHERE id = ?;
         """,
         (
@@ -26,6 +29,9 @@ def update_medical_record_row(connection: Connection, medical_record: MedicalRec
             medical_record.valid_until,
             medical_record.medical_decision.value,
             medical_record.restriction_note,
+            medical_record.medical_exam_basis.value,
+            medical_record.basis_text,
+            medical_record.basis_note,
             medical_record.record_id,
         ),
     )

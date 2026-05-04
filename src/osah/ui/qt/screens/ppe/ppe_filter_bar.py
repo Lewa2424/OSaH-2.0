@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushBu
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.entities.ppe_workspace import PpeWorkspace
 from osah.domain.entities.ppe_workspace_mode import PpeWorkspaceMode
+from osah.domain.services.build_default_ppe_names import build_default_ppe_names
 from osah.domain.services.format_ppe_status_label import format_ppe_status_label
 from osah.ui.qt.design.tokens import SPACING
 
@@ -36,7 +37,7 @@ class PpeFilterBar(QWidget):
 
         self.ppe_filter = QComboBox()
         self.ppe_filter.addItem("Усі типи ЗІЗ", "")
-        for ppe_name in sorted({item.ppe_name for item in workspace.rows}):
+        for ppe_name in sorted({item.ppe_name for item in workspace.rows} | set(build_default_ppe_names())):
             self.ppe_filter.addItem(ppe_name, ppe_name)
         self.ppe_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         row.addWidget(self.ppe_filter)

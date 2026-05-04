@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import replace
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
@@ -8,6 +9,7 @@ from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
+from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.design.tokens import SPACING
@@ -30,14 +32,15 @@ class TrainingsScreen(QWidget):
         workspace: TrainingWorkspace,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
+        initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
         self._visible_rows: tuple[TrainingWorkspaceRow, ...] = workspace.rows
         self._current_row: TrainingWorkspaceRow | None = None
-        self._pending_record_id: int | None = None
-        self._pending_personnel_number: str | None = None
+        self._pending_record_id: int | None = initial_record_id
+        self._pending_personnel_number: str | None = initial_personnel_number
 
         self._reload_task_controller = WorkerTaskController()
         self._reload_task_controller.started.connect(self._on_reload_started)
@@ -75,6 +78,7 @@ class TrainingsScreen(QWidget):
         splitter.addWidget(self.details_pane)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
+        configure_detail_splitter(splitter, self.details_pane, detail_fraction=0.42, detail_min_width=460, detail_max_width=760)
         layout.addWidget(splitter, stretch=1)
 
         self.loading_state = LoadingStateWidget()
@@ -263,9 +267,53 @@ def _collapse_by_employee(rows: tuple[TrainingWorkspaceRow, ...]) -> tuple[Train
         TrainingRegistryFilter.CURRENT: 1,
         TrainingRegistryFilter.ALL: 0,
     }
-    selected: dict[str, TrainingWorkspaceRow] = {}
+    grouped: dict[str, list[TrainingWorkspaceRow]] = {}
     for row in rows:
-        current = selected.get(row.employee_personnel_number)
-        if current is None or priority[row.status_filter] > priority[current.status_filter]:
-            selected[row.employee_personnel_number] = row
-    return tuple(selected.values())
+        grouped.setdefault(row.employee_personnel_number, []).append(row)
+    summarized_rows = [
+        _build_employee_summary_row(employee_rows, priority)
+        for employee_rows in grouped.values()
+    ]
+    return tuple(
+        sorted(
+            summarized_rows,
+            key=lambda row: (-priority[row.status_filter], row.employee_full_name.lower(), row.record_id or 0),
+        )
+    )
+
+
+def _build_employee_summary_row(
+    employee_rows: list[TrainingWorkspaceRow],
+    priority: dict[TrainingRegistryFilter, int],
+) -> TrainingWorkspaceRow:
+    anchor_row = min(
+        employee_rows,
+        key=lambda row: (-priority[row.status_filter], row.employee_full_name.lower(), row.record_id or 0),
+    )
+    problem_rows = [row for row in employee_rows if row.status_filter != TrainingRegistryFilter.CURRENT]
+    visible_rows = problem_rows[:3] if problem_rows else employee_rows[:1]
+    summary_reason_lines = [
+        f"• {_summarize_employee_row_reason(row)}"
+        for row in visible_rows
+    ]
+    if len(problem_rows) > 3:
+        summary_reason_lines.append(f"• Ще проблем: {len(problem_rows) - 3}")
+    if not problem_rows and not summary_reason_lines:
+        summary_reason_lines.append("• Немає проблемних інструктажів")
+
+    return replace(
+        anchor_row,
+        training_type_label="Стан працівника",
+        status_reason="\n".join(summary_reason_lines),
+    )
+
+
+def _summarize_employee_row_reason(row: TrainingWorkspaceRow) -> str:
+    reason_text = row.status_reason.replace("\n", " ").strip()
+    if row.status_filter == TrainingRegistryFilter.MISSING:
+        return reason_text
+    if row.status_filter == TrainingRegistryFilter.OVERDUE:
+        return f"{row.training_type_label}: {reason_text}"
+    if row.status_filter == TrainingRegistryFilter.WARNING:
+        return f"{row.training_type_label}: {reason_text}"
+    return f"{row.training_type_label}: {reason_text}"

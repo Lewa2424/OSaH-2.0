@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from osah.domain.entities.medical_record import MedicalRecord
@@ -15,8 +16,11 @@ class EmployeeMedicalTab(QWidget):
     Real medical admission tab inside an employee card.
     """
 
+    record_requested = Signal(str, int)
+
     def __init__(self, records: tuple[MedicalRecord, ...]) -> None:
         super().__init__()
+        self._records = records
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["md"])
@@ -33,6 +37,7 @@ class EmployeeMedicalTab(QWidget):
             return
 
         table = QTableWidget(0, 6)
+        table.itemClicked.connect(self._emit_record_request)
         table.setHorizontalHeaderLabels(["Початок", "Закінчення", "Рішення", "Обмеження", "Статус", "Причина"])
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -51,11 +56,25 @@ class EmployeeMedicalTab(QWidget):
                 build_medical_status_reason(record),
             )
             for column, value in enumerate(values):
-                table.setItem(row_index, column, QTableWidgetItem(value))
+                item = QTableWidgetItem(value)
+                item.setData(Qt.ItemDataRole.UserRole, row_index)
+                table.setItem(row_index, column, item)
 
         table.resizeColumnsToContents()
         ensure_table_column_width(table, 4)
         layout.addWidget(ScrollableTableFrame(table))
+
+    def _emit_record_request(self, item: QTableWidgetItem) -> None:
+        """Переходить до конкретного медичного запису з картки працівника.
+        Navigates to a concrete medical record from the employee card.
+        """
+
+        row_index_data = item.data(Qt.ItemDataRole.UserRole)
+        row_index = int(row_index_data) if row_index_data is not None else -1
+        if 0 <= row_index < len(self._records):
+            record = self._records[row_index]
+            if record.record_id is not None:
+                self.record_requested.emit(record.employee_personnel_number, record.record_id)
 
 
 def build_medical_history_hint(records: tuple[MedicalRecord, ...]) -> str:

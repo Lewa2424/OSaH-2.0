@@ -48,9 +48,14 @@ def seed_demo_employees(connection: Connection) -> None:
             person_category,
             requires_primary_on_workplace,
             work_risk_category,
-            next_control_basis
+            next_control_basis,
+            knowledge_check_result,
+            work_admission_status,
+            knowledge_check_note,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         training_rows,
     )
@@ -64,9 +69,13 @@ def seed_demo_employees(connection: Connection) -> None:
             issue_date,
             replacement_date,
             quantity,
-            note_text
+            note_text,
+            provision_status,
+            compliance_check_state,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         ppe_rows,
     )
@@ -77,9 +86,12 @@ def seed_demo_employees(connection: Connection) -> None:
             valid_from,
             valid_until,
             medical_decision,
-            restriction_note
+            restriction_note,
+            medical_exam_basis,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """,
         medical_rows,
     )
@@ -94,9 +106,15 @@ def seed_demo_employees(connection: Connection) -> None:
             responsible_person,
             issuer_person,
             note_text,
-            closed_at
+            closed_at,
+            target_training_status,
+            target_training_date,
+            target_training_conducted_by,
+            target_training_note,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         work_permit_rows,
     )

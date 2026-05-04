@@ -5,6 +5,8 @@ from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.delete_work_permit_participants import delete_work_permit_participants
@@ -15,7 +17,7 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.list_work_permit_records import list_work_permit_records
 
 
-# ###### ОНОВЛЕННЯ НАРЯДУ-ДОПУСКУ / UPDATE WORK PERMIT RECORD ######
+# ###### ОБНОВЛЕНИЕ НАРЯДА-ДОПУСКА / UPDATE WORK PERMIT RECORD ######
 def update_work_permit_record(
     database_path: Path,
     record_id: int,
@@ -29,8 +31,14 @@ def update_work_permit_record(
     employee_personnel_number: str,
     participant_role: str,
     note_text: str,
+    target_training_status: str = "legacy_not_tracked",
+    target_training_date_text: str = "",
+    target_training_conducted_by: str = "",
+    target_training_note: str = "",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> None:
-    """Оновлює наряд-допуск та контрольований список учасників через application service.
+    """Обновляет наряд-допуск и контролируемый список участников через application service.
     Updates a work permit and the controlled participant list through an application service.
     """
 
@@ -45,6 +53,12 @@ def update_work_permit_record(
         employee_personnel_number,
         participant_role,
         note_text,
+        target_training_status,
+        target_training_date_text,
+        target_training_conducted_by,
+        target_training_note,
+        basis_text,
+        basis_note,
     )
     connection = create_database_connection(database_path)
     try:
@@ -85,7 +99,6 @@ def update_work_permit_record(
         connection.close()
 
 
-# ###### ВАЛІДАЦІЯ НАРЯДУ / VALIDATE WORK PERMIT INPUT ######
 def _validate_work_permit_input(
     permit_number: str,
     work_kind: str,
@@ -97,11 +110,13 @@ def _validate_work_permit_input(
     employee_personnel_number: str,
     participant_role: str,
     note_text: str,
+    target_training_status: str,
+    target_training_date_text: str,
+    target_training_conducted_by: str,
+    target_training_note: str,
+    basis_text: str,
+    basis_note: str,
 ) -> dict[str, object]:
-    """Перевіряє поля наряду та повертає нормалізовані значення.
-    Validates work permit fields and returns normalized values.
-    """
-
     starts_at = parse_ui_datetime_text(starts_at_text)
     ends_at = parse_ui_datetime_text(ends_at_text)
     if ends_at <= starts_at:
@@ -121,6 +136,10 @@ def _validate_work_permit_input(
     if not normalized_employee_personnel_number:
         raise ValueError("Потрібно вибрати учасника наряду.")
 
+    target_training_date = ""
+    if target_training_date_text.strip():
+        target_training_date = parse_ui_date_text(target_training_date_text.strip()).isoformat()
+
     return {
         "permit_number": normalized_permit_number,
         "work_kind": normalized_work_kind,
@@ -137,4 +156,10 @@ def _validate_work_permit_input(
                 participant_role=WorkPermitParticipantRole(normalized_participant_role),
             ),
         ),
+        "target_training_status": WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked"),
+        "target_training_date": target_training_date,
+        "target_training_conducted_by": target_training_conducted_by.strip(),
+        "target_training_note": target_training_note.strip(),
+        "basis_text": basis_text.strip(),
+        "basis_note": basis_note.strip(),
     }

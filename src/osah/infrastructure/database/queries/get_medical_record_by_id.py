@@ -1,14 +1,15 @@
 from sqlite3 import Connection
 
 from osah.domain.entities.medical_decision import MedicalDecision
+from osah.domain.entities.medical_exam_basis import MedicalExamBasis
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.services.evaluate_medical_status import evaluate_medical_status
 
 
-# ###### ЧИТАННЯ МЕДИЧНОГО ЗАПИСУ ЗА ID / READ MEDICAL RECORD BY ID ######
+# ###### ЧТЕНИЕ МЕДИЦИНСКОЙ ЗАПИСИ ПО ID / GET MEDICAL RECORD BY ID ######
 def get_medical_record_by_id(connection: Connection, record_id: int) -> MedicalRecord | None:
-    """Повертає один медичний запис за ідентифікатором.
+    """Возвращает одну медицинскую запись по идентификатору.
     Returns one medical record by identifier.
     """
 
@@ -21,7 +22,10 @@ def get_medical_record_by_id(connection: Connection, record_id: int) -> MedicalR
             medical_records.valid_from,
             medical_records.valid_until,
             medical_records.medical_decision,
-            medical_records.restriction_note
+            medical_records.restriction_note,
+            medical_records.medical_exam_basis,
+            medical_records.basis_text,
+            medical_records.basis_note
         FROM medical_records
         INNER JOIN employees
             ON employees.personnel_number = medical_records.employee_personnel_number
@@ -41,6 +45,9 @@ def get_medical_record_by_id(connection: Connection, record_id: int) -> MedicalR
         medical_decision=MedicalDecision(row["medical_decision"]),
         restriction_note=row["restriction_note"] or "",
         status=MedicalStatus.CURRENT,
+        medical_exam_basis=MedicalExamBasis(row["medical_exam_basis"] or "legacy_not_tracked"),
+        basis_text=row["basis_text"] or "",
+        basis_note=row["basis_note"] or "",
     )
     return MedicalRecord(
         record_id=record.record_id,
@@ -51,4 +58,7 @@ def get_medical_record_by_id(connection: Connection, record_id: int) -> MedicalR
         medical_decision=record.medical_decision,
         restriction_note=record.restriction_note,
         status=evaluate_medical_status(record),
+        medical_exam_basis=record.medical_exam_basis,
+        basis_text=record.basis_text,
+        basis_note=record.basis_note,
     )

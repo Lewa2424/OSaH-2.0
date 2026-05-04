@@ -2,6 +2,7 @@ from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.medical_decision import MedicalDecision
+from osah.domain.entities.medical_exam_basis import MedicalExamBasis
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
@@ -12,7 +13,7 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.get_medical_record_by_id import get_medical_record_by_id
 
 
-# ###### ОНОВЛЕННЯ МЕДИЧНОГО ЗАПИСУ / UPDATE MEDICAL RECORD ######
+# ###### ОБНОВЛЕНИЕ МЕДИЦИНСКОЙ ЗАПИСИ / UPDATE MEDICAL RECORD ######
 def update_medical_record(
     database_path: Path,
     record_id: int,
@@ -21,8 +22,11 @@ def update_medical_record(
     valid_until_text: str,
     medical_decision: str,
     restriction_note: str,
+    medical_exam_basis: str = "legacy_not_tracked",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> None:
-    """Оновлює медичний запис, синхронізує сповіщення і пише audit.
+    """Обновляет медицинскую запись, синхронизирует уведомления и пишет audit.
     Updates a medical record, synchronizes notifications and writes audit.
     """
 
@@ -54,6 +58,9 @@ def update_medical_record(
             medical_decision=MedicalDecision(normalized_decision),
             restriction_note=normalized_restriction,
             status=MedicalStatus.CURRENT,
+            medical_exam_basis=MedicalExamBasis(medical_exam_basis.strip() or "legacy_not_tracked"),
+            basis_text=basis_text.strip(),
+            basis_note=basis_note.strip(),
         )
         update_medical_record_row(connection, updated_record)
         insert_audit_log(

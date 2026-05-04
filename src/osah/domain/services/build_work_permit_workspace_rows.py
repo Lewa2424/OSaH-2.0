@@ -2,33 +2,29 @@ from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
 from osah.domain.services.build_work_permit_status_reason import build_work_permit_status_reason
 from osah.domain.services.format_work_permit_status_label import format_work_permit_status_label
 
 
-# ###### ПОБУДОВА РЯДКІВ НАРЯДІВ / BUILD WORK PERMIT ROWS ######
+# ###### ПОСТРОЕНИЕ РЯДКОВ НАРЯДОВ / BUILD WORK PERMIT ROWS ######
 def build_work_permit_workspace_rows(
     work_permit_records: tuple[WorkPermitRecord, ...],
     employee_rows: tuple[EmployeeWorkspaceRow, ...],
 ) -> tuple[WorkPermitWorkspaceRow, ...]:
-    """Будує підготовлені рядки нарядів-допусків для Qt без UI-розрахунків.
-    Builds prepared work permit rows for Qt without UI calculations.
+    """Строит подготовленные строки нарядов-допусков для Qt.
+    Builds prepared work permit rows for Qt.
     """
 
     employee_lookup = {row.employee.personnel_number: row for row in employee_rows}
     return tuple(_build_row(record, employee_lookup) for record in work_permit_records)
 
 
-# ###### ПОБУДОВА РЯДКА НАРЯДУ / BUILD WORK PERMIT ROW ######
 def _build_row(
     record: WorkPermitRecord,
     employee_lookup: dict[str, EmployeeWorkspaceRow],
 ) -> WorkPermitWorkspaceRow:
-    """Будує один рядок реєстру нарядів-допусків.
-    Builds one work permit registry row.
-    """
-
     conflict_reasons = _build_conflict_reasons(record, employee_lookup)
     employee_numbers = tuple(participant.employee_personnel_number for participant in record.participants)
     return WorkPermitWorkspaceRow(
@@ -51,22 +47,20 @@ def _build_row(
         status_reason=build_work_permit_status_reason(record),
         has_conflicts=bool(conflict_reasons),
         conflict_reasons=conflict_reasons,
+        target_training_status=record.target_training_status,
     )
 
 
-# ###### КОНФЛІКТИ ДОПУСКУ / ADMISSION CONFLICTS ######
 def _build_conflict_reasons(
     record: WorkPermitRecord,
     employee_lookup: dict[str, EmployeeWorkspaceRow],
 ) -> tuple[str, ...]:
-    """Знаходить блокуючі конфлікти учасників наряду з іншими контурами ОП.
-    Finds blocking participant conflicts with other safety modules.
-    """
-
     if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}:
         return ()
 
     reasons: list[str] = []
+    if record.target_training_status == WorkPermitTargetTrainingStatus.REQUIRED_NOT_DONE:
+        reasons.append("Цільовий інструктаж для наряду не зафіксовано")
     for participant in record.participants:
         employee_row = employee_lookup.get(participant.employee_personnel_number)
         if employee_row is None:
@@ -80,12 +74,7 @@ def _build_conflict_reasons(
     return tuple(reasons)
 
 
-# ###### ВИЗНАЧЕННЯ ПІДРОЗДІЛУ / INFER DEPARTMENT ######
 def _infer_department_name(work_location: str) -> str:
-    """Виводить підрозділ з місця робіт для першого Qt-релізу.
-    Infers a department from work location for the first Qt release.
-    """
-
     if "/" in work_location:
         return work_location.split("/", 1)[0].strip()
     if " - " in work_location:

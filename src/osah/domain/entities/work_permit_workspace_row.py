@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 
 
 @dataclass(slots=True)
@@ -29,3 +30,4 @@ class WorkPermitWorkspaceRow:
     status_reason: str
     has_conflicts: bool
     conflict_reasons: tuple[str, ...]
+    target_training_status: WorkPermitTargetTrainingStatus = WorkPermitTargetTrainingStatus.LEGACY_NOT_TRACKED

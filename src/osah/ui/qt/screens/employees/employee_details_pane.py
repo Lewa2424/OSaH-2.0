@@ -20,6 +20,7 @@ class EmployeeDetailsPane(QScrollArea):
     edit_requested = Signal(EmployeeWorkspaceRow)
     archive_requested = Signal(EmployeeWorkspaceRow)
     module_navigation_requested = Signal(AppSection, str)
+    module_record_navigation_requested = Signal(AppSection, str, int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -62,10 +63,42 @@ class EmployeeDetailsPane(QScrollArea):
         )
         tabs.addTab(overview_tab, "Огляд")
         
-        tabs.addTab(EmployeeTrainingsTab(row.training_records), "Інструктажі")
-        tabs.addTab(EmployeePpeTab(row.ppe_records), "ЗІЗ")
-        tabs.addTab(EmployeeMedicalTab(row.medical_records), "Медицина")
-        tabs.addTab(EmployeeWorkPermitsTab(row.work_permit_records), "Наряди-допуски")
+        trainings_tab = EmployeeTrainingsTab(row.employee, row.training_records)
+        trainings_tab.record_requested.connect(
+            lambda personnel_number, record_id: self.module_record_navigation_requested.emit(
+                AppSection.TRAININGS,
+                personnel_number,
+                int(record_id) if record_id is not None else 0,
+            )
+        )
+        tabs.addTab(trainings_tab, "Інструктажі")
+        ppe_tab = EmployeePpeTab(row.ppe_records)
+        ppe_tab.record_requested.connect(
+            lambda personnel_number, record_id: self.module_record_navigation_requested.emit(
+                AppSection.PPE,
+                personnel_number,
+                record_id,
+            )
+        )
+        tabs.addTab(ppe_tab, "ЗІЗ")
+        medical_tab = EmployeeMedicalTab(row.medical_records)
+        medical_tab.record_requested.connect(
+            lambda personnel_number, record_id: self.module_record_navigation_requested.emit(
+                AppSection.MEDICAL,
+                personnel_number,
+                record_id,
+            )
+        )
+        tabs.addTab(medical_tab, "Медицина")
+        permits_tab = EmployeeWorkPermitsTab(row.employee.personnel_number, row.work_permit_records)
+        permits_tab.record_requested.connect(
+            lambda personnel_number, record_id: self.module_record_navigation_requested.emit(
+                AppSection.WORK_PERMITS,
+                personnel_number,
+                record_id,
+            )
+        )
+        tabs.addTab(permits_tab, "Наряди-допуски")
         tabs.addTab(_stub_tab("Історія", "Історія буде прив'язана до audit-журналу."), "Історія")
         layout.addWidget(tabs)
 

@@ -1,15 +1,23 @@
 from datetime import date, timedelta
 
 
-# ###### ПОБУДОВА ДЕМО-ЗАПИСІВ ЗІЗ / ПОСТРОЕНИЕ ДЕМО-ЗАПИСЕЙ СИЗ ######
-def build_demo_ppe_rows(employee_rows: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, int, int, str, str, int, str]]:
-    """Повертає демонстраційні записи ЗІЗ з актуальними, простроченими та проблемними станами.
-    Возвращает демонстрационные записи СИЗ с актуальными, просроченными и проблемными состояниями.
+# ###### ПОБУДОВА ДЕМО-ЗАПИСІВ ЗІЗ / BUILD DEMO PPE ROWS ######
+def build_demo_ppe_rows(
+    employee_rows: list[tuple[str, str, str, str, str]],
+) -> list[tuple[str, str, int, int, str, str, int, str, str, str, str, str]]:
+    """Возвращает демонстрационные записи СИЗ с новыми полями обеспечения и проверки.
+    Returns demo PPE records with provision and compliance fields populated.
     """
 
     today = date.today()
-    ppe_catalog = ("Каска захисна", "Окуляри захисні", "Рукавиці комбіновані", "Черевики захисні", "Костюм робочий")
-    rows: list[tuple[str, str, int, int, str, str, int, str]] = []
+    ppe_catalog = (
+        "Каска захисна",
+        "Окуляри захисні",
+        "Рукавиці комбіновані",
+        "Черевики захисні",
+        "Костюм робочий",
+    )
+    rows: list[tuple[str, str, int, int, str, str, int, str, str, str, str, str]] = []
 
     for index, employee_row in enumerate(row for row in employee_rows if row[4] == "active"):
         personnel_number = employee_row[0]
@@ -27,6 +35,10 @@ def build_demo_ppe_rows(employee_rows: list[tuple[str, str, str, str, str]]) -> 
                     replacement_date.isoformat(),
                     1 if ppe_name != "Рукавиці комбіновані" else 2,
                     "Норма видачі за посадою та виробничою дільницею.",
+                    "required_not_issued" if is_issued == 0 else "issued",
+                    "legacy_not_tracked" if (index + ppe_index) % 4 else "checked",
+                    "Норма видачі СІЗ по підприємству",
+                    "",
                 )
             )
 

@@ -25,6 +25,8 @@ class TrainingsRegistryTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(True)
+        self.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.verticalHeader().setVisible(False)
         self.horizontalHeader().setStretchLastSection(False)
         self.itemSelectionChanged.connect(self._emit_selected_row)
@@ -51,10 +53,12 @@ class TrainingsRegistryTable(QTableWidget):
             self.setCellWidget(row_index, 5, TrainingStatusBadge(row.status_filter, row.status_label))
             self._set_item(row_index, 6, row.conducted_by, row)
             self._set_item(row_index, 7, row.status_reason, row)
-            self.setRowHeight(row_index, 38)
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 5)
-        ensure_table_column_width(self, 7, max_width=500)
+        ensure_table_column_width(self, 7, max_width=420)
+        self.resizeRowsToContents()
+        for row_index in range(self.rowCount()):
+            self.setRowHeight(row_index, max(38, self.rowHeight(row_index)))
 
     def select_first(self) -> None:
         """Виділяє перший рядок, якщо таблиця не порожня.
@@ -94,6 +98,8 @@ class TrainingsRegistryTable(QTableWidget):
         item = QTableWidgetItem(text)
         item.setData(Qt.ItemDataRole.UserRole, row_index)
         item.setToolTip(text)
+        if column_index == 7:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}:
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status_filter == TrainingRegistryFilter.WARNING:

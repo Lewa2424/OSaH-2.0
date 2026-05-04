@@ -54,6 +54,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_training_workspace(context.application_context.database_path),
             initial_status=intent.training_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
+            initial_record_id=intent.training_record_id if intent else None,
         )
 
     if context.selected_section == AppSection.PPE:
@@ -63,6 +64,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_ppe_workspace(context.application_context.database_path),
             initial_status=intent.ppe_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
+            initial_record_id=intent.ppe_record_id if intent else None,
         )
 
     if context.selected_section == AppSection.MEDICAL:
@@ -72,6 +74,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_medical_workspace(context.application_context.database_path),
             initial_status=intent.medical_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
+            initial_record_id=intent.medical_record_id if intent else None,
         )
 
     if context.selected_section == AppSection.WORK_PERMITS:
@@ -81,6 +84,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_work_permit_workspace(context.application_context.database_path),
             initial_status=intent.work_permit_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
+            initial_record_id=intent.work_permit_record_id if intent else None,
         )
 
     if context.selected_section == AppSection.REPORTS:

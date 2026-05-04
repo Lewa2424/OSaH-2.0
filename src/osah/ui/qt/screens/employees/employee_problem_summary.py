@@ -21,7 +21,7 @@ class EmployeeProblemSummary(QFrame):
         layout.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])
         layout.setSpacing(SPACING["sm"])
 
-        title = QLabel("Причини та сигнали")
+        title = QLabel("Сигнали та причини")
         title.setStyleSheet("font-weight: 800; font-size: 13px;")
         layout.addWidget(title)
 

@@ -4,13 +4,13 @@ from datetime import date, timedelta
 # ###### ПОСТРОЕНИЕ ДЕМО-ЗАПИСЕЙ ИНСТРУКТАЖЕЙ / BUILD DEMO TRAINING ROWS ######
 def build_demo_training_rows(
     employee_rows: list[tuple[str, str, str, str, str]],
-) -> list[tuple[str, str, str, str, str, str, str, int, str, str]]:
-    """Возвращает демонстрационные записи инструктажей с разными сценариями статусов.
-    Returns demo training records with different status scenarios.
+) -> list[tuple[str, str, str, str, str, str, str, int, str, str, str, str, str, str, str]]:
+    """Возвращает демонстрационные записи инструктажей с новыми нормативными полями.
+    Returns demo training records with the new normative fields populated.
     """
 
     today = date.today()
-    rows: list[tuple[str, str, str, str, str, str, str, int, str, str]] = []
+    rows: list[tuple[str, str, str, str, str, str, str, int, str, str, str, str, str, str, str]] = []
     active_employees = [row for row in employee_rows if row[4] == "active"]
 
     for index, employee_row in enumerate(active_employees):
@@ -25,6 +25,15 @@ def build_demo_training_rows(
             training_type = "primary"
         elif index % 5 == 0:
             training_type = "targeted"
+
+        knowledge_check_result = "satisfactory"
+        work_admission_status = "allowed"
+        knowledge_check_note = "Проверка знаний проведена ответственным лицом."
+        if training_type == "targeted" and index % 10 == 0:
+            knowledge_check_result = "unsatisfactory"
+            work_admission_status = "not_allowed"
+            knowledge_check_note = "Целевой инструктаж завершен неудовлетворительным результатом."
+
         rows.append(
             (
                 personnel_number,
@@ -37,6 +46,11 @@ def build_demo_training_rows(
                 1,
                 "regular",
                 "manual",
+                knowledge_check_result,
+                work_admission_status,
+                knowledge_check_note,
+                "Журнал інструктажів підприємства",
+                "",
             )
         )
 
@@ -54,6 +68,11 @@ def build_demo_training_rows(
                     1,
                     "regular",
                     "manual",
+                    "satisfactory",
+                    "allowed",
+                    "Внеплановый контроль знаний подтвержден.",
+                    "Наказ про зміну технології робіт",
+                    "",
                 )
             )
 

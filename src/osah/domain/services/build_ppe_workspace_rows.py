@@ -5,12 +5,12 @@ from osah.domain.services.build_ppe_status_reason import build_ppe_status_reason
 from osah.domain.services.format_ppe_status_label import format_ppe_status_label
 
 
-# ###### ПОБУДОВА РЯДКІВ ЗІЗ / BUILD PPE ROWS ######
+# ###### ПОСТРОЕНИЕ РЯДОВ СИЗ / BUILD PPE ROWS ######
 def build_ppe_workspace_rows(
     employees: tuple[Employee, ...],
     ppe_records: tuple[PpeRecord, ...],
 ) -> tuple[PpeWorkspaceRow, ...]:
-    """Будує рядки реєстру ЗІЗ із реальних працівників і записів.
+    """Строит строки реестра СИЗ из реальных сотрудников и записей.
     Builds PPE registry rows from real employees and records.
     """
 
@@ -38,16 +38,16 @@ def build_ppe_workspace_rows(
                 status_label=format_ppe_status_label(record.status),
                 status_reason=build_ppe_status_reason(record),
                 note_text=record.note_text,
+                provision_status=record.provision_status,
+                compliance_check_state=record.compliance_check_state,
+                basis_text=record.basis_text,
+                basis_note=record.basis_note,
             )
         )
     return tuple(rows)
 
 
 def _infer_site_name(department_name: str) -> str:
-    """Виводить участок із назви підрозділу для фільтрів першої версії.
-    Infers a site name from department for first-version filters.
-    """
-
     lowered = department_name.lower()
     if "дільниц" in lowered:
         return department_name

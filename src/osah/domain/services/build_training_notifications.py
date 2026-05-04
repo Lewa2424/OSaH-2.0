@@ -2,6 +2,7 @@ from osah.domain.entities.employee import Employee
 from osah.domain.entities.notification_item import NotificationItem
 from osah.domain.entities.notification_kind import NotificationKind
 from osah.domain.entities.notification_level import NotificationLevel
+from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
@@ -38,7 +39,7 @@ def build_training_notifications(
                     notification_level=NotificationLevel.CRITICAL,
                     source_module="trainings.registry",
                     title_text="Відсутній первинний інструктаж",
-                    message_text="Для працівника відсутній обов'язковий первинний інструктаж.",
+                    message_text="Після вступного інструктажу первинний інструктаж потрібен до допуску до самостійної роботи.",
                     employee_personnel_number=employee.personnel_number,
                     employee_full_name=employee.full_name,
                 )
@@ -80,14 +81,26 @@ def build_training_notifications(
                     )
                 )
 
+            if training_record.knowledge_check_result == TrainingKnowledgeCheckResult.UNSATISFACTORY:
+                message_text = "Результат перевірки знань зафіксований як незадовільний."
+                if training_record.training_type == TrainingType.TARGETED:
+                    message_text = "Цільовий інструктаж незадовільний. Допуск до робіт заборонено."
+                notifications.append(
+                    NotificationItem(
+                        notification_kind=NotificationKind.CONTROL,
+                        notification_level=NotificationLevel.CRITICAL,
+                        source_module="trainings.registry",
+                        title_text="Незадовільний результат перевірки знань",
+                        message_text=message_text,
+                        employee_personnel_number=employee.personnel_number,
+                        employee_full_name=employee.full_name,
+                    )
+                )
+
     return tuple(notifications)
 
 
 def _should_raise_missing_primary(employee_records: tuple[TrainingRecord, ...]) -> bool:
-    """Определяет, нужно ли поднимать отдельную проблему отсутствующего первичного.
-    Determines whether a dedicated missing-primary problem must be raised.
-    """
-
     if not employee_records:
         return True
 
@@ -97,16 +110,16 @@ def _should_raise_missing_primary(employee_records: tuple[TrainingRecord, ...]) 
         default=None,
     )
     if latest_introductory is not None:
-        return False
+        return not any(
+            record.training_type == TrainingType.PRIMARY
+            and record.event_date >= latest_introductory.event_date
+            for record in employee_records
+        )
 
     return not any(record.training_type == TrainingType.PRIMARY for record in employee_records)
 
 
 def _build_notification_title(training_record: TrainingRecord, is_warning: bool) -> str:
-    """Возвращает короткий заголовок уведомления по типу проблемы инструктажа.
-    Returns a short notification title based on the training problem type.
-    """
-
     if training_record.training_type == TrainingType.INTRODUCTORY:
         return "Потрібен первинний після вступного" if is_warning else "Прострочено первинний після вступного"
     return "Скоро спливає строк повторного інструктажу" if is_warning else "Прострочено повторний інструктаж"

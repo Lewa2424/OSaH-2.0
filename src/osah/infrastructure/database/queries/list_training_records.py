@@ -1,18 +1,20 @@
 from sqlite3 import Connection
 
+from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.entities.training_work_admission_status import TrainingWorkAdmissionStatus
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.evaluate_training_status import evaluate_training_status
 
 
 # ###### ЧТЕНИЕ РЕЕСТРА ИНСТРУКТАЖЕЙ / LIST TRAINING RECORDS ######
 def list_training_records(connection: Connection, warning_days: int = 30) -> tuple[TrainingRecord, ...]:
-    """Возвращает все записи инструктажей с рассчитанными статусами.
-    Returns all training records with calculated statuses.
+    """Возвращает все записи инструктажей с новыми полями и рассчитанными статусами.
+    Returns all training records with new fields and calculated statuses.
     """
 
     rows = connection.execute(
@@ -29,7 +31,12 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
             trainings.person_category,
             trainings.requires_primary_on_workplace,
             trainings.work_risk_category,
-            trainings.next_control_basis
+            trainings.next_control_basis,
+            trainings.knowledge_check_result,
+            trainings.work_admission_status,
+            trainings.knowledge_check_note,
+            trainings.basis_text,
+            trainings.basis_note
         FROM trainings
         INNER JOIN employees
             ON employees.personnel_number = trainings.employee_personnel_number
@@ -54,6 +61,15 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
                 requires_primary_on_workplace=bool(int(row["requires_primary_on_workplace"] or 0)),
                 work_risk_category=TrainingWorkRiskCategory(row["work_risk_category"] or "not_applicable"),
                 next_control_basis=TrainingNextControlBasis(row["next_control_basis"] or "manual"),
+                knowledge_check_result=TrainingKnowledgeCheckResult(
+                    row["knowledge_check_result"] or "legacy_not_tracked"
+                ),
+                work_admission_status=TrainingWorkAdmissionStatus(
+                    row["work_admission_status"] or "legacy_not_tracked"
+                ),
+                knowledge_check_note=row["knowledge_check_note"] or "",
+                basis_text=row["basis_text"] or "",
+                basis_note=row["basis_note"] or "",
             )
         )
 
@@ -84,6 +100,11 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
             requires_primary_on_workplace=record.requires_primary_on_workplace,
             work_risk_category=record.work_risk_category,
             next_control_basis=record.next_control_basis,
+            knowledge_check_result=record.knowledge_check_result,
+            work_admission_status=record.work_admission_status,
+            knowledge_check_note=record.knowledge_check_note,
+            basis_text=record.basis_text,
+            basis_note=record.basis_note,
         )
         for record in raw_records
     )

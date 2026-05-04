@@ -1,24 +1,28 @@
 from datetime import date
 
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
+from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.services.format_ui_date import format_ui_date
 
 
-# ###### ПРИЧИНА СТАТУСУ ЗІЗ / BUILD PPE STATUS REASON ######
+# ###### ПРИЧИНА СТАТУСА СИЗ / BUILD PPE STATUS REASON ######
 def build_ppe_status_reason(ppe_record: PpeRecord, today: date | None = None) -> str:
-    """Пояснює, чому позиція ЗІЗ має конкретний статус.
+    """Объясняет, почему позиция СИЗ имеет конкретный статус.
     Explains why a PPE item has a specific status.
     """
 
+    if ppe_record.provision_status == PpeProvisionStatus.NOT_REQUIRED:
+        return "Не требуется по текущим условиям работ"
     if ppe_record.status == PpeStatus.NOT_ISSUED:
-        return f"Критично - {ppe_record.ppe_name} не видано"
+        return f"Критично - {ppe_record.ppe_name} положено, но не выдано"
     current_date = today or date.today()
     remaining_days = (date.fromisoformat(ppe_record.replacement_date) - current_date).days
     if ppe_record.status == PpeStatus.EXPIRED:
-        return f"Критично - строк {ppe_record.ppe_name} минув"
+        return f"Критично - срок использования {ppe_record.ppe_name} истек"
     if ppe_record.status == PpeStatus.WARNING:
         return f"Увага - заміна через {remaining_days} дн."
-    if not ppe_record.is_required and ppe_record.is_issued:
-        return f"Несистемно - {ppe_record.ppe_name} видано без ознаки обов'язковості"
+    if ppe_record.compliance_check_state == PpeComplianceCheckState.NOT_CHECKED:
+        return "Увага - відповідність ЗІЗ умовам роботи не підтверджена"
     return f"Актуально - кількість {ppe_record.quantity}, заміна до {format_ui_date(ppe_record.replacement_date)}"

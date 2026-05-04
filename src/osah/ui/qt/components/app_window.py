@@ -4,7 +4,7 @@ Main Qt application shell window.
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QMainWindow, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QLineEdit, QMainWindow, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
@@ -78,6 +78,9 @@ class AppWindow(QMainWindow):
         self._install_navigation_shortcuts()
         self._navigate_to(AppSection.DASHBOARD, record_history=False)
         self._news_task_controller = WorkerTaskController()
+        self._last_time_sync_marker = self._build_time_sync_marker()
+        self._last_day_sync_marker = self._build_day_sync_marker()
+        self._install_time_tracking()
         self._schedule_news_refresh()
 
     def _install_navigation_shortcuts(self) -> None:
@@ -144,6 +147,8 @@ class AppWindow(QMainWindow):
             screen.work_permits_attention_requested.connect(self._open_work_permits_attention)
         if hasattr(screen, "module_navigation_requested"):
             screen.module_navigation_requested.connect(self._open_module_for_employee)
+        if hasattr(screen, "module_record_navigation_requested"):
+            screen.module_record_navigation_requested.connect(self._open_module_record_for_employee)
         if hasattr(screen, "employee_open_requested"):
             screen.employee_open_requested.connect(
                 lambda personnel_number, source=section: self._open_employee_attention(
@@ -221,6 +226,26 @@ class AppWindow(QMainWindow):
         )
         self._navigate_to(target_section, intent=intent)
 
+    def _open_module_record_for_employee(
+        self,
+        target_section: AppSection,
+        personnel_number: str,
+        record_id: int,
+    ) -> None:
+        """Відкриває конкретний запис модуля для працівника.
+        Opens a concrete module record for the selected employee.
+        """
+
+        intent = QtNavigationIntent(
+            target_section=target_section,
+            employee_personnel_number=personnel_number,
+            training_record_id=record_id if target_section == AppSection.TRAININGS and record_id > 0 else None,
+            ppe_record_id=record_id if target_section == AppSection.PPE and record_id > 0 else None,
+            medical_record_id=record_id if target_section == AppSection.MEDICAL and record_id > 0 else None,
+            work_permit_record_id=record_id if target_section == AppSection.WORK_PERMITS and record_id > 0 else None,
+        )
+        self._navigate_to(target_section, intent=intent)
+
     # ###### ПЛАНУВАЛЬНИК НОВИН / NEWS REFRESH SCHEDULER ######
     def _schedule_news_refresh(self) -> None:
         """Schedules daily automatic news refresh based on saved settings."""
@@ -245,6 +270,69 @@ class AppWindow(QMainWindow):
         self._news_timer.setSingleShot(True)
         self._news_timer.timeout.connect(self._run_scheduled_news_refresh)
         self._news_timer.start(delay_ms)
+
+    def _install_time_tracking(self) -> None:
+        """Tracks system time changes for time-sensitive sections."""
+
+        self._time_tracking_timer = QTimer(self)
+        self._time_tracking_timer.setInterval(60 * 1000)
+        self._time_tracking_timer.timeout.connect(self._sync_time_sensitive_views_on_timer)
+        self._time_tracking_timer.start()
+
+    def _build_time_sync_marker(self) -> tuple[int, int, int, int, int]:
+        from datetime import datetime
+
+        now = datetime.now()
+        return now.year, now.month, now.day, now.hour, now.minute
+
+    def _build_day_sync_marker(self) -> tuple[int, int, int]:
+        from datetime import datetime
+
+        now = datetime.now()
+        return now.year, now.month, now.day
+
+    def _sync_time_sensitive_views_on_timer(self) -> None:
+        current_day_marker = self._build_day_sync_marker()
+        if current_day_marker == self._last_day_sync_marker:
+            return
+        self._last_day_sync_marker = current_day_marker
+        self._sync_time_sensitive_views()
+
+    def _sync_time_sensitive_views(self) -> None:
+        marker = self._build_time_sync_marker()
+        if marker == self._last_time_sync_marker:
+            return
+        self._last_time_sync_marker = marker
+
+        current_screen = self._current_screen_widget()
+        if current_screen is None or self._has_active_editor_focus():
+            return
+
+        if hasattr(current_screen, "_reload_workspace"):
+            current_screen._reload_workspace()
+            return
+
+        if self._current_section is not None:
+            self._navigate_to(
+                self._current_section,
+                intent=self._current_navigation_intent,
+                record_history=False,
+            )
+
+    def changeEvent(self, event) -> None:  # type: ignore[override]
+        super().changeEvent(event)
+        if event.type() == event.Type.ActivationChange and self.isActiveWindow():
+            self._sync_time_sensitive_views()
+
+    def _current_screen_widget(self) -> QWidget | None:
+        layout = self._content_container.content_layout()
+        if layout.count() <= 0:
+            return None
+        item = layout.itemAt(0)
+        return item.widget() if item is not None else None
+
+    def _has_active_editor_focus(self) -> bool:
+        return isinstance(self.focusWidget(), (QLineEdit, QTextEdit, QComboBox))
 
     # ###### ЗАПУСК ЗАПЛАНОВАНОЇ ПЕРЕВІРКИ / RUN SCHEDULED NEWS REFRESH ######
     def _run_scheduled_news_refresh(self) -> None:

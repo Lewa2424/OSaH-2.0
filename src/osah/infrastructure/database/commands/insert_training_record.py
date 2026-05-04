@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.training_record import TrainingRecord
 
 
-# ###### ДОДАВАННЯ ЗАПИСУ ІНСТРУКТАЖУ / ДОБАВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
+# ###### ДОБАВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА / INSERT TRAINING RECORD ######
 def insert_training_record(connection: Connection, training_record: TrainingRecord) -> int:
-    """Зберігає новий запис інструктажу в локальній базі.
-    Сохраняет новую запись инструктажа в локальной базе.
+    """Сохраняет новую запись инструктажа с нормативными полями.
+    Persists a new training record including normative fields.
     """
 
     cursor = connection.execute(
@@ -21,9 +21,14 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             person_category,
             requires_primary_on_workplace,
             work_risk_category,
-            next_control_basis
+            next_control_basis,
+            knowledge_check_result,
+            work_admission_status,
+            knowledge_check_note,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             training_record.employee_personnel_number,
@@ -36,6 +41,11 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             int(training_record.requires_primary_on_workplace),
             training_record.work_risk_category.value,
             training_record.next_control_basis.value,
+            training_record.knowledge_check_result.value,
+            training_record.work_admission_status.value,
+            training_record.knowledge_check_note,
+            training_record.basis_text,
+            training_record.basis_note,
         ),
     )
     return int(cursor.lastrowid)

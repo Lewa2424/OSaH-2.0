@@ -1,13 +1,15 @@
 from sqlite3 import Connection
 
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
+from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.services.evaluate_ppe_status import evaluate_ppe_status
 
 
-# ###### ЧИТАННЯ ЗАПИСУ ЗІЗ ЗА ID / READ PPE RECORD BY ID ######
+# ###### ЧТЕНИЕ ЗАПИСИ СИЗ ПО ID / READ PPE RECORD BY ID ######
 def get_ppe_record_by_id(connection: Connection, record_id: int) -> PpeRecord | None:
-    """Повертає один запис ЗІЗ за ідентифікатором.
+    """Возвращает один экземпляр записи СИЗ по идентификатору.
     Returns one PPE record by identifier.
     """
 
@@ -23,7 +25,11 @@ def get_ppe_record_by_id(connection: Connection, record_id: int) -> PpeRecord | 
             ppe_records.issue_date,
             ppe_records.replacement_date,
             ppe_records.quantity,
-            ppe_records.note_text
+            ppe_records.note_text,
+            ppe_records.provision_status,
+            ppe_records.compliance_check_state,
+            ppe_records.basis_text,
+            ppe_records.basis_note
         FROM ppe_records
         INNER JOIN employees
             ON employees.personnel_number = ppe_records.employee_personnel_number
@@ -46,6 +52,10 @@ def get_ppe_record_by_id(connection: Connection, record_id: int) -> PpeRecord | 
         quantity=int(row["quantity"]),
         note_text=row["note_text"] or "",
         status=PpeStatus.CURRENT,
+        provision_status=PpeProvisionStatus(row["provision_status"] or "legacy_not_tracked"),
+        compliance_check_state=PpeComplianceCheckState(row["compliance_check_state"] or "legacy_not_tracked"),
+        basis_text=row["basis_text"] or "",
+        basis_note=row["basis_note"] or "",
     )
     return PpeRecord(
         record_id=record.record_id,
@@ -59,4 +69,8 @@ def get_ppe_record_by_id(connection: Connection, record_id: int) -> PpeRecord | 
         quantity=record.quantity,
         note_text=record.note_text,
         status=evaluate_ppe_status(record),
+        provision_status=record.provision_status,
+        compliance_check_state=record.compliance_check_state,
+        basis_text=record.basis_text,
+        basis_note=record.basis_note,
     )

@@ -3,7 +3,6 @@ from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QVBoxLay
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.screens.employees.employee_photo_widget import EmployeePhotoWidget
-from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowStateBadge
 
 
 class EmployeeHeaderCard(QFrame):
@@ -42,15 +41,6 @@ class EmployeeHeaderCard(QFrame):
         info_layout.addLayout(grid)
         layout.addLayout(info_layout, stretch=1)
 
-        status_layout = QVBoxLayout()
-        status_layout.setSpacing(SPACING["sm"])
-        status_layout.addWidget(EmployeeRowStateBadge(row.status_level, row.status_label))
-        reason = QLabel(row.status_reason)
-        reason.setWordWrap(True)
-        reason.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        status_layout.addWidget(reason)
-        status_layout.addStretch()
-        layout.addLayout(status_layout)
 
 
 # ###### ПАРА ПОЛІВ ШАПКИ / HEADER FIELD PAIR ######

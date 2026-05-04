@@ -26,6 +26,7 @@ class EmployeesScreen(QWidget):
     """Full Qt screen for employees module."""
 
     module_navigation_requested = Signal(AppSection, str)
+    module_record_navigation_requested = Signal(AppSection, str, int)
 
     def __init__(
         self,
@@ -81,6 +82,7 @@ class EmployeesScreen(QWidget):
         self.details_pane.edit_requested.connect(self._open_edit_employee_dialog)
         self.details_pane.archive_requested.connect(self._archive_employee)
         self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
+        self.details_pane.module_record_navigation_requested.connect(self.module_record_navigation_requested.emit)
         right_layout.addWidget(self.details_pane, stretch=1)
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 0)

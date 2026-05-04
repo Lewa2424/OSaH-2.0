@@ -15,7 +15,7 @@ def load_training_registry(database_path: Path) -> tuple[TrainingRecord, ...]:
     connection = create_database_connection(database_path)
     try:
         app_settings = list_app_settings(connection)
-        warning_days = int(app_settings.get("behavior.training_warning_days", "30") or "30")
+        warning_days = int(app_settings.get("behavior.training_warning_days", "7") or "7")
         return list_training_records(connection, warning_days=max(1, min(warning_days, 90)))
     finally:
         connection.close()

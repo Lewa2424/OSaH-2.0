@@ -4,10 +4,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_work_permit_workspace import load_work_permit_workspace
+from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_workspace import WorkPermitWorkspace
 from osah.domain.entities.work_permit_workspace_mode import WorkPermitWorkspaceMode
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
+from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
@@ -24,6 +26,7 @@ class WorkPermitsScreen(QWidget):
     """Full Qt screen for work permits module."""
 
     employee_open_requested = Signal(str)
+    module_navigation_requested = Signal(AppSection, str)
 
     def __init__(
         self,
@@ -31,10 +34,13 @@ class WorkPermitsScreen(QWidget):
         workspace: WorkPermitWorkspace,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
+        initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
+        self._initial_personnel_number = initial_personnel_number
+        self._initial_record_id = initial_record_id
 
         self._reload_task_controller = WorkerTaskController()
         self._reload_task_controller.started.connect(self._on_reload_started)
@@ -67,9 +73,11 @@ class WorkPermitsScreen(QWidget):
         self.details_pane = WorkPermitDetailsPane(database_path, workspace.employees)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)
+        self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
         splitter.addWidget(self.details_pane)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
+        configure_detail_splitter(splitter, self.details_pane, detail_fraction=0.45, detail_min_width=500, detail_max_width=820)
         layout.addWidget(splitter, stretch=1)
 
         self.loading_state = LoadingStateWidget()
@@ -122,7 +130,8 @@ class WorkPermitsScreen(QWidget):
                 "Немає нарядів-допусків за поточними фільтрами.",
                 "Скиньте фільтри або перевірте активні роботи.",
             )
-        self.registry_table.select_first()
+        if rows and not self._restore_initial_selection():
+            self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: WorkPermitWorkspaceRow) -> None:
@@ -178,6 +187,19 @@ class WorkPermitsScreen(QWidget):
         self.loading_state.hide()
         self.filter_bar.setEnabled(True)
         self.details_pane.setEnabled(True)
+
+    def _restore_initial_selection(self) -> bool:
+        """Відновлює стартове виділення за записом або учасником.
+        Restores initial selection by record or participant.
+        """
+
+        restored = False
+        if self._initial_record_id is not None:
+            restored = self.registry_table.select_record(self._initial_record_id)
+        if not restored and self._initial_personnel_number:
+            restored = self.registry_table.select_employee(self._initial_personnel_number)
+        self._initial_record_id = None
+        return restored
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######

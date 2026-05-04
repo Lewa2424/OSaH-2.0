@@ -3,10 +3,10 @@ from sqlite3 import Connection
 from osah.domain.entities.ppe_record import PpeRecord
 
 
-# ###### ДОДАВАННЯ ЗАПИСУ ЗІЗ / ДОБАВЛЕНИЕ ЗАПИСИ СИЗ ######
+# ###### ДОБАВЛЕНИЕ ЗАПИСИ СИЗ / INSERT PPE RECORD ######
 def insert_ppe_record(connection: Connection, ppe_record: PpeRecord) -> None:
-    """Зберігає новий запис ЗІЗ у локальній базі.
-    Сохраняет новую запись СИЗ в локальной базе.
+    """Сохраняет новую запись СИЗ вместе с полями нормативного контроля.
+    Persists a new PPE record together with normative-control fields.
     """
 
     connection.execute(
@@ -19,9 +19,13 @@ def insert_ppe_record(connection: Connection, ppe_record: PpeRecord) -> None:
             issue_date,
             replacement_date,
             quantity,
-            note_text
+            note_text,
+            provision_status,
+            compliance_check_state,
+            basis_text,
+            basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             ppe_record.employee_personnel_number,
@@ -32,6 +36,9 @@ def insert_ppe_record(connection: Connection, ppe_record: PpeRecord) -> None:
             ppe_record.replacement_date,
             ppe_record.quantity,
             ppe_record.note_text,
+            ppe_record.provision_status.value,
+            ppe_record.compliance_check_state.value,
+            ppe_record.basis_text,
+            ppe_record.basis_note,
         ),
     )
-    connection.commit()

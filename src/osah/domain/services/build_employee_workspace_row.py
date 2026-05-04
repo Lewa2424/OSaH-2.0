@@ -7,17 +7,21 @@ from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
+from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_record import TrainingRecord
+from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.services.build_training_workspace_rows import build_training_workspace_rows
 from osah.domain.services.format_employee_status_label import format_employee_status_label
 from osah.domain.services.rank_employee_status_level import rank_employee_status_level
 
 
-# ###### ПОБУДОВА РЯДКА ПРАЦІВНИКА / BUILD EMPLOYEE ROW ######
+# ###### ПОСТРОЕНИЕ РЯДКА СОТРУДНИКА / BUILD EMPLOYEE ROW ######
 def build_employee_workspace_row(
     employee: Employee,
     training_records: Iterable[TrainingRecord],
@@ -25,12 +29,12 @@ def build_employee_workspace_row(
     medical_records: Iterable[MedicalRecord],
     work_permit_records: Iterable[WorkPermitRecord],
 ) -> EmployeeWorkspaceRow:
-    """Збирає один рядок робочого простору працівників без UI-логіки.
+    """Собирает один ряд рабочего пространства сотрудников без UI-логики.
     Builds one employee workspace row without UI logic.
     """
 
     training_records_tuple = tuple(training_records)
-    training_summary, training_problems = _build_training_summary(training_records_tuple)
+    training_summary, training_problems = _build_training_summary(employee, training_records_tuple)
     ppe_records_tuple = tuple(ppe_records)
     ppe_summary, ppe_problems = _build_ppe_summary(ppe_records_tuple)
     medical_records_tuple = tuple(medical_records)
@@ -71,13 +75,11 @@ def build_employee_workspace_row(
 
 
 def _build_training_summary(
+    employee: Employee,
     records: tuple[TrainingRecord, ...],
 ) -> tuple[EmployeeModuleStatusSummary, tuple[EmployeeProblem, ...]]:
-    """Будує підсумок інструктажів і список проблем працівника.
-    Builds training summary and employee problem list.
-    """
-
-    if not records:
+    training_rows = build_training_workspace_rows((employee,), records)
+    if not training_rows:
         problem = EmployeeProblem(
             module_name="Інструктажі",
             level=EmployeeStatusLevel.CRITICAL,
@@ -87,22 +89,36 @@ def _build_training_summary(
         )
         return _module_summary("Інструктажі", problem.level, "Критично", problem.title), (problem,)
 
-    if any(record.status == TrainingStatus.OVERDUE for record in records):
+    if any(record.knowledge_check_result == TrainingKnowledgeCheckResult.UNSATISFACTORY for record in records):
         problem = EmployeeProblem(
             module_name="Інструктажі",
             level=EmployeeStatusLevel.CRITICAL,
-            title="інструктаж прострочено",
-            detail="Є інструктаж із простроченою датою наступного контролю.",
+            title="незадовільна перевірка знань з інструктажу",
+            detail="За працівником є запис інструктажу з незадовільним результатом перевірки знань.",
             target_key="trainings",
         )
         return _module_summary("Інструктажі", problem.level, "Критично", problem.title), (problem,)
 
-    if any(record.status == TrainingStatus.WARNING for record in records):
+    if any(row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING} for row in training_rows):
+        critical_row = next(
+            row for row in training_rows if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}
+        )
+        problem = EmployeeProblem(
+            module_name="Інструктажі",
+            level=EmployeeStatusLevel.CRITICAL,
+            title=critical_row.status_reason.split("\n", 1)[0],
+            detail=critical_row.status_reason.replace("\n", " "),
+            target_key="trainings",
+        )
+        return _module_summary("Інструктажі", problem.level, "Критично", problem.title), (problem,)
+
+    if any(row.status_filter == TrainingRegistryFilter.WARNING for row in training_rows):
+        warning_row = next(row for row in training_rows if row.status_filter == TrainingRegistryFilter.WARNING)
         problem = EmployeeProblem(
             module_name="Інструктажі",
             level=EmployeeStatusLevel.WARNING,
-            title="наближається строк інструктажу",
-            detail="Один або кілька інструктажів скоро потребують повторного контролю.",
+            title=warning_row.status_reason.split("\n", 1)[0],
+            detail=warning_row.status_reason.replace("\n", " "),
             target_key="trainings",
         )
         return _module_summary("Інструктажі", problem.level, "Увага", problem.title), (problem,)
@@ -111,10 +127,6 @@ def _build_training_summary(
 
 
 def _build_ppe_summary(records: tuple[PpeRecord, ...]) -> tuple[EmployeeModuleStatusSummary, tuple[EmployeeProblem, ...]]:
-    """Будує підсумок ЗІЗ і список проблем працівника.
-    Builds PPE summary and employee problem list.
-    """
-
     if not records:
         problem = EmployeeProblem(
             module_name="ЗІЗ",
@@ -146,16 +158,22 @@ def _build_ppe_summary(records: tuple[PpeRecord, ...]) -> tuple[EmployeeModuleSt
         )
         return _module_summary("ЗІЗ", problem.level, "Увага", problem.title), (problem,)
 
+    if any(record.compliance_check_state == PpeComplianceCheckState.NOT_CHECKED for record in records):
+        problem = EmployeeProblem(
+            module_name="ЗІЗ",
+            level=EmployeeStatusLevel.WARNING,
+            title="не підтверджено відповідність ЗІЗ умовам роботи",
+            detail="Для одного або кількох ЗІЗ не зафіксована перевірка відповідності.",
+            target_key="ppe",
+        )
+        return _module_summary("ЗІЗ", problem.level, "Увага", problem.title), (problem,)
+
     return _module_summary("ЗІЗ", EmployeeStatusLevel.NORMAL, "Норма", "забезпечення актуальне"), ()
 
 
 def _build_medical_summary(
     records: tuple[MedicalRecord, ...],
 ) -> tuple[EmployeeModuleStatusSummary, tuple[EmployeeProblem, ...]]:
-    """Будує підсумок меддопуску і список проблем працівника.
-    Builds medical admission summary and employee problem list.
-    """
-
     if not records:
         problem = EmployeeProblem(
             module_name="Медицина",
@@ -202,10 +220,6 @@ def _build_medical_summary(
 def _build_work_permit_summary(
     records: tuple[WorkPermitRecord, ...],
 ) -> tuple[EmployeeModuleStatusSummary, tuple[EmployeeProblem, ...]]:
-    """Будує підсумок нарядів-допусків і список проблем працівника.
-    Builds work permit summary and employee problem list.
-    """
-
     active_records = tuple(record for record in records if record.status not in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED})
     if any(record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID} for record in active_records):
         problem = EmployeeProblem(
@@ -239,18 +253,10 @@ def _module_summary(
     label: str,
     reason: str,
 ) -> EmployeeModuleStatusSummary:
-    """Створює короткий модульний підсумок для картки працівника.
-    Creates a compact module summary for an employee card.
-    """
-
     return EmployeeModuleStatusSummary(module_name=module_name, level=level, label=label, reason=reason)
 
 
 def _infer_site_name(department_name: str) -> str:
-    """Виводить робочий участок із назви підрозділу для першої версії.
-    Infers a work site from department name for the first version.
-    """
-
     lowered = department_name.lower()
     if "дільниц" in lowered:
         return department_name

@@ -1,10 +1,12 @@
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.entities.training_work_admission_status import TrainingWorkAdmissionStatus
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
@@ -28,8 +30,13 @@ def create_training_record(
     work_risk_category: str = "not_applicable",
     should_update_repeated_control: bool = False,
     use_manual_next_control_date: bool = False,
+    knowledge_check_result: str = "legacy_not_tracked",
+    work_admission_status: str = "legacy_not_tracked",
+    knowledge_check_note: str = "",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> int:
-    """Создаёт новую запись инструктажа и синхронизирует контрольные уведомления.
+    """Создаёт новую запись инструктажа и синхронизирует уведомления.
     Creates a new training record and synchronizes control notifications.
     """
 
@@ -39,6 +46,9 @@ def create_training_record(
     normalized_training_type = training_type.strip()
     normalized_person_category = person_category.strip() or "own_employee"
     normalized_work_risk_category = work_risk_category.strip() or "not_applicable"
+    normalized_knowledge_check_note = knowledge_check_note.strip()
+    normalized_basis_text = basis_text.strip()
+    normalized_basis_note = basis_note.strip()
     if not normalized_personnel_number:
         raise ValueError("Потрібно вибрати працівника.")
     if not normalized_training_type:
@@ -78,6 +88,11 @@ def create_training_record(
             requires_primary_on_workplace=requires_primary_on_workplace,
             work_risk_category=resolved_work_risk_category,
             next_control_basis=next_control_basis,
+            knowledge_check_result=TrainingKnowledgeCheckResult(knowledge_check_result.strip() or "legacy_not_tracked"),
+            work_admission_status=TrainingWorkAdmissionStatus(work_admission_status.strip() or "legacy_not_tracked"),
+            knowledge_check_note=normalized_knowledge_check_note,
+            basis_text=normalized_basis_text,
+            basis_note=normalized_basis_note,
         )
         created_record_id = insert_training_record(connection, training_record)
         insert_audit_log(

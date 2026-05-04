@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
+from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_status import PpeStatus
 
 
@@ -25,3 +27,7 @@ class PpeWorkspaceRow:
     status_label: str
     status_reason: str
     note_text: str
+    provision_status: PpeProvisionStatus = PpeProvisionStatus.LEGACY_NOT_TRACKED
+    compliance_check_state: PpeComplianceCheckState = PpeComplianceCheckState.LEGACY_NOT_TRACKED
+    basis_text: str = ""
+    basis_note: str = ""

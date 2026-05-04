@@ -6,13 +6,13 @@ from osah.domain.entities.notification_kind import NotificationKind
 from osah.domain.entities.notification_level import NotificationLevel
 
 
-# ###### ПОБУДОВА СПОВІЩЕНЬ МЕДИЦИНИ / ПОСТРОЕНИЕ УВЕДОМЛЕНИЙ МЕДИЦИНЫ ######
+# ###### ПОСТРОЕНИЕ УВЕДОМЛЕНИЙ МЕДИЦИНЫ / BUILD MEDICAL NOTIFICATIONS ######
 def build_medical_notifications(
     employees: tuple[Employee, ...],
     medical_records: tuple[MedicalRecord, ...],
 ) -> tuple[NotificationItem, ...]:
-    """Повертає активні сповіщення за модулем медицини.
-    Возвращает активные уведомления по модулю медицины.
+    """Возвращает активные уведомления по модулю медицины.
+    Returns active notifications for the medical module.
     """
 
     notifications: list[NotificationItem] = []

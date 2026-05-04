@@ -1,10 +1,12 @@
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.entities.training_work_admission_status import TrainingWorkAdmissionStatus
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
@@ -30,6 +32,11 @@ def update_training_record(
     work_risk_category: str = "not_applicable",
     should_update_repeated_control: bool = False,
     use_manual_next_control_date: bool = False,
+    knowledge_check_result: str = "legacy_not_tracked",
+    work_admission_status: str = "legacy_not_tracked",
+    knowledge_check_note: str = "",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> None:
     """Обновляет запись инструктажа, синхронизирует уведомления и пишет audit.
     Updates a training record, synchronizes notifications, and writes audit.
@@ -84,6 +91,11 @@ def update_training_record(
             requires_primary_on_workplace=requires_primary_on_workplace,
             work_risk_category=resolved_work_risk_category,
             next_control_basis=next_control_basis,
+            knowledge_check_result=TrainingKnowledgeCheckResult(knowledge_check_result.strip() or "legacy_not_tracked"),
+            work_admission_status=TrainingWorkAdmissionStatus(work_admission_status.strip() or "legacy_not_tracked"),
+            knowledge_check_note=knowledge_check_note.strip(),
+            basis_text=basis_text.strip(),
+            basis_note=basis_note.strip(),
         )
         update_training_record_row(connection, updated_record)
         insert_audit_log(

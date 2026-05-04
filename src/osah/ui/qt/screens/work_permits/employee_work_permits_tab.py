@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from osah.domain.entities.work_permit_record import WorkPermitRecord
@@ -14,8 +15,12 @@ class EmployeeWorkPermitsTab(QWidget):
     Real work permits tab inside an employee card.
     """
 
-    def __init__(self, records: tuple[WorkPermitRecord, ...]) -> None:
+    record_requested = Signal(str, int)
+
+    def __init__(self, employee_personnel_number: str, records: tuple[WorkPermitRecord, ...]) -> None:
         super().__init__()
+        self._employee_personnel_number = employee_personnel_number
+        self._records = records
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["md"])
@@ -31,6 +36,7 @@ class EmployeeWorkPermitsTab(QWidget):
             return
 
         table = QTableWidget(0, 6)
+        table.itemClicked.connect(self._emit_record_request)
         table.setHorizontalHeaderLabels(["№", "Вид робіт", "Місце", "Завершення", "Статус", "Причина"])
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -47,7 +53,21 @@ class EmployeeWorkPermitsTab(QWidget):
                 build_work_permit_status_reason(record),
             )
             for column, value in enumerate(values):
-                table.setItem(row_index, column, QTableWidgetItem(value))
+                item = QTableWidgetItem(value)
+                item.setData(Qt.ItemDataRole.UserRole, row_index)
+                table.setItem(row_index, column, item)
         table.resizeColumnsToContents()
         ensure_table_column_width(table, 4)
         layout.addWidget(ScrollableTableFrame(table))
+
+    def _emit_record_request(self, item: QTableWidgetItem) -> None:
+        """Переходить до конкретного наряду-допуску з картки працівника.
+        Navigates to a concrete work permit from the employee card.
+        """
+
+        row_index_data = item.data(Qt.ItemDataRole.UserRole)
+        row_index = int(row_index_data) if row_index_data is not None else -1
+        if 0 <= row_index < len(self._records):
+            record = self._records[row_index]
+            if record.record_id is not None:
+                self.record_requested.emit(self._employee_personnel_number, record.record_id)

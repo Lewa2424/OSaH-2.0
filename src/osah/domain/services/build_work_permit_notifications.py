@@ -1,18 +1,21 @@
+from datetime import datetime
+
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.notification_item import NotificationItem
 from osah.domain.entities.notification_kind import NotificationKind
 from osah.domain.entities.notification_level import NotificationLevel
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 
 
-# ###### ПОБУДОВА СПОВІЩЕНЬ НАРЯДІВ-ДОПУСКІВ / ПОСТРОЕНИЕ УВЕДОМЛЕНИЙ НАРЯДОВ-ДОПУСКОВ ######
+# ###### ПОСТРОЕНИЕ УВЕДОМЛЕНИЙ НАРЯДОВ-ДОПУСКОВ / BUILD WORK PERMIT NOTIFICATIONS ######
 def build_work_permit_notifications(
     employees: tuple[Employee, ...],
     work_permit_records: tuple[WorkPermitRecord, ...],
 ) -> tuple[NotificationItem, ...]:
-    """Повертає активні контрольні сповіщення за модулем нарядів-допусків.
-    Возвращает активные контрольные уведомления по модулю нарядов-допусков.
+    """Возвращает активные контрольные уведомления по модулю нарядов-допусков.
+    Returns active control notifications for the work-permits module.
     """
 
     active_employee_numbers = {
@@ -36,10 +39,9 @@ def build_work_permit_notifications(
                         notification_kind=NotificationKind.CONTROL,
                         notification_level=NotificationLevel.CRITICAL,
                         source_module="work_permits.registry",
-                        title_text="Наряд-допуск прострочено",
+                        title_text="Наряд-допуск проблемний або прострочений",
                         message_text=(
-                            f"Наряд {work_permit_record.permit_number} завершився {work_permit_record.ends_at}, "
-                            f"але не був закритий вручну."
+                            f"Наряд {work_permit_record.permit_number} вимагає уваги через статус {work_permit_record.status.value}."
                         ),
                         employee_personnel_number=participant.employee_personnel_number,
                         employee_full_name=participant.employee_full_name,
@@ -52,8 +54,23 @@ def build_work_permit_notifications(
                         notification_level=NotificationLevel.WARNING,
                         source_module="work_permits.registry",
                         title_text="Наближається завершення наряду-допуску",
+                        message_text=f"Наряд {work_permit_record.permit_number} потребує уваги до {work_permit_record.ends_at}.",
+                        employee_personnel_number=participant.employee_personnel_number,
+                        employee_full_name=participant.employee_full_name,
+                    )
+                )
+
+            if work_permit_record.target_training_status == WorkPermitTargetTrainingStatus.REQUIRED_NOT_DONE:
+                starts_at = datetime.fromisoformat(work_permit_record.starts_at)
+                has_started = datetime.now() >= starts_at
+                notifications.append(
+                    NotificationItem(
+                        notification_kind=NotificationKind.CONTROL,
+                        notification_level=NotificationLevel.CRITICAL if has_started else NotificationLevel.WARNING,
+                        source_module="work_permits.registry",
+                        title_text="Не зафіксовано цільовий інструктаж",
                         message_text=(
-                            f"Наряд {work_permit_record.permit_number} потребує уваги до {work_permit_record.ends_at}."
+                            f"Для наряду {work_permit_record.permit_number} цільовий інструктаж не відмічений."
                         ),
                         employee_personnel_number=participant.employee_personnel_number,
                         employee_full_name=participant.employee_full_name,

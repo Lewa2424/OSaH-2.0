@@ -1,6 +1,9 @@
 from pathlib import Path
 
+from osah.application.services.create_ppe_record import _parse_quantity, _resolve_provision_status
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
+from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
@@ -11,7 +14,7 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.get_ppe_record_by_id import get_ppe_record_by_id
 
 
-# ###### ОНОВЛЕННЯ ЗАПИСУ ЗІЗ / UPDATE PPE RECORD ######
+# ###### ОБНОВЛЕНИЕ ЗАПИСИ СИЗ / UPDATE PPE RECORD ######
 def update_ppe_record(
     database_path: Path,
     record_id: int,
@@ -23,8 +26,12 @@ def update_ppe_record(
     replacement_date_text: str,
     quantity_text: str,
     note_text: str,
+    provision_status: str = "",
+    compliance_check_state: str = "legacy_not_tracked",
+    basis_text: str = "",
+    basis_note: str = "",
 ) -> None:
-    """Оновлює запис ЗІЗ, синхронізує сповіщення і пише audit.
+    """Обновляет запись СИЗ, синхронизирует уведомления и пишет audit.
     Updates a PPE record, synchronizes notifications and writes audit.
     """
 
@@ -59,6 +66,10 @@ def update_ppe_record(
             quantity=quantity,
             note_text=normalized_note,
             status=PpeStatus.CURRENT,
+            provision_status=PpeProvisionStatus(provision_status.strip() or _resolve_provision_status(is_required, is_issued)),
+            compliance_check_state=PpeComplianceCheckState(compliance_check_state.strip() or "legacy_not_tracked"),
+            basis_text=basis_text.strip(),
+            basis_note=basis_note.strip(),
         )
         update_ppe_record_row(connection, updated_record)
         insert_audit_log(
@@ -78,18 +89,3 @@ def update_ppe_record(
         connection.commit()
     finally:
         connection.close()
-
-
-# ###### РОЗБІР КІЛЬКОСТІ ЗІЗ / PARSE PPE QUANTITY ######
-def _parse_quantity(quantity_text: str) -> int:
-    """Перетворює кількість у додатнє ціле число.
-    Converts quantity into a positive integer.
-    """
-
-    try:
-        quantity = int(quantity_text)
-    except ValueError as error:
-        raise ValueError("Кількість має бути цілим числом.") from error
-    if quantity <= 0:
-        raise ValueError("Кількість має бути більшою за нуль.")
-    return quantity

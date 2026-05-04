@@ -1,14 +1,16 @@
 from sqlite3 import Connection
 
+from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
+from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.services.evaluate_ppe_status import evaluate_ppe_status
 
 
-# ###### ЧИТАННЯ РЕЄСТРУ ЗІЗ / ЧТЕНИЕ РЕЕСТРА СИЗ ######
+# ###### ЧТЕНИЕ РЕЕСТРА СИЗ / LIST PPE RECORDS ######
 def list_ppe_records(connection: Connection) -> tuple[PpeRecord, ...]:
-    """Повертає всі записи ЗІЗ із розрахованими статусами.
-    Возвращает все записи СИЗ с рассчитанными статусами.
+    """Возвращает все записи СИЗ с расширенными полями и статусами.
+    Returns all PPE records with extended fields and calculated statuses.
     """
 
     rows = connection.execute(
@@ -23,11 +25,15 @@ def list_ppe_records(connection: Connection) -> tuple[PpeRecord, ...]:
             ppe_records.issue_date,
             ppe_records.replacement_date,
             ppe_records.quantity,
-            ppe_records.note_text
+            ppe_records.note_text,
+            ppe_records.provision_status,
+            ppe_records.compliance_check_state,
+            ppe_records.basis_text,
+            ppe_records.basis_note
         FROM ppe_records
         INNER JOIN employees
             ON employees.personnel_number = ppe_records.employee_personnel_number
-        ORDER BY ppe_records.replacement_date ASC, ppe_records.id ASC;
+        ORDER BY employees.full_name COLLATE NOCASE ASC, ppe_records.ppe_name COLLATE NOCASE ASC, ppe_records.id ASC;
         """
     ).fetchall()
 
@@ -45,6 +51,12 @@ def list_ppe_records(connection: Connection) -> tuple[PpeRecord, ...]:
             quantity=int(row["quantity"]),
             note_text=row["note_text"] or "",
             status=PpeStatus.CURRENT,
+            provision_status=PpeProvisionStatus(row["provision_status"] or "legacy_not_tracked"),
+            compliance_check_state=PpeComplianceCheckState(
+                row["compliance_check_state"] or "legacy_not_tracked"
+            ),
+            basis_text=row["basis_text"] or "",
+            basis_note=row["basis_note"] or "",
         )
         records.append(
             PpeRecord(
@@ -59,6 +71,10 @@ def list_ppe_records(connection: Connection) -> tuple[PpeRecord, ...]:
                 quantity=ppe_record.quantity,
                 note_text=ppe_record.note_text,
                 status=evaluate_ppe_status(ppe_record),
+                provision_status=ppe_record.provision_status,
+                compliance_check_state=ppe_record.compliance_check_state,
+                basis_text=ppe_record.basis_text,
+                basis_note=ppe_record.basis_note,
             )
         )
 
