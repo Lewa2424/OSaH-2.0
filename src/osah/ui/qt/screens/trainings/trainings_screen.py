@@ -35,6 +35,9 @@ class TrainingsScreen(QWidget):
         self._database_path = database_path
         self._workspace = workspace
         self._visible_rows: tuple[TrainingWorkspaceRow, ...] = workspace.rows
+        self._current_row: TrainingWorkspaceRow | None = None
+        self._pending_record_id: int | None = None
+        self._pending_personnel_number: str | None = None
 
         self._reload_task_controller = WorkerTaskController()
         self._reload_task_controller.started.connect(self._on_reload_started)
@@ -67,6 +70,7 @@ class TrainingsScreen(QWidget):
 
         self.details_pane = TrainingRecordDetailsPane(database_path, workspace.employees)
         self.details_pane.editor.saved.connect(self._reload_workspace)
+        self.details_pane.editor.deleted.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)
         splitter.addWidget(self.details_pane)
         splitter.setStretchFactor(0, 1)
@@ -90,6 +94,7 @@ class TrainingsScreen(QWidget):
     def _reload_workspace(self) -> None:
         """Reloads data after creating or editing a training record."""
 
+        self._remember_selection_context()
         if not self._reload_task_controller.start_worker(
             WorkspaceReloadWorker(
                 load_callable=lambda: load_training_workspace(self._database_path),
@@ -102,6 +107,8 @@ class TrainingsScreen(QWidget):
     def _apply_filters(self) -> None:
         """Applies combined filters without domain calculations in UI."""
 
+        if self._pending_record_id is None and self._pending_personnel_number is None:
+            self._remember_selection_context()
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
         if values["mode"] == TrainingWorkspaceMode.BY_EMPLOYEES.value:
@@ -117,12 +124,16 @@ class TrainingsScreen(QWidget):
                 "Немає записів за активними фільтрами.",
                 "Скиньте фільтри або змініть параметри пошуку.",
             )
-        self.registry_table.select_first()
+            self._current_row = None
+            self.details_pane.show_empty_state()
+        if rows and not self._restore_selection_context():
+            self.registry_table.select_first()
 
     # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: TrainingWorkspaceRow) -> None:
         """Shows selected row in summary and details pane."""
 
+        self._current_row = row
         self.details_pane.show_row(row)
 
     # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
@@ -173,6 +184,34 @@ class TrainingsScreen(QWidget):
         self.loading_state.hide()
         self.filter_bar.setEnabled(True)
         self.details_pane.setEnabled(True)
+
+    def _remember_selection_context(self) -> None:
+        """Запам'ятовує поточний контекст для відновлення вибору.
+        Stores current context so selection can be restored later.
+        """
+
+        record_id, personnel_number = self.details_pane.editor.current_selection_context()
+        if record_id is not None or personnel_number is not None:
+            self._pending_record_id = record_id
+            self._pending_personnel_number = personnel_number
+            return
+        if self._current_row is not None:
+            self._pending_record_id = self._current_row.record_id
+            self._pending_personnel_number = self._current_row.employee_personnel_number
+
+    def _restore_selection_context(self) -> bool:
+        """Відновлює вибір після reload або зміни фільтрів.
+        Restores selection after reload or filter changes.
+        """
+
+        restored = False
+        if self._pending_record_id is not None:
+            restored = self.registry_table.select_record(self._pending_record_id)
+        if not restored and self._pending_personnel_number:
+            restored = self.registry_table.select_employee(self._pending_personnel_number)
+        self._pending_record_id = None
+        self._pending_personnel_number = None
+        return restored
 
 
 # ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######

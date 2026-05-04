@@ -64,6 +64,28 @@ class TrainingsRegistryTable(QTableWidget):
         if self.rowCount():
             self.selectRow(0)
 
+    def select_record(self, record_id: int) -> bool:
+        """Відновлює виділення за id запису інструктажу.
+        Restores selection by training record id.
+        """
+
+        for row_index, row in enumerate(self._rows):
+            if row.record_id == record_id:
+                self.selectRow(row_index)
+                return True
+        return False
+
+    def select_employee(self, personnel_number: str) -> bool:
+        """Відновлює виділення за табельним номером.
+        Restores selection by employee personnel number.
+        """
+
+        for row_index, row in enumerate(self._rows):
+            if row.employee_personnel_number == personnel_number:
+                self.selectRow(row_index)
+                return True
+        return False
+
     def _set_item(self, row_index: int, column_index: int, text: str, row: TrainingWorkspaceRow) -> None:
         """Додає текстову комірку з візуальним акцентом статусу.
         Adds a text cell with status visual accent.

@@ -4,12 +4,12 @@ from osah.domain.entities.training_record import TrainingRecord
 
 
 # ###### ДОДАВАННЯ ЗАПИСУ ІНСТРУКТАЖУ / ДОБАВЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
-def insert_training_record(connection: Connection, training_record: TrainingRecord) -> None:
+def insert_training_record(connection: Connection, training_record: TrainingRecord) -> int:
     """Зберігає новий запис інструктажу в локальній базі.
     Сохраняет новую запись инструктажа в локальной базе.
     """
 
-    connection.execute(
+    cursor = connection.execute(
         """
         INSERT INTO trainings (
             employee_personnel_number,
@@ -38,3 +38,4 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             training_record.next_control_basis.value,
         ),
     )
+    return int(cursor.lastrowid)

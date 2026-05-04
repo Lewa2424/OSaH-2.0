@@ -28,7 +28,7 @@ def create_training_record(
     work_risk_category: str = "not_applicable",
     should_update_repeated_control: bool = False,
     use_manual_next_control_date: bool = False,
-) -> None:
+) -> int:
     """Создаёт новую запись инструктажа и синхронизирует контрольные уведомления.
     Creates a new training record and synchronizes control notifications.
     """
@@ -79,7 +79,7 @@ def create_training_record(
             work_risk_category=resolved_work_risk_category,
             next_control_basis=next_control_basis,
         )
-        insert_training_record(connection, training_record)
+        created_record_id = insert_training_record(connection, training_record)
         insert_audit_log(
             connection,
             event_type="training.created",
@@ -92,5 +92,6 @@ def create_training_record(
         )
         sync_control_notifications(connection)
         connection.commit()
+        return created_record_id
     finally:
         connection.close()

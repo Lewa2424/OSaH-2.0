@@ -33,6 +33,9 @@ class TrainingRecordDetailsPane(QScrollArea):
         Shows the editor in new-record mode without a selected row.
         """
 
+        self._current_personnel_number = None
+        self.editor.clear_form()
+        self.open_employee_button.setEnabled(False)
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -54,6 +57,7 @@ class TrainingRecordDetailsPane(QScrollArea):
         """
 
         self._current_personnel_number = row.employee_personnel_number
+        self.open_employee_button.setEnabled(True)
         self.editor.set_row(row)
 
     def _emit_employee_request(self) -> None:

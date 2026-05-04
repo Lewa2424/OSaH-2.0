@@ -1,9 +1,22 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QCheckBox, QComboBox, QFormLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from osah.application.services.create_training_record import create_training_record
+from osah.application.services.delete_training_record import delete_training_record
 from osah.application.services.update_training_record import update_training_record
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
@@ -30,6 +43,7 @@ class TrainingRecordEditor(QWidget):
     """
 
     saved = Signal()
+    deleted = Signal()
 
     def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
         super().__init__()
@@ -117,7 +131,17 @@ class TrainingRecordEditor(QWidget):
         self.save_button = QPushButton("Зберегти запис")
         self.save_button.setProperty("variant", "accent")
         self.save_button.clicked.connect(self._save_record)
-        layout.addWidget(self.save_button)
+        self.delete_button = QPushButton("Видалити запис")
+        self.delete_button.setProperty("variant", "secondary")
+        self.delete_button.setStyleSheet(f"color: {COLOR['critical']};")
+        self.delete_button.clicked.connect(self._delete_record)
+
+        actions_layout = QHBoxLayout()
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(SPACING["sm"])
+        actions_layout.addWidget(self.save_button, stretch=1)
+        actions_layout.addWidget(self.delete_button)
+        layout.addLayout(actions_layout)
 
         self.new_button = QPushButton("Новий запис")
         self.new_button.setProperty("variant", "secondary")
@@ -148,6 +172,7 @@ class TrainingRecordEditor(QWidget):
         self.conducted_by_input.setText("" if row.conducted_by == "-" else row.conducted_by)
         self.note_input.setPlainText(row.note_text)
         self.save_button.setText("Створити запис" if row.is_missing else "Зберегти зміни")
+        self.delete_button.setVisible(not row.is_missing and row.record_id is not None)
         self._is_updating = False
         self._sync_scenario_fields(recalculate=False)
 
@@ -173,8 +198,19 @@ class TrainingRecordEditor(QWidget):
         self.conducted_by_input.clear()
         self.note_input.clear()
         self.save_button.setText("Створити запис")
+        self.delete_button.setVisible(False)
         self._is_updating = False
         self._sync_scenario_fields()
+
+    def current_selection_context(self) -> tuple[int | None, str | None]:
+        """Повертає контекст поточного запису для відновлення вибору.
+        Returns current record context for selection restore.
+        """
+
+        if self._current_record_id is None:
+            return None, None
+        personnel_number = self.employee_input.currentData()
+        return self._current_record_id, str(personnel_number) if personnel_number is not None else None
 
     def _sync_scenario_fields(self, recalculate: bool = True) -> None:
         """Обновляет доступность полей по сценарию выбранного типа инструктажа.
@@ -294,7 +330,7 @@ class TrainingRecordEditor(QWidget):
 
         try:
             if self._current_record_id is None:
-                create_training_record(
+                self._current_record_id = create_training_record(
                     self._database_path,
                     str(self.employee_input.currentData()),
                     training_type.value,
@@ -332,4 +368,55 @@ class TrainingRecordEditor(QWidget):
             return
 
         self.feedback_label.show_success("Запис інструктажу збережено.")
+        self.delete_button.setVisible(True)
         self.saved.emit()
+
+    def _delete_record(self) -> None:
+        """Видаляє поточний запис після підтвердження.
+        Deletes the current record after explicit confirmation.
+        """
+
+        if self._current_record_id is None:
+            self.feedback_label.show_error("Для видалення потрібно відкрити існуючий запис.")
+            return
+        if not self._confirm_delete():
+            return
+
+        try:
+            delete_training_record(self._database_path, self._current_record_id)
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+        except Exception as error:  # noqa: BLE001
+            self.feedback_label.show_error(f"Не вдалося видалити запис інструктажу: {error}")
+            return
+
+        self.feedback_label.show_success("Запис інструктажу видалено.")
+        self.deleted.emit()
+
+    def _confirm_delete(self) -> bool:
+        """Запитує явне підтвердження видалення.
+        Requests explicit confirmation before deletion.
+        """
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Підтвердження")
+        box.setText("Ви впевнені, що хочете видалити цей запис інструктажу?")
+
+        yes_button = box.addButton("Видалити", QMessageBox.ButtonRole.AcceptRole)
+        yes_button.setStyleSheet(
+            "color: #d32f2f; font-weight: bold; padding: 6px 16px; border: 1px solid #ffcdd2; "
+            "background: #fff0f0; border-radius: 4px;"
+        )
+        no_button = box.addButton("Скасувати", QMessageBox.ButtonRole.RejectRole)
+        no_button.setStyleSheet(
+            "padding: 6px 16px; font-weight: bold; background: #f1f3f5; border: 1px solid #dee2e6; "
+            "border-radius: 4px; color: #495057;"
+        )
+        box.setDefaultButton(no_button)
+        box.setStyleSheet(
+            f"QMessageBox {{ background: {COLOR['bg_card']}; }} "
+            "QLabel { font-size: 14px; margin-bottom: 10px; }"
+        )
+        box.exec()
+        return box.clickedButton() == yes_button
