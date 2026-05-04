@@ -6,6 +6,7 @@ from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.services.evaluate_work_permit_status import evaluate_work_permit_status
+from osah.domain.services.normalize_work_permit_target_training_status import normalize_work_permit_target_training_status
 
 
 # ###### ЧТЕНИЕ РЕЕСТРА НАРЯДОВ-ДОПУСКОВ / LIST WORK PERMIT RECORDS ######
@@ -80,8 +81,8 @@ def list_work_permit_records(connection: Connection) -> tuple[WorkPermitRecord, 
             cancel_reason_text=row["cancel_reason_text"] or "",
             participants=tuple(participants_by_permit_id.get(int(row["id"]), ())),
             status=WorkPermitStatus.ACTIVE,
-            target_training_status=WorkPermitTargetTrainingStatus(
-                row["target_training_status"] or "legacy_not_tracked"
+            target_training_status=normalize_work_permit_target_training_status(
+                WorkPermitTargetTrainingStatus(row["target_training_status"] or "legacy_not_tracked")
             ),
             target_training_date=row["target_training_date"] or "",
             target_training_conducted_by=row["target_training_conducted_by"] or "",

@@ -32,7 +32,6 @@ class WorkPermitDetailsPane(QScrollArea):
         self.open_employee_button.clicked.connect(self._emit_employee_request)
         self.show_empty_state()
 
-    # ###### ПОРОЖНІЙ СТАН / EMPTY STATE ######
     def show_empty_state(self) -> None:
         """Показує редактор у режимі нового наряду.
         Shows the editor in new work permit mode.
@@ -55,7 +54,6 @@ class WorkPermitDetailsPane(QScrollArea):
         layout.addStretch()
         self.setWidget(container)
 
-    # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def show_row(self, row: WorkPermitWorkspaceRow) -> None:
         """Показує вибраний наряд у деталях і формі редагування.
         Shows the selected work permit in details and edit form.
@@ -65,11 +63,11 @@ class WorkPermitDetailsPane(QScrollArea):
         self.participants_panel.set_row(row)
         self.editor.set_row(row)
 
-    # ###### ЗАПИТ КАРТКИ / EMPLOYEE REQUEST ######
     def _emit_employee_request(self) -> None:
-        """Передає запит відкрити картку першого учасника наряду.
-        Emits a request to open the first participant card.
+        """Передає запит відкрити картку поточного учасника наряду.
+        Emits a request to open the current participant card.
         """
 
-        if self._current_employee_number:
-            self.employee_requested.emit(self._current_employee_number)
+        personnel_number = self.editor.current_employee_personnel_number() or self._current_employee_number
+        if personnel_number:
+            self.employee_requested.emit(personnel_number)

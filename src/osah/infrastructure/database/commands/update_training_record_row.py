@@ -27,7 +27,10 @@ def update_training_record_row(connection: Connection, training_record: Training
             work_admission_status = ?,
             knowledge_check_note = ?,
             basis_text = ?,
-            basis_note = ?
+            basis_note = ?,
+            source_module = ?,
+            source_record_id = ?,
+            source_key = ?
         WHERE id = ?;
         """,
         (
@@ -46,6 +49,9 @@ def update_training_record_row(connection: Connection, training_record: Training
             training_record.knowledge_check_note,
             training_record.basis_text,
             training_record.basis_note,
+            training_record.source_module,
+            training_record.source_record_id,
+            training_record.source_key,
             training_record.record_id,
         ),
     )

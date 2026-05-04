@@ -33,3 +33,6 @@ class TrainingRecord:
     knowledge_check_note: str = ""
     basis_text: str = ""
     basis_note: str = ""
+    source_module: str = ""
+    source_record_id: int | None = None
+    source_key: str = ""

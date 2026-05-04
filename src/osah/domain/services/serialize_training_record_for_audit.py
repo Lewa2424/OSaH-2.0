@@ -23,6 +23,9 @@ def serialize_training_record_for_audit(training_record: TrainingRecord) -> str:
         f"knowledge_note={training_record.knowledge_check_note}; "
         f"basis_text={training_record.basis_text}; "
         f"basis_note={training_record.basis_note}; "
+        f"source_module={training_record.source_module}; "
+        f"source_record_id={training_record.source_record_id or ''}; "
+        f"source_key={training_record.source_key}; "
         f"conducted_by={training_record.conducted_by}; "
         f"note={training_record.note_text}"
     )

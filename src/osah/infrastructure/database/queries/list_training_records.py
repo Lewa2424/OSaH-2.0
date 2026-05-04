@@ -36,7 +36,10 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
             trainings.work_admission_status,
             trainings.knowledge_check_note,
             trainings.basis_text,
-            trainings.basis_note
+            trainings.basis_note,
+            trainings.source_module,
+            trainings.source_record_id,
+            trainings.source_key
         FROM trainings
         INNER JOIN employees
             ON employees.personnel_number = trainings.employee_personnel_number
@@ -70,6 +73,9 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
                 knowledge_check_note=row["knowledge_check_note"] or "",
                 basis_text=row["basis_text"] or "",
                 basis_note=row["basis_note"] or "",
+                source_module=row["source_module"] or "",
+                source_record_id=int(row["source_record_id"]) if row["source_record_id"] is not None else None,
+                source_key=row["source_key"] or "",
             )
         )
 
@@ -105,6 +111,9 @@ def list_training_records(connection: Connection, warning_days: int = 30) -> tup
             knowledge_check_note=record.knowledge_check_note,
             basis_text=record.basis_text,
             basis_note=record.basis_note,
+            source_module=record.source_module,
+            source_record_id=record.source_record_id,
+            source_key=record.source_key,
         )
         for record in raw_records
     )

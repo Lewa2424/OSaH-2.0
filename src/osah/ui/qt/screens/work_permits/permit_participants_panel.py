@@ -15,7 +15,6 @@ class PermitParticipantsPanel(QWidget):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(SPACING["xs"])
 
-    # ###### ПОКАЗ УЧАСНИКІВ / SHOW PARTICIPANTS ######
     def set_row(self, row: WorkPermitWorkspaceRow | None) -> None:
         """Показує учасників і причини конфліктів вибраного наряду.
         Shows participants and conflict reasons for the selected work permit.
@@ -28,7 +27,12 @@ class PermitParticipantsPanel(QWidget):
         if row is None:
             self._layout.addWidget(_label("Оберіть наряд для перегляду учасників.", COLOR["text_muted"]))
             return
-        self._layout.addWidget(_label(f"Учасники: {row.participant_names}", COLOR["text_secondary"]))
+        if row.participant_count > 0:
+            self._layout.addWidget(
+                _label(f"Учасники: {row.participant_count} — {row.participant_names}", COLOR["text_secondary"])
+            )
+        else:
+            self._layout.addWidget(_label("Учасники: 0", COLOR["text_secondary"]))
         if row.conflict_reasons:
             for reason in row.conflict_reasons:
                 self._layout.addWidget(_label(f"Критично: {reason}", COLOR["critical"]))
@@ -36,7 +40,6 @@ class PermitParticipantsPanel(QWidget):
             self._layout.addWidget(_label("Блокуючих конфліктів учасників не знайдено.", COLOR["success"]))
 
 
-# ###### ТЕКСТОВИЙ РЯДОК / LABEL ######
 def _label(text: str, color: str) -> QLabel:
     """Створює службовий текстовий рядок панелі.
     Creates a helper text line for the panel.

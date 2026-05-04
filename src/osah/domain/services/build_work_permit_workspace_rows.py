@@ -6,14 +6,14 @@ from osah.domain.entities.work_permit_target_training_status import WorkPermitTa
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
 from osah.domain.services.build_work_permit_status_reason import build_work_permit_status_reason
 from osah.domain.services.format_work_permit_status_label import format_work_permit_status_label
+from osah.domain.services.normalize_work_permit_target_training_status import normalize_work_permit_target_training_status
 
 
-# ###### ПОСТРОЕНИЕ РЯДКОВ НАРЯДОВ / BUILD WORK PERMIT ROWS ######
 def build_work_permit_workspace_rows(
     work_permit_records: tuple[WorkPermitRecord, ...],
     employee_rows: tuple[EmployeeWorkspaceRow, ...],
 ) -> tuple[WorkPermitWorkspaceRow, ...]:
-    """Строит подготовленные строки нарядов-допусков для Qt.
+    """Будує підготовлені рядки нарядів-допусків для Qt.
     Builds prepared work permit rows for Qt.
     """
 
@@ -25,7 +25,8 @@ def _build_row(
     record: WorkPermitRecord,
     employee_lookup: dict[str, EmployeeWorkspaceRow],
 ) -> WorkPermitWorkspaceRow:
-    conflict_reasons = _build_conflict_reasons(record, employee_lookup)
+    normalized_target_training_status = normalize_work_permit_target_training_status(record.target_training_status)
+    conflict_reasons = _build_conflict_reasons(record, employee_lookup, normalized_target_training_status)
     employee_numbers = tuple(participant.employee_personnel_number for participant in record.participants)
     return WorkPermitWorkspaceRow(
         record=record,
@@ -47,20 +48,24 @@ def _build_row(
         status_reason=build_work_permit_status_reason(record),
         has_conflicts=bool(conflict_reasons),
         conflict_reasons=conflict_reasons,
-        target_training_status=record.target_training_status,
+        target_training_status=normalized_target_training_status,
     )
 
 
 def _build_conflict_reasons(
     record: WorkPermitRecord,
     employee_lookup: dict[str, EmployeeWorkspaceRow],
+    normalized_target_training_status: WorkPermitTargetTrainingStatus,
 ) -> tuple[str, ...]:
     if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}:
         return ()
 
     reasons: list[str] = []
-    if record.target_training_status == WorkPermitTargetTrainingStatus.REQUIRED_NOT_DONE:
-        reasons.append("Цільовий інструктаж для наряду не зафіксовано")
+    if normalized_target_training_status == WorkPermitTargetTrainingStatus.NOT_DONE:
+        reasons.append("Цільовий інструктаж для наряду не проведено")
+    elif normalized_target_training_status == WorkPermitTargetTrainingStatus.DONE_FAILED:
+        reasons.append("Цільовий інструктаж проведено, але перевірка знань не пройдена")
+
     for participant in record.participants:
         employee_row = employee_lookup.get(participant.employee_personnel_number)
         if employee_row is None:

@@ -212,6 +212,7 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_work_permit_cancel_columns(connection)
     _ensure_training_control_columns(connection)
     _ensure_training_normative_columns(connection)
+    _ensure_training_source_columns(connection)
     _ensure_ppe_normative_columns(connection)
     _ensure_medical_normative_columns(connection)
     _ensure_work_permit_target_training_columns(connection)
@@ -302,6 +303,26 @@ def _ensure_training_normative_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE trainings ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
     if "basis_note" not in columns:
         connection.execute("ALTER TABLE trainings ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_training_source_columns(connection: Connection) -> None:
+    """Додає source-поля інструктажів для надійного зв'язку з модулем-джерелом.
+    Adds training source fields for reliable linkage to the origin module.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
+    }
+    if "source_module" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN source_module TEXT NOT NULL DEFAULT '';")
+    if "source_record_id" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN source_record_id INTEGER NULL;")
+    if "source_key" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN source_key TEXT NOT NULL DEFAULT '';")
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_trainings_source_key ON trainings(source_key);"
+    )
 
 
 def _ensure_ppe_normative_columns(connection: Connection) -> None:

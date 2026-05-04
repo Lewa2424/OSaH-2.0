@@ -1,6 +1,8 @@
+from dataclasses import replace
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.application.services.sync_work_permit_target_training_records import sync_work_permit_target_training_records
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
@@ -15,7 +17,6 @@ from osah.infrastructure.database.commands.insert_work_permit_record import inse
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
-# ###### СОЗДАНИЕ НАРЯДА-ДОПУСКА / CREATE WORK PERMIT RECORD ######
 def create_work_permit_record(
     database_path: Path,
     permit_number: str,
@@ -34,9 +35,10 @@ def create_work_permit_record(
     target_training_note: str = "",
     basis_text: str = "",
     basis_note: str = "",
+    participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> None:
-    """Создаёт новый наряд-допуск с первым участником и синхронизирует уведомления.
-    Creates a new work permit with the first participant and synchronizes notifications.
+    """Створює новий наряд-допуск і синхронізує пов'язані записи.
+    Creates a new work permit and synchronizes linked records.
     """
 
     normalized_permit_number = permit_number.strip()
@@ -54,12 +56,12 @@ def create_work_permit_record(
     if not normalized_work_location:
         raise ValueError("Потрібно вказати місце виконання робіт.")
     if not normalized_responsible_person:
-        raise ValueError("Потрібно вказати відповідального.")
+        raise ValueError("Потрібно вказати керівника робіт.")
     if not normalized_issuer_person:
         raise ValueError("Потрібно вказати допускаючого.")
-    if not normalized_employee_personnel_number:
+    if not normalized_employee_personnel_number and not participants:
         raise ValueError("Потрібно вибрати учасника наряду.")
-    if not normalized_participant_role:
+    if not normalized_participant_role and not participants:
         raise ValueError("Потрібно вибрати роль учасника.")
 
     starts_at = parse_ui_datetime_text(starts_at_text)
@@ -70,6 +72,22 @@ def create_work_permit_record(
     target_training_date = ""
     if target_training_date_text.strip():
         target_training_date = parse_ui_date_text(target_training_date_text.strip()).isoformat()
+    normalized_target_training_status = WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked")
+    normalized_target_training_conducted_by = target_training_conducted_by.strip()
+    if normalized_target_training_status in {
+        WorkPermitTargetTrainingStatus.DONE_PASSED,
+        WorkPermitTargetTrainingStatus.DONE_FAILED,
+        WorkPermitTargetTrainingStatus.DONE,
+    } and (not target_training_date or not normalized_target_training_conducted_by):
+        raise ValueError("Для проведеного цільового інструктажу потрібно вказати дату та особу, яка його провела.")
+
+    effective_participants = participants or (
+        WorkPermitParticipant(
+            employee_personnel_number=normalized_employee_personnel_number,
+            employee_full_name="",
+            participant_role=WorkPermitParticipantRole(normalized_participant_role),
+        ),
+    )
 
     work_permit_record = WorkPermitRecord(
         record_id=None,
@@ -82,17 +100,11 @@ def create_work_permit_record(
         issuer_person=normalized_issuer_person,
         note_text=normalized_note_text,
         closed_at=None,
-        participants=(
-            WorkPermitParticipant(
-                employee_personnel_number=normalized_employee_personnel_number,
-                employee_full_name="",
-                participant_role=WorkPermitParticipantRole(normalized_participant_role),
-            ),
-        ),
+        participants=effective_participants,
         status=WorkPermitStatus.ACTIVE,
-        target_training_status=WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked"),
+        target_training_status=normalized_target_training_status,
         target_training_date=target_training_date,
-        target_training_conducted_by=target_training_conducted_by.strip(),
+        target_training_conducted_by=normalized_target_training_conducted_by,
         target_training_note=target_training_note.strip(),
         basis_text=basis_text.strip(),
         basis_note=basis_note.strip(),
@@ -103,6 +115,8 @@ def create_work_permit_record(
         work_permit_id = insert_work_permit_record(connection, work_permit_record)
         for work_permit_participant in work_permit_record.participants:
             insert_work_permit_participant(connection, work_permit_id, work_permit_participant)
+        saved_work_permit_record = replace(work_permit_record, record_id=work_permit_id)
+        sync_work_permit_target_training_records(connection, saved_work_permit_record)
         insert_audit_log(
             connection,
             event_type="work_permit.created",
@@ -111,7 +125,7 @@ def create_work_permit_record(
             actor_name="system",
             entity_name=f"work_permit:{normalized_permit_number}",
             result_status="success",
-            description_text=f"created=({serialize_work_permit_record_for_audit(work_permit_record)})",
+            description_text=f"created=({serialize_work_permit_record_for_audit(saved_work_permit_record)})",
         )
         sync_control_notifications(connection)
         connection.commit()

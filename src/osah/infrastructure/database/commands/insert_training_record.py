@@ -26,9 +26,12 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             work_admission_status,
             knowledge_check_note,
             basis_text,
-            basis_note
+            basis_note,
+            source_module,
+            source_record_id,
+            source_key
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             training_record.employee_personnel_number,
@@ -46,6 +49,9 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             training_record.knowledge_check_note,
             training_record.basis_text,
             training_record.basis_note,
+            training_record.source_module,
+            training_record.source_record_id,
+            training_record.source_key,
         ),
     )
     return int(cursor.lastrowid)

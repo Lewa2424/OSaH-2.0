@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.application.services.sync_work_permit_target_training_records import sync_work_permit_target_training_records
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
@@ -17,7 +18,6 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.queries.list_work_permit_records import list_work_permit_records
 
 
-# ###### ОБНОВЛЕНИЕ НАРЯДА-ДОПУСКА / UPDATE WORK PERMIT RECORD ######
 def update_work_permit_record(
     database_path: Path,
     record_id: int,
@@ -37,9 +37,10 @@ def update_work_permit_record(
     target_training_note: str = "",
     basis_text: str = "",
     basis_note: str = "",
+    participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> None:
-    """Обновляет наряд-допуск и контролируемый список участников через application service.
-    Updates a work permit and the controlled participant list through an application service.
+    """Оновлює наряд-допуск і синхронізує пов'язані записи.
+    Updates a work permit and synchronizes linked records.
     """
 
     normalized = _validate_work_permit_input(
@@ -59,6 +60,7 @@ def update_work_permit_record(
         target_training_note,
         basis_text,
         basis_note,
+        participants=participants,
     )
     connection = create_database_connection(database_path)
     try:
@@ -80,6 +82,7 @@ def update_work_permit_record(
         delete_work_permit_participants(connection, record_id)
         for participant in updated_record.participants:
             insert_work_permit_participant(connection, record_id, participant)
+        sync_work_permit_target_training_records(connection, updated_record)
         insert_audit_log(
             connection,
             event_type="work_permit.updated",
@@ -116,6 +119,7 @@ def _validate_work_permit_input(
     target_training_note: str,
     basis_text: str,
     basis_note: str,
+    participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> dict[str, object]:
     starts_at = parse_ui_datetime_text(starts_at_text)
     ends_at = parse_ui_datetime_text(ends_at_text)
@@ -132,13 +136,29 @@ def _validate_work_permit_input(
     if not normalized_permit_number or not normalized_work_kind or not normalized_work_location:
         raise ValueError("Номер наряду, вид робіт і місце робіт обов'язкові.")
     if not normalized_responsible_person or not normalized_issuer_person:
-        raise ValueError("Потрібно вказати відповідального та допускаючого.")
-    if not normalized_employee_personnel_number:
+        raise ValueError("Потрібно вказати керівника робіт та допускаючого.")
+    if not normalized_employee_personnel_number and not participants:
         raise ValueError("Потрібно вибрати учасника наряду.")
 
     target_training_date = ""
     if target_training_date_text.strip():
         target_training_date = parse_ui_date_text(target_training_date_text.strip()).isoformat()
+    normalized_target_training_status = WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked")
+    normalized_target_training_conducted_by = target_training_conducted_by.strip()
+    if normalized_target_training_status in {
+        WorkPermitTargetTrainingStatus.DONE_PASSED,
+        WorkPermitTargetTrainingStatus.DONE_FAILED,
+        WorkPermitTargetTrainingStatus.DONE,
+    } and (not target_training_date or not normalized_target_training_conducted_by):
+        raise ValueError("Для проведеного цільового інструктажу потрібно вказати дату та особу, яка його провела.")
+
+    effective_participants = participants or (
+        WorkPermitParticipant(
+            employee_personnel_number=normalized_employee_personnel_number,
+            employee_full_name="",
+            participant_role=WorkPermitParticipantRole(normalized_participant_role),
+        ),
+    )
 
     return {
         "permit_number": normalized_permit_number,
@@ -149,16 +169,10 @@ def _validate_work_permit_input(
         "responsible_person": normalized_responsible_person,
         "issuer_person": normalized_issuer_person,
         "note_text": note_text.strip(),
-        "participants": (
-            WorkPermitParticipant(
-                employee_personnel_number=normalized_employee_personnel_number,
-                employee_full_name="",
-                participant_role=WorkPermitParticipantRole(normalized_participant_role),
-            ),
-        ),
-        "target_training_status": WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked"),
+        "participants": effective_participants,
+        "target_training_status": normalized_target_training_status,
         "target_training_date": target_training_date,
-        "target_training_conducted_by": target_training_conducted_by.strip(),
+        "target_training_conducted_by": normalized_target_training_conducted_by,
         "target_training_note": target_training_note.strip(),
         "basis_text": basis_text.strip(),
         "basis_note": basis_note.strip(),
