@@ -1,5 +1,5 @@
-from pathlib import Path
 from dataclasses import replace
+from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
@@ -94,7 +94,6 @@ class TrainingsScreen(QWidget):
             self.filter_bar.set_employee_filter(initial_personnel_number)
         self._apply_filters()
 
-    # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######
     def _reload_workspace(self) -> None:
         """Reloads data after creating or editing a training record."""
 
@@ -107,7 +106,6 @@ class TrainingsScreen(QWidget):
         ):
             self.error_state.show_state("Оновлення вже виконується. Дочекайтеся завершення.")
 
-    # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
         """Applies combined filters without domain calculations in UI."""
 
@@ -133,14 +131,12 @@ class TrainingsScreen(QWidget):
         if rows and not self._restore_selection_context():
             self.registry_table.select_first()
 
-    # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: TrainingWorkspaceRow) -> None:
         """Shows selected row in summary and details pane."""
 
         self._current_row = row
         self.details_pane.show_row(row)
 
-    # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
     def _apply_initial_status(self, initial_status: str) -> None:
         """Activates initial status filter from navigation intent."""
 
@@ -149,7 +145,6 @@ class TrainingsScreen(QWidget):
         except ValueError:
             return
 
-    # ###### СТАРТ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD START ######
     def _on_reload_started(self) -> None:
         """Applies busy-state for workspace reload."""
 
@@ -158,13 +153,11 @@ class TrainingsScreen(QWidget):
         self.filter_bar.setEnabled(False)
         self.details_pane.setEnabled(False)
 
-    # ###### ПРОГРЕС ПЕРЕЗАВАНТАЖЕННЯ / RELOAD PROGRESS ######
     def _on_reload_progress(self, progress_value: int, message_text: str) -> None:
         """Updates loading message while reload is running."""
 
         self.loading_state.show_state(message_text)
 
-    # ###### УСПІХ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD SUCCESS ######
     def _on_reload_success(self, payload: object) -> None:
         """Updates workspace from background reload result."""
 
@@ -175,13 +168,11 @@ class TrainingsScreen(QWidget):
         self.quick_stats.set_summary(self._workspace.summary)
         self._apply_filters()
 
-    # ###### ПОМИЛКА ПЕРЕЗАВАНТАЖЕННЯ / RELOAD ERROR ######
     def _on_reload_error(self, message_text: str) -> None:
         """Shows reload error text."""
 
         self.error_state.show_state(message_text)
 
-    # ###### ФІНАЛ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD FINISH ######
     def _on_reload_finished(self) -> None:
         """Resets busy-state after reload completion."""
 
@@ -218,7 +209,6 @@ class TrainingsScreen(QWidget):
         return restored
 
 
-# ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
     """Checks if row matches active filters."""
 
@@ -256,9 +246,8 @@ def _row_matches(row: TrainingWorkspaceRow, values: dict[str, str]) -> bool:
     return True
 
 
-# ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[TrainingWorkspaceRow, ...]) -> tuple[TrainingWorkspaceRow, ...]:
-    """Keeps most problematic training row per employee."""
+    """Keeps one most-problematic summary row per employee."""
 
     priority = {
         TrainingRegistryFilter.MISSING: 4,
@@ -286,29 +275,22 @@ def _build_employee_summary_row(
     employee_rows: list[TrainingWorkspaceRow],
     priority: dict[TrainingRegistryFilter, int],
 ) -> TrainingWorkspaceRow:
+    """Builds a single employee row with the most severe current state."""
+
     anchor_row = min(
         employee_rows,
         key=lambda row: (-priority[row.status_filter], row.employee_full_name.lower(), row.record_id or 0),
     )
-    problem_rows = [row for row in employee_rows if row.status_filter != TrainingRegistryFilter.CURRENT]
-    visible_rows = problem_rows[:3] if problem_rows else employee_rows[:1]
-    summary_reason_lines = [
-        f"• {_summarize_employee_row_reason(row)}"
-        for row in visible_rows
-    ]
-    if len(problem_rows) > 3:
-        summary_reason_lines.append(f"• Ще проблем: {len(problem_rows) - 3}")
-    if not problem_rows and not summary_reason_lines:
-        summary_reason_lines.append("• Немає проблемних інструктажів")
-
     return replace(
         anchor_row,
         training_type_label="Стан працівника",
-        status_reason="\n".join(summary_reason_lines),
+        status_reason=_summarize_employee_row_reason(anchor_row),
     )
 
 
 def _summarize_employee_row_reason(row: TrainingWorkspaceRow) -> str:
+    """Builds one concise reason for the most severe employee training state."""
+
     reason_text = row.status_reason.replace("\n", " ").strip()
     if row.status_filter == TrainingRegistryFilter.MISSING:
         return reason_text
@@ -316,4 +298,6 @@ def _summarize_employee_row_reason(row: TrainingWorkspaceRow) -> str:
         return f"{row.training_type_label}: {reason_text}"
     if row.status_filter == TrainingRegistryFilter.WARNING:
         return f"{row.training_type_label}: {reason_text}"
-    return f"{row.training_type_label}: {reason_text}"
+    if not reason_text:
+        return "Актуально: зауважень не виявлено."
+    return f"Актуально: {reason_text}"

@@ -213,6 +213,7 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_training_control_columns(connection)
     _ensure_training_normative_columns(connection)
     _ensure_training_source_columns(connection)
+    _ensure_training_current_columns(connection)
     _ensure_ppe_normative_columns(connection)
     _ensure_medical_normative_columns(connection)
     _ensure_work_permit_target_training_columns(connection)
@@ -303,6 +304,114 @@ def _ensure_training_normative_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE trainings ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
     if "basis_note" not in columns:
         connection.execute("ALTER TABLE trainings ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_training_current_columns(connection: Connection) -> None:
+    """Додає поля актуальності інструктажів і безпечно позначає поточні записи.
+    Adds training current/archive fields and safely marks current records.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
+    }
+    added_columns = False
+    if "is_current" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN is_current INTEGER NOT NULL DEFAULT 1;")
+        added_columns = True
+    if "archived_at" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN archived_at TEXT NULL;")
+        added_columns = True
+    if "archive_reason" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN archive_reason TEXT NOT NULL DEFAULT '';")
+        added_columns = True
+    if "replaced_by_record_id" not in columns:
+        connection.execute("ALTER TABLE trainings ADD COLUMN replaced_by_record_id INTEGER NULL;")
+        added_columns = True
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_trainings_current_employee_type
+        ON trainings(employee_personnel_number, training_type, is_current);
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_trainings_employee_current
+        ON trainings(employee_personnel_number, is_current);
+        """
+    )
+    if added_columns:
+        _backfill_training_current_state(connection)
+
+
+def _backfill_training_current_state(connection: Connection) -> None:
+    """Позначає актуальні та архівні training-записи у вже існуючих базах.
+    Marks current and archived training records in already existing databases.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(trainings);").fetchall()
+    }
+    has_source_key = "source_key" in columns
+    select_source_key = ", source_key" if has_source_key else ", '' AS source_key"
+    rows = connection.execute(
+        f"""
+        SELECT id, employee_personnel_number, training_type, event_date{select_source_key}
+        FROM trainings
+        ORDER BY event_date ASC, id ASC;
+        """
+    ).fetchall()
+    latest_regular_ids: dict[tuple[str, str], int] = {}
+    latest_manual_targeted_ids: dict[str, int] = {}
+    latest_targeted_source_ids: dict[str, int] = {}
+
+    for row in rows:
+        record_id = int(row["id"])
+        employee_number = str(row["employee_personnel_number"])
+        training_type = str(row["training_type"])
+        source_key = str(row["source_key"] or "").strip()
+        if training_type == "targeted":
+            if source_key:
+                latest_targeted_source_ids[source_key] = record_id
+            else:
+                latest_manual_targeted_ids[employee_number] = record_id
+            continue
+        latest_regular_ids[(employee_number, training_type)] = record_id
+
+    current_ids = set(latest_regular_ids.values())
+    current_ids.update(latest_manual_targeted_ids.values())
+    current_ids.update(latest_targeted_source_ids.values())
+
+    for row in rows:
+        record_id = int(row["id"])
+        if record_id in current_ids:
+            connection.execute(
+                """
+                UPDATE trainings
+                SET is_current = 1,
+                    archived_at = NULL,
+                    archive_reason = '',
+                    replaced_by_record_id = NULL
+                WHERE id = ?;
+                """,
+                (record_id,),
+            )
+            continue
+        connection.execute(
+            """
+            UPDATE trainings
+            SET is_current = 0,
+                archived_at = COALESCE(archived_at, CURRENT_TIMESTAMP),
+                archive_reason = CASE
+                    WHEN archive_reason = '' THEN 'legacy_superseded'
+                    ELSE archive_reason
+                END
+            WHERE id = ?;
+            """,
+            (record_id,),
+        )
 
 
 def _ensure_training_source_columns(connection: Connection) -> None:

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from osah.application.services.create_training_record import create_training_record
+from osah.application.services.create_current_training_record import create_current_training_record
 from osah.application.services.delete_training_record import delete_training_record
 from osah.application.services.update_training_record import update_training_record
 from osah.domain.entities.employee import Employee
@@ -49,8 +49,8 @@ from osah.ui.qt.hints.normative_hints import (
 
 
 class TrainingRecordEditor(QWidget):
-    """Форма создания и редактирования одного записи инструктажа.
-    Form for creating and editing one training record.
+    """Форма створення і редагування одного запису інструктажу.
+    Form for creating and editing a single training record.
     """
 
     saved = Signal()
@@ -67,11 +67,12 @@ class TrainingRecordEditor(QWidget):
         layout.setSpacing(SPACING["md"])
 
         form = QFormLayout()
+        self.employee_label = QLabel("Працівник")
         self.employee_input = QComboBox()
         for employee in employees:
             if employee.employment_status.strip().lower() == "active":
                 self.employee_input.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
-        form.addRow("Працівник", self.employee_input)
+        form.addRow(self.employee_label, self.employee_input)
 
         self.type_input = QComboBox()
         for training_type in TrainingType:
@@ -136,7 +137,10 @@ class TrainingRecordEditor(QWidget):
         self.knowledge_result_input.addItem("Задовільно", TrainingKnowledgeCheckResult.SATISFACTORY.value)
         self.knowledge_result_input.addItem("Незадовільно", TrainingKnowledgeCheckResult.UNSATISFACTORY.value)
         self.knowledge_result_input.addItem("Не застосовується", TrainingKnowledgeCheckResult.NOT_APPLICABLE.value)
-        form.addRow(self._with_info("Результат перевірки\nзнань і навичок", TRAINING_KNOWLEDGE_CHECK_HINT), self.knowledge_result_input)
+        form.addRow(
+            self._with_info("Результат перевірки\nзнань і навичок", TRAINING_KNOWLEDGE_CHECK_HINT),
+            self.knowledge_result_input,
+        )
 
         self.work_admission_input = QComboBox()
         self.work_admission_input.addItem("Не відстежувалось раніше", TrainingWorkAdmissionStatus.LEGACY_NOT_TRACKED.value)
@@ -179,7 +183,11 @@ class TrainingRecordEditor(QWidget):
         self.new_button = QPushButton("Новий запис")
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
+        self.new_button.setVisible(False)
         layout.addWidget(self.new_button)
+
+        self.employee_label.setVisible(False)
+        self.employee_input.setVisible(False)
         self.clear_form()
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
@@ -192,6 +200,29 @@ class TrainingRecordEditor(QWidget):
         row.addStretch()
         return container
 
+    def set_locked_employee(self, employee_personnel_number: str) -> None:
+        self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(employee_personnel_number)))
+
+    def set_type_locked(self, locked: bool) -> None:
+        self.type_input.setEnabled(not locked)
+
+    def prepare_card_create_mode(
+        self,
+        employee_personnel_number: str,
+        training_type: TrainingType | None = None,
+        lock_type: bool = False,
+    ) -> None:
+        self.clear_form()
+        self.set_locked_employee(employee_personnel_number)
+        if training_type is not None:
+            self.type_input.setCurrentIndex(max(0, self.type_input.findData(training_type.value)))
+        self.set_type_locked(lock_type)
+        self.save_button.setText("Створити інструктаж")
+
+    def show_card_row(self, row: TrainingWorkspaceRow, lock_type: bool = True) -> None:
+        self.set_row(row)
+        self.set_type_locked(lock_type)
+
     def set_row(self, row: TrainingWorkspaceRow) -> None:
         self._is_updating = True
         self._current_record_id = row.record_id
@@ -201,7 +232,7 @@ class TrainingRecordEditor(QWidget):
         self.person_category_input.setCurrentIndex(max(0, self.person_category_input.findData(row.person_category.value)))
         self.requires_primary_input.setChecked(row.requires_primary_on_workplace)
         self.event_date_input.setText("" if row.event_date == "-" else format_ui_date(row.event_date))
-        self.next_date_input.setText("" if row.next_control_date == "-" else format_ui_date(row.next_control_date))
+        self.next_date_input.setText("" if row.next_control_date in {"-", "Потрібен"} else format_ui_date(row.next_control_date))
         self.risk_input.setCurrentIndex(max(0, self.risk_input.findData(row.work_risk_category.value)))
         self.affects_repeated_input.setChecked(
             row.training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED}
@@ -214,7 +245,7 @@ class TrainingRecordEditor(QWidget):
         self.work_admission_input.setCurrentIndex(max(0, self.work_admission_input.findData(row.work_admission_status.value)))
         self.knowledge_note_input.setPlainText(row.knowledge_check_note)
         self.basis_panel.set_values(row.basis_text, row.basis_note)
-        self.save_button.setText("Створити запис" if row.is_missing else "Зберегти зміни")
+        self.save_button.setText("Створити інструктаж" if row.is_missing else "Зберегти зміни")
         self.delete_button.setVisible(not row.is_missing and row.record_id is not None)
         self._is_updating = False
         self._sync_scenario_fields(recalculate=False)
@@ -240,15 +271,15 @@ class TrainingRecordEditor(QWidget):
         self.work_admission_input.setCurrentIndex(0)
         self.knowledge_note_input.clear()
         self.basis_panel.clear()
-        self.save_button.setText("Створити запис")
+        self.save_button.setText("Створити інструктаж")
         self.delete_button.setVisible(False)
         self._is_updating = False
         self._sync_scenario_fields()
 
     def current_selection_context(self) -> tuple[int | None, str | None]:
-        if self._current_record_id is None:
-            return None, None
         personnel_number = self.employee_input.currentData()
+        if self._current_record_id is None:
+            return None, str(personnel_number) if personnel_number is not None else None
         return self._current_record_id, str(personnel_number) if personnel_number is not None else None
 
     def _sync_scenario_fields(self, recalculate: bool = True) -> None:
@@ -365,7 +396,7 @@ class TrainingRecordEditor(QWidget):
 
         try:
             if self._current_record_id is None:
-                self._current_record_id = create_training_record(
+                self._current_record_id = create_current_training_record(
                     self._database_path,
                     str(self.employee_input.currentData()),
                     training_type.value,

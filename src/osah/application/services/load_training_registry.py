@@ -7,7 +7,10 @@ from osah.infrastructure.database.queries.list_training_records import list_trai
 
 
 # ###### ЗАГРУЗКА РЕЕСТРА ИНСТРУКТАЖЕЙ / LOAD TRAINING REGISTRY ######
-def load_training_registry(database_path: Path) -> tuple[TrainingRecord, ...]:
+def load_training_registry(
+    database_path: Path,
+    include_archived: bool = False,
+) -> tuple[TrainingRecord, ...]:
     """Загружает реестр инструктажей из локальной базы с учётом настроек поведения.
     Loads the trainings registry from the local database using behavior settings.
     """
@@ -16,6 +19,10 @@ def load_training_registry(database_path: Path) -> tuple[TrainingRecord, ...]:
     try:
         app_settings = list_app_settings(connection)
         warning_days = int(app_settings.get("behavior.training_warning_days", "7") or "7")
-        return list_training_records(connection, warning_days=max(1, min(warning_days, 90)))
+        return list_training_records(
+            connection,
+            warning_days=max(1, min(warning_days, 90)),
+            include_archived=include_archived,
+        )
     finally:
         connection.close()

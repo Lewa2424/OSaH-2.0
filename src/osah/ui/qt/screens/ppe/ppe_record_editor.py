@@ -5,11 +5,11 @@ from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLine
 
 from osah.application.services.create_ppe_record import create_ppe_record
 from osah.application.services.update_ppe_record import update_ppe_record
-from osah.domain.services.build_default_ppe_names import build_default_ppe_names
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
 from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
+from osah.domain.services.build_default_ppe_names import build_default_ppe_names
 from osah.domain.services.format_ui_date import format_ui_date
 from osah.ui.qt.components.basis_note_panel import BasisNotePanel
 from osah.ui.qt.components.date_line_edit import DateLineEdit
@@ -20,7 +20,7 @@ from osah.ui.qt.hints.normative_hints import PPE_COMPLIANCE_HINT, PPE_PROVISION_
 
 
 class PpeRecordEditor(QWidget):
-    """Форма создания и редактирования одной записи СИЗ.
+    """Форма створення і редагування однієї позиції ЗІЗ.
     Form for creating and editing one PPE record.
     """
 
@@ -30,6 +30,8 @@ class PpeRecordEditor(QWidget):
         super().__init__()
         self._database_path = database_path
         self._current_record_id: int | None = None
+        self._locked_employee_number: str | None = None
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING["md"])
@@ -40,6 +42,7 @@ class PpeRecordEditor(QWidget):
             if employee.employment_status.strip().lower() == "active":
                 self.employee_input.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
         form.addRow("Працівник", self.employee_input)
+        self.employee_input.setVisible(False)
 
         self.ppe_input = QComboBox()
         self.ppe_input.setEditable(True)
@@ -71,11 +74,11 @@ class PpeRecordEditor(QWidget):
         form.addRow("Фактично видано", self.issued_input)
 
         self.issue_date_input = DateLineEdit()
-        self.issue_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
+        self.issue_date_input.setPlaceholderText("ДД.ММ.РРРР")
         form.addRow("Дата видачі", self.issue_date_input)
 
         self.replacement_date_input = DateLineEdit()
-        self.replacement_date_input.setPlaceholderText("ДД.ММ.ГГГГ")
+        self.replacement_date_input.setPlaceholderText("ДД.ММ.РРРР")
         form.addRow(self._with_info("Дата заміни", PPE_REPLACEMENT_HINT), self.replacement_date_input)
 
         self.quantity_input = QLineEdit()
@@ -101,6 +104,7 @@ class PpeRecordEditor(QWidget):
         self.new_button = QPushButton("Новий запис")
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
+        self.new_button.setVisible(False)
         layout.addWidget(self.new_button)
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
@@ -113,9 +117,17 @@ class PpeRecordEditor(QWidget):
         row.addStretch()
         return container
 
+    def set_locked_employee(self, employee_personnel_number: str) -> None:
+        """Фіксує працівника для картки ЗІЗ.
+        Locks the employee context for the PPE card.
+        """
+
+        self._locked_employee_number = employee_personnel_number
+        self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(employee_personnel_number)))
+
     def set_row(self, row: PpeWorkspaceRow) -> None:
         self._current_record_id = row.record_id
-        self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(row.employee_personnel_number)))
+        self.set_locked_employee(row.employee_personnel_number)
         self.ppe_input.setCurrentText(row.ppe_name)
         self.required_input.setCurrentIndex(0 if row.is_required else 1)
         self.issued_input.setCurrentIndex(0 if row.is_issued else 1)
@@ -128,8 +140,20 @@ class PpeRecordEditor(QWidget):
         self.basis_panel.set_values(row.basis_text, row.basis_note)
         self.save_button.setText("Зберегти зміни")
 
+    def prepare_card_create_mode(self, employee_personnel_number: str, ppe_name: str | None = None) -> None:
+        """Готує картку до створення нової позиції ЗІЗ для працівника.
+        Prepares the card for creating a new PPE item for the employee.
+        """
+
+        self.set_locked_employee(employee_personnel_number)
+        self.clear_form()
+        if ppe_name:
+            self.ppe_input.setCurrentText(ppe_name)
+
     def clear_form(self) -> None:
         self._current_record_id = None
+        if self._locked_employee_number is not None:
+            self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(self._locked_employee_number)))
         self.ppe_input.setCurrentIndex(0)
         self.required_input.setCurrentIndex(0)
         self.issued_input.setCurrentIndex(0)
@@ -141,6 +165,16 @@ class PpeRecordEditor(QWidget):
         self.note_input.clear()
         self.basis_panel.clear()
         self.save_button.setText("Створити запис")
+
+    def current_selection_context(self) -> tuple[int | None, str | None]:
+        """Повертає контекст вибору для відновлення після reload.
+        Returns selection context for restoration after reload.
+        """
+
+        personnel_number = self.employee_input.currentData()
+        if self._current_record_id is None:
+            return None, str(personnel_number) if personnel_number is not None else self._locked_employee_number
+        return self._current_record_id, str(personnel_number) if personnel_number is not None else self._locked_employee_number
 
     def _save_record(self) -> None:
         basis_text, basis_note = self.basis_panel.values()

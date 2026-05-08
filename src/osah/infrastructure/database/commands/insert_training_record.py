@@ -27,11 +27,15 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             knowledge_check_note,
             basis_text,
             basis_note,
+            is_current,
+            archived_at,
+            archive_reason,
+            replaced_by_record_id,
             source_module,
             source_record_id,
             source_key
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             training_record.employee_personnel_number,
@@ -49,6 +53,10 @@ def insert_training_record(connection: Connection, training_record: TrainingReco
             training_record.knowledge_check_note,
             training_record.basis_text,
             training_record.basis_note,
+            int(training_record.is_current),
+            training_record.archived_at,
+            training_record.archive_reason,
+            training_record.replaced_by_record_id,
             training_record.source_module,
             training_record.source_record_id,
             training_record.source_key,

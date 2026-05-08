@@ -96,6 +96,13 @@ def update_training_record(
             knowledge_check_note=knowledge_check_note.strip(),
             basis_text=basis_text.strip(),
             basis_note=basis_note.strip(),
+            is_current=previous_record.is_current,
+            archived_at=previous_record.archived_at,
+            archive_reason=previous_record.archive_reason,
+            replaced_by_record_id=previous_record.replaced_by_record_id,
+            source_module=previous_record.source_module,
+            source_record_id=previous_record.source_record_id,
+            source_key=previous_record.source_key,
         )
         update_training_record_row(connection, updated_record)
         insert_audit_log(

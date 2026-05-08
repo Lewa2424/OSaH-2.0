@@ -33,6 +33,9 @@ class TrainingsFilterBar(QWidget):
         self.mode_filter.addItem("По працівниках", TrainingWorkspaceMode.BY_EMPLOYEES.value)
         self.mode_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         first_row.addWidget(self.mode_filter)
+        self.mode_filter.setCurrentIndex(
+            max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value))
+        )
 
         self.employee_filter = QComboBox()
         self.employee_filter.addItem("Усі працівники", "")
@@ -126,7 +129,6 @@ class TrainingsFilterBar(QWidget):
 
         self.search_input.clear()
         for combo in (
-            self.mode_filter,
             self.type_filter,
             self.department_filter,
             self.site_filter,
@@ -136,6 +138,9 @@ class TrainingsFilterBar(QWidget):
             self.employee_filter,
         ):
             combo.setCurrentIndex(0)
+        self.mode_filter.setCurrentIndex(
+            max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value))
+        )
         self.date_from_input.clear()
         self.date_to_input.clear()
         self._update_active_filters_label()
@@ -165,7 +170,7 @@ class TrainingsFilterBar(QWidget):
         """
 
         values = {
-            "mode": self.mode_filter.currentData() or TrainingWorkspaceMode.BY_RECORDS.value,
+            "mode": self.mode_filter.currentData() or TrainingWorkspaceMode.BY_EMPLOYEES.value,
             "search": self.search_input.text().strip().lower(),
             "type": self.type_filter.currentData() or "",
             "department": self.department_filter.currentData() or "",

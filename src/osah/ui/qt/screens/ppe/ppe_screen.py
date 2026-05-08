@@ -37,8 +37,9 @@ class PpeScreen(QWidget):
         super().__init__()
         self._database_path = database_path
         self._workspace = workspace
-        self._initial_personnel_number = initial_personnel_number
-        self._initial_record_id = initial_record_id
+        self._pending_personnel_number: str | None = initial_personnel_number
+        self._pending_record_id: int | None = initial_record_id
+        self._current_row: PpeWorkspaceRow | None = None
 
         self._reload_task_controller = WorkerTaskController()
         self._reload_task_controller.started.connect(self._on_reload_started)
@@ -95,10 +96,10 @@ class PpeScreen(QWidget):
             self.filter_bar.set_employee_filter(initial_personnel_number)
         self._apply_filters()
 
-    # ###### ОНОВЛЕННЯ ДАНИХ / RELOAD DATA ######
     def _reload_workspace(self) -> None:
         """Reloads data after creating or editing PPE record."""
 
+        self._remember_selection_context()
         if not self._reload_task_controller.start_worker(
             WorkspaceReloadWorker(
                 load_callable=lambda: load_ppe_workspace(self._database_path),
@@ -107,10 +108,11 @@ class PpeScreen(QWidget):
         ):
             self.error_state.show_state("Оновлення вже виконується. Дочекайтеся завершення.")
 
-    # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
         """Applies combined filters without domain calculations in UI."""
 
+        if self._pending_record_id is None and self._pending_personnel_number is None:
+            self._remember_selection_context()
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
         if values["mode"] == PpeWorkspaceMode.BY_EMPLOYEES.value:
@@ -125,16 +127,17 @@ class PpeScreen(QWidget):
                 "Немає позицій ЗІЗ за поточними фільтрами.",
                 "Скиньте фільтри або перевірте реєстр норм/видачі.",
             )
-        if rows and not self._restore_initial_selection():
+            self._current_row = None
+            self.details_pane.show_empty_state()
+        if rows and not self._restore_selection_context():
             self.registry_table.select_first()
 
-    # ###### ПОКАЗ РЯДКА / SHOW ROW ######
     def _show_row(self, row: PpeWorkspaceRow) -> None:
-        """Shows selected row in right pane and summary."""
+        """Shows selected row in right pane."""
 
+        self._current_row = row
         self.details_pane.show_row(row)
 
-    # ###### СТАРТОВИЙ ФІЛЬТР СТАТУСУ / INITIAL STATUS FILTER ######
     def _apply_initial_status(self, initial_status: str) -> None:
         """Activates initial status filter from navigation intent."""
 
@@ -143,7 +146,6 @@ class PpeScreen(QWidget):
         except ValueError:
             return
 
-    # ###### СТАРТ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD START ######
     def _on_reload_started(self) -> None:
         """Applies busy-state for workspace reload."""
 
@@ -152,13 +154,11 @@ class PpeScreen(QWidget):
         self.filter_bar.setEnabled(False)
         self.details_pane.setEnabled(False)
 
-    # ###### ПРОГРЕС ПЕРЕЗАВАНТАЖЕННЯ / RELOAD PROGRESS ######
     def _on_reload_progress(self, progress_value: int, message_text: str) -> None:
         """Updates loading message while reload is running."""
 
         self.loading_state.show_state(message_text)
 
-    # ###### УСПІХ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD SUCCESS ######
     def _on_reload_success(self, payload: object) -> None:
         """Updates workspace from background reload result."""
 
@@ -169,13 +169,11 @@ class PpeScreen(QWidget):
         self.summary_panel.set_summary(self._workspace.summary)
         self._apply_filters()
 
-    # ###### ПОМИЛКА ПЕРЕЗАВАНТАЖЕННЯ / RELOAD ERROR ######
     def _on_reload_error(self, message_text: str) -> None:
         """Shows reload error text."""
 
         self.error_state.show_state(message_text)
 
-    # ###### ФІНАЛ ПЕРЕЗАВАНТАЖЕННЯ / RELOAD FINISH ######
     def _on_reload_finished(self) -> None:
         """Resets busy-state after reload completion."""
 
@@ -183,21 +181,35 @@ class PpeScreen(QWidget):
         self.filter_bar.setEnabled(True)
         self.details_pane.setEnabled(True)
 
-    def _restore_initial_selection(self) -> bool:
+    def _remember_selection_context(self) -> None:
+        """Запам'ятовує поточний контекст для відновлення вибору.
+        Stores current context so selection can be restored later.
+        """
+
+        record_id, personnel_number = self.details_pane.editor.current_selection_context()
+        if record_id is not None or personnel_number is not None:
+            self._pending_record_id = record_id
+            self._pending_personnel_number = personnel_number
+            return
+        if self._current_row is not None:
+            self._pending_record_id = self._current_row.record_id
+            self._pending_personnel_number = self._current_row.employee_personnel_number
+
+    def _restore_selection_context(self) -> bool:
         """Відновлює стартове виділення за записом або працівником.
-        Restores initial selection by record or employee.
+        Restores selection by record or employee.
         """
 
         restored = False
-        if self._initial_record_id is not None:
-            restored = self.registry_table.select_record(self._initial_record_id)
-        if not restored and self._initial_personnel_number:
-            restored = self.registry_table.select_employee(self._initial_personnel_number)
-        self._initial_record_id = None
+        if self._pending_record_id is not None:
+            restored = self.registry_table.select_record(self._pending_record_id)
+        if not restored and self._pending_personnel_number:
+            restored = self.registry_table.select_employee(self._pending_personnel_number)
+        self._pending_record_id = None
+        self._pending_personnel_number = None
         return restored
 
 
-# ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches(row: PpeWorkspaceRow, values: dict[str, str]) -> bool:
     """Checks whether row matches active filters."""
 
@@ -221,14 +233,26 @@ def _row_matches(row: PpeWorkspaceRow, values: dict[str, str]) -> bool:
     return True
 
 
-# ###### ЗГОРТАННЯ ДО ПРАЦІВНИКА / COLLAPSE BY EMPLOYEE ######
 def _collapse_by_employee(rows: tuple[PpeWorkspaceRow, ...]) -> tuple[PpeWorkspaceRow, ...]:
-    """Keeps most problematic PPE row per employee."""
+    """Keeps one most problematic PPE row per employee."""
 
     priority = {PpeStatus.NOT_ISSUED: 4, PpeStatus.EXPIRED: 3, PpeStatus.WARNING: 2, PpeStatus.CURRENT: 1}
     selected: dict[str, PpeWorkspaceRow] = {}
     for row in rows:
         current = selected.get(row.employee_personnel_number)
-        if current is None or priority[row.status] > priority[current.status]:
+        if current is None:
             selected[row.employee_personnel_number] = row
-    return tuple(selected.values())
+            continue
+        current_priority = priority[current.status]
+        candidate_priority = priority[row.status]
+        if candidate_priority > current_priority:
+            selected[row.employee_personnel_number] = row
+            continue
+        if candidate_priority == current_priority and row.ppe_name.lower() < current.ppe_name.lower():
+            selected[row.employee_personnel_number] = row
+    return tuple(
+        sorted(
+            selected.values(),
+            key=lambda row: (row.employee_full_name.lower(), row.record_id or 0),
+        )
+    )

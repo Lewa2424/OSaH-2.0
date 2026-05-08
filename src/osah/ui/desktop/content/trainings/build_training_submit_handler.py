@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from tkinter import StringVar, messagebox
 
-from osah.application.services.create_training_record import create_training_record
+from osah.application.services.create_current_training_record import create_current_training_record
 from osah.ui.desktop.content.trainings.extract_personnel_number import extract_personnel_number
 from osah.ui.desktop.content.trainings.extract_training_type_value import extract_training_type_value
 
@@ -28,7 +28,7 @@ def build_training_submit_handler(
         """
 
         try:
-            create_training_record(
+            create_current_training_record(
                 database_path=database_path,
                 employee_personnel_number=extract_personnel_number(selected_employee_var),
                 training_type=extract_training_type_value(training_type_var.get()),

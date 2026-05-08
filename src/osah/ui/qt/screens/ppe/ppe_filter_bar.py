@@ -29,6 +29,7 @@ class PpeFilterBar(QWidget):
         self.mode_filter.addItem("По працівниках", PpeWorkspaceMode.BY_EMPLOYEES.value)
         self.mode_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         row.addWidget(self.mode_filter)
+        self.mode_filter.setCurrentIndex(max(0, self.mode_filter.findData(PpeWorkspaceMode.BY_EMPLOYEES.value)))
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Пошук: ПІБ, табельний, ЗІЗ, підрозділ, посада")
@@ -94,7 +95,6 @@ class PpeFilterBar(QWidget):
 
         self.search_input.clear()
         for combo in (
-            self.mode_filter,
             self.ppe_filter,
             self.department_filter,
             self.status_filter,
@@ -103,6 +103,7 @@ class PpeFilterBar(QWidget):
             self.employee_filter,
         ):
             combo.setCurrentIndex(0)
+        self.mode_filter.setCurrentIndex(max(0, self.mode_filter.findData(PpeWorkspaceMode.BY_EMPLOYEES.value)))
         self._update_active_filters_label()
         self.filters_changed.emit()
 
@@ -130,7 +131,7 @@ class PpeFilterBar(QWidget):
         """
 
         values = {
-            "mode": self.mode_filter.currentData() or PpeWorkspaceMode.BY_RECORDS.value,
+            "mode": self.mode_filter.currentData() or PpeWorkspaceMode.BY_EMPLOYEES.value,
             "search": self.search_input.text().strip().lower(),
             "ppe": self.ppe_filter.currentData() or "",
             "department": self.department_filter.currentData() or "",

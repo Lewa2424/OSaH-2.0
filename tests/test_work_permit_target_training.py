@@ -307,6 +307,95 @@ class WorkPermitTargetTrainingTests(unittest.TestCase):
             finally:
                 shut_down_logging()
 
+    def test_downgrade_to_not_done_archives_linked_training_records(self) -> None:
+        """Перехід з done_passed на not_done видаляє автостворені training-записи з audit.
+        Downgrading from done_passed to not_done removes linked auto-created trainings with audit.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            context = initialize_application(build_application_paths(Path(temporary_directory)))
+            try:
+                permit_number = "AUTO-WP-DOWNGRADE-001"
+                create_work_permit_record(
+                    context.database_path,
+                    permit_number,
+                    "Висотні роботи",
+                    "Дільниця И",
+                    "10.05.2026 08:00",
+                    "10.05.2026 12:00",
+                    "Майстер",
+                    "Інженер з ОП",
+                    "0001",
+                    "executor",
+                    "Початково інструктаж проведено",
+                    target_training_status="done_passed",
+                    target_training_date_text="09.05.2026",
+                    target_training_conducted_by="Коваль О.В.",
+                )
+
+                permit_record = next(record for record in load_work_permit_registry(context.database_path) if record.permit_number == permit_number)
+                created_records = [
+                    record
+                    for record in load_training_registry(context.database_path)
+                    if record.source_module == "work_permits"
+                    and record.source_record_id == permit_record.record_id
+                ]
+                self.assertEqual(len(created_records), 1)
+
+                update_work_permit_record(
+                    context.database_path,
+                    int(permit_record.record_id),
+                    permit_record.permit_number,
+                    permit_record.work_kind,
+                    permit_record.work_location,
+                    "10.05.2026 08:00",
+                    "10.05.2026 12:00",
+                    permit_record.responsible_person,
+                    permit_record.issuer_person,
+                    "0001",
+                    "executor",
+                    "Інструктаж скасовано",
+                    target_training_status="not_done",
+                    target_training_date_text="",
+                    target_training_conducted_by="",
+                    target_training_note="",
+                )
+
+                remaining_records = [
+                    record
+                    for record in load_training_registry(context.database_path)
+                    if record.source_module == "work_permits"
+                    and record.source_record_id == permit_record.record_id
+                ]
+                self.assertEqual(len(remaining_records), 0)
+
+                archived_records = [
+                    record
+                    for record in load_training_registry(context.database_path, include_archived=True)
+                    if record.source_module == "work_permits"
+                    and record.source_record_id == permit_record.record_id
+                ]
+                self.assertEqual(len(archived_records), 1)
+                self.assertFalse(archived_records[0].is_current)
+
+                connection = sqlite3.connect(context.database_path)
+                audit_row = connection.execute(
+                    """
+                    SELECT description_text
+                    FROM audit_log
+                    WHERE event_type = 'training.archived'
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """
+                ).fetchone()
+                connection.close()
+
+                self.assertIsNotNone(audit_row)
+                self.assertIn(permit_number, audit_row[0])
+                self.assertIn("not_done", audit_row[0])
+            finally:
+                shut_down_logging()
+
     def test_legacy_status_does_not_create_noise(self) -> None:
         """Legacy-статус не створює ані training-записів, ані шумових сповіщень.
         Legacy status creates neither training records nor noisy notifications.

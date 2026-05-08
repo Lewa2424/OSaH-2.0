@@ -33,6 +33,10 @@ class TrainingRecord:
     knowledge_check_note: str = ""
     basis_text: str = ""
     basis_note: str = ""
+    is_current: bool = True
+    archived_at: str | None = None
+    archive_reason: str = ""
+    replaced_by_record_id: int | None = None
     source_module: str = ""
     source_record_id: int | None = None
     source_key: str = ""
