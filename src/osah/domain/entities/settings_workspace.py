@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from osah.domain.entities.mail_settings import MailSettings
+from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.news_source import NewsSource
 from osah.domain.entities.security_profile import SecurityProfile
 
@@ -10,7 +10,7 @@ class SettingsWorkspace:
     """Aggregated settings data used by the SettingsScreen."""
 
     security_profile: SecurityProfile
-    mail_settings: MailSettings
+    manual_report_settings: ManualReportSettings
     news_sources: tuple[NewsSource, ...]
     backup_directory_path: str
     backup_snapshot_count: int

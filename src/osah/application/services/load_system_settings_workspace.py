@@ -2,7 +2,7 @@ import tomllib
 from pathlib import Path
 
 from osah.application.services.load_backup_registry import load_backup_registry
-from osah.application.services.load_mail_settings import load_mail_settings
+from osah.application.services.load_manual_report_settings import load_manual_report_settings
 from osah.application.services.load_news_sources import load_news_sources
 from osah.application.services.security.load_security_profile import load_security_profile
 from osah.domain.entities.settings_workspace import SettingsWorkspace
@@ -29,7 +29,7 @@ def load_system_settings_workspace(database_path: Path) -> SettingsWorkspace:
 
     return SettingsWorkspace(
         security_profile=load_security_profile(database_path),
-        mail_settings=load_mail_settings(database_path),
+        manual_report_settings=load_manual_report_settings(database_path),
         news_sources=load_news_sources(database_path),
         backup_directory_path=str(database_path.parent / "backups"),
         backup_snapshot_count=len(backup_snapshots),

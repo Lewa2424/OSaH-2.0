@@ -15,10 +15,10 @@ class SecuritySettingsPanel(SettingsSectionCard):
         title.setProperty("role", "section_title")
         layout.addWidget(title)
         layout.addWidget(QLabel(f"Профіль: {'налаштовано' if profile.is_configured else 'не налаштовано'}"))
-        layout.addWidget(QLabel(f"ID установки: {profile.installation_id or 'n/a'}"))
+        layout.addWidget(QLabel(f"Ідентифікатор установки: {profile.installation_id or 'не задано'}"))
         layout.addWidget(QLabel(f"Невдалі входи: {profile.failed_attempt_count}"))
         layout.addWidget(QLabel(f"Блокування до: {profile.locked_until_text or 'немає'}"))
-        layout.addWidget(QLabel(f"Recovery-файл: {profile.recovery_file_path or 'не створено'}"))
-        layout.addWidget(QLabel(f"Recovery створено: {profile.recovery_created_at_text or 'n/a'}"))
-        role_text = "Інспектор (повний доступ)" if access_role == AccessRole.INSPECTOR else "Керівник (read-only)"
+        layout.addWidget(QLabel(f"Файл відновлення: {profile.recovery_file_path or 'не створено'}"))
+        layout.addWidget(QLabel(f"Файл відновлення створено: {profile.recovery_created_at_text or 'не задано'}"))
+        role_text = "Інспектор (повний доступ)" if access_role == AccessRole.INSPECTOR else "Керівник (лише перегляд)"
         layout.addWidget(QLabel(f"Поточна роль: {role_text}"))

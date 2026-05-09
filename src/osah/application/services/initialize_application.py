@@ -2,7 +2,6 @@ from osah.application.services.application_context import ApplicationContext
 from osah.application.services.ensure_startup_auto_backup import ensure_startup_auto_backup
 from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
 from osah.application.services.security.ensure_security_baseline import ensure_security_baseline
-from osah.application.services.send_daily_report_if_due import send_daily_report_if_due
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.infrastructure.config.application_paths import ApplicationPaths
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -33,7 +32,6 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
 
     ensure_security_baseline(application_paths.database_file_path)
     ensure_startup_auto_backup(application_paths.database_file_path)
-    send_daily_report_if_due(application_paths.database_file_path)
     log_system_event("bootstrap", "Application bootstrap completed successfully.")
 
     return ApplicationContext(

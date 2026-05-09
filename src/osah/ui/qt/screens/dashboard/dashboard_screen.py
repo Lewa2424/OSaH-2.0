@@ -267,13 +267,13 @@ def _count_work_permit_notifications(snapshot: DashboardSnapshot) -> tuple[int, 
 
 # ###### СЛУЖБОВІ СТАТУСИ ЗОВНІШНЬОГО КОНТУРУ / EXTERNAL SERVICE STATUS LINES ######
 def _build_service_status_lines(audit_entries: tuple[AuditLogEntry, ...]) -> tuple[str, ...]:
-    """Builds short status lines for mail and NPA sources."""
+    """Builds short human-readable status lines for reports and NPA sources."""
 
-    latest_mail = _find_latest_entry(audit_entries, "reports_mail")
+    latest_report = _find_latest_entry(audit_entries, "reports")
     latest_news = _find_latest_entry(audit_entries, "news_npa")
     return (
-        _format_service_line("Пошта", latest_mail),
-        _format_service_line("Джерела НПА", latest_news),
+        _format_service_line("Щоденний звіт", latest_report),
+        _format_service_line("Джерела новин і НПА", latest_news),
     )
 
 
@@ -289,8 +289,22 @@ def _find_latest_entry(audit_entries: tuple[AuditLogEntry, ...], module_name: st
 
 # ###### ФОРМАТ СЛУЖБОВОГО РЯДКА / SERVICE LINE FORMAT ######
 def _format_service_line(title: str, audit_entry: AuditLogEntry | None) -> str:
-    """Formats audit event into readable service line."""
+    """Formats an audit event into a readable service line."""
 
     if audit_entry is None:
-        return f"{title}: подій ще немає"
-    return f"{title}: {audit_entry.result_status} | {audit_entry.event_type} | {audit_entry.created_at_text}"
+        return f"{title}: подій ще не зафіксовано."
+    if title == "Щоденний звіт":
+        if audit_entry.event_type == "report.file_created":
+            return f"{title}: файл сформовано {audit_entry.created_at_text}."
+        if audit_entry.event_type == "report.settings_updated":
+            return f"{title}: параметри нагадування оновлено {audit_entry.created_at_text}."
+        return f"{title}: зафіксовано службову дію {audit_entry.created_at_text}."
+    if audit_entry.event_type == "news.refresh_completed":
+        return f"{title}: перевірку джерел завершено {audit_entry.created_at_text}."
+    if audit_entry.event_type == "news.source_saved":
+        return f"{title}: список джерел оновлено {audit_entry.created_at_text}."
+    if audit_entry.event_type == "news.source_deleted":
+        return f"{title}: джерело видалено {audit_entry.created_at_text}."
+    if audit_entry.event_type == "news.source_activity_changed":
+        return f"{title}: стан джерел змінено {audit_entry.created_at_text}."
+    return f"{title}: зафіксовано службову дію {audit_entry.created_at_text}."

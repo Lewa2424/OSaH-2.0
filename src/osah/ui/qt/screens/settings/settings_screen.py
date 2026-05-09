@@ -20,12 +20,12 @@ from osah.application.services.discover_news_feed_url import discover_news_feed_
 from osah.application.services.delete_news_source import delete_news_source
 from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
-from osah.application.services.save_mail_settings import save_mail_settings
+from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.save_news_refresh_time import save_news_refresh_time
 from osah.application.services.save_system_behavior_settings import save_system_behavior_settings
 from osah.application.services.toggle_news_source_activity import toggle_news_source_activity
 from osah.domain.entities.access_role import AccessRole
-from osah.domain.entities.mail_settings import MailSettings
+from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.domain.services.build_news_source_name_from_url import build_news_source_name_from_url
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
@@ -35,7 +35,7 @@ from osah.ui.qt.components.show_styled_message_box import show_styled_message_bo
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
-from osah.ui.qt.screens.settings.mail_settings_panel import MailSettingsPanel
+from osah.ui.qt.screens.settings.manual_report_settings_panel import ManualReportSettingsPanel
 from osah.ui.qt.screens.settings.news_sources_settings_panel import NewsSourcesSettingsPanel
 from osah.ui.qt.screens.settings.operations_settings_panel import OperationsSettingsPanel
 from osah.ui.qt.screens.settings.security_settings_panel import SecuritySettingsPanel
@@ -71,7 +71,7 @@ class SettingsScreen(QWidget):
 
         self._section_header = SectionHeader(
             "Налаштування",
-            "Командний центр конфігурації системи без змішування внутрішнього та зовнішнього контурів.",
+            "Параметри щоденного звіту, джерел новин, резервного копіювання та службових дій.",
         )
         layout.addWidget(self._section_header)
 
@@ -109,9 +109,9 @@ class SettingsScreen(QWidget):
         self._workspace = load_system_settings_workspace(self._database_path)
         self._content_layout.addWidget(SecuritySettingsPanel(self._workspace.security_profile, self._access_role))
 
-        mail_panel = MailSettingsPanel(self._workspace.mail_settings, self._read_only)
-        mail_panel.save_requested.connect(self._save_mail_settings)
-        self._content_layout.addWidget(mail_panel)
+        manual_report_panel = ManualReportSettingsPanel(self._workspace.manual_report_settings, self._read_only)
+        manual_report_panel.save_requested.connect(self._save_manual_report_settings)
+        self._content_layout.addWidget(manual_report_panel)
 
         sources_panel = NewsSourcesSettingsPanel(
             self._workspace.news_sources,
@@ -161,15 +161,29 @@ class SettingsScreen(QWidget):
         title.setProperty("role", "section_title")
         layout.addWidget(title)
 
+        subtitle = QLabel("Тут задаються пороги попередження для реєстрів.")
+        subtitle.setProperty("role", "section_header_subtitle")
+        subtitle.setWordWrap(True)
+        layout.addWidget(subtitle)
+
         row = QHBoxLayout()
+        ppe_layout = QVBoxLayout()
+        ppe_label = QLabel("Поріг попередження для ЗІЗ (у днях)")
+        ppe_layout.addWidget(ppe_label)
         self._ppe_warning_days = QLineEdit(str(self._workspace.ppe_warning_days))
-        self._ppe_warning_days.setPlaceholderText("Поріг попередження ЗІЗ (днів)")
+        self._ppe_warning_days.setPlaceholderText("Наприклад: 7")
         self._ppe_warning_days.setReadOnly(self._read_only)
-        row.addWidget(self._ppe_warning_days)
+        ppe_layout.addWidget(self._ppe_warning_days)
+        row.addLayout(ppe_layout)
+
+        training_layout = QVBoxLayout()
+        training_label = QLabel("Поріг попередження для інструктажів (у днях)")
+        training_layout.addWidget(training_label)
         self._training_warning_days = QLineEdit(str(self._workspace.training_warning_days))
-        self._training_warning_days.setPlaceholderText("РџРѕСЂС–Рі РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏ С–РЅСЃС‚СЂСѓРєС‚Р°Р¶С–РІ (РґРЅС–РІ)")
+        self._training_warning_days.setPlaceholderText("Наприклад: 7")
         self._training_warning_days.setReadOnly(self._read_only)
-        row.addWidget(self._training_warning_days)
+        training_layout.addWidget(self._training_warning_days)
+        row.addLayout(training_layout)
         save_button = QPushButton("Зберегти пороги")
         save_button.setProperty("variant", "secondary")
         save_button.setEnabled(not self._read_only)
@@ -189,26 +203,30 @@ class SettingsScreen(QWidget):
         title = QLabel("Службова інформація")
         title.setProperty("role", "section_title")
         layout.addWidget(title)
-        layout.addWidget(QLabel(f"Версія: {self._workspace.app_version}"))
-        layout.addWidget(QLabel(f"База даних: {self._workspace.database_path}"))
+        subtitle = QLabel("Довідкові відомості про поточну локальну копію програми.")
+        subtitle.setProperty("role", "section_header_subtitle")
+        subtitle.setWordWrap(True)
+        layout.addWidget(subtitle)
+        layout.addWidget(QLabel(f"Версія програми: {self._workspace.app_version}"))
+        layout.addWidget(QLabel(f"Файл бази даних: {self._workspace.database_path}"))
         layout.addWidget(QLabel(f"Каталог даних: {self._workspace.data_directory_path}"))
         init_text = "готово" if self._workspace.is_initialized else "не готово"
         layout.addWidget(QLabel(f"Стан ініціалізації: {init_text}"))
         return card
 
     # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / SAVE MAIL SETTINGS ######
-    def _save_mail_settings(self, mail_settings: MailSettings) -> None:
-        """Saves mail settings through application service."""
+    def _save_manual_report_settings(self, manual_report_settings: ManualReportSettings) -> None:
+        """Saves manual report settings through application service."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
-            save_mail_settings(self._database_path, mail_settings)
+            save_manual_report_settings(self._database_path, manual_report_settings)
         except Exception as error:  # noqa: BLE001
-            self._feedback.show_error(f"Не вдалося зберегти пошту: {error}")
+            self._feedback.show_error(f"Не вдалося зберегти налаштування звіту: {error}")
             return
-        self._feedback.show_success("Поштові налаштування збережено.")
+        self._feedback.show_success("Налаштування щоденного звіту збережено.")
         self._rebuild_sections()
 
     # ###### СТВОРЕННЯ ДЖЕРЕЛА НОВИН / CREATE NEWS SOURCE ######
@@ -216,7 +234,7 @@ class SettingsScreen(QWidget):
         """Creates trusted source through application service."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
             create_news_source(self._database_path, source_name, source_url, NewsSourceKind(source_kind_value))
@@ -233,7 +251,7 @@ class SettingsScreen(QWidget):
         """
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
             feed_url = discover_news_feed_url(site_url)
@@ -290,7 +308,7 @@ class SettingsScreen(QWidget):
         """Toggles source activity through application service."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             self._rebuild_sections()
             return
         try:
@@ -307,7 +325,7 @@ class SettingsScreen(QWidget):
         """Deletes selected trusted sources through application service."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         errors: list[str] = []
         for source_id in source_ids:
@@ -332,7 +350,7 @@ class SettingsScreen(QWidget):
         """Saves daily news refresh time through application service."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
             save_news_refresh_time(self._database_path, refresh_time)
@@ -357,7 +375,7 @@ class SettingsScreen(QWidget):
         """Saves behavior settings with validation."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
             ppe_warning_days = int(self._ppe_warning_days.text() or str(self._workspace.ppe_warning_days))
@@ -401,7 +419,7 @@ class SettingsScreen(QWidget):
             self,
             "Оберіть файл резервної копії",
             self._workspace.backup_directory_path,
-            "Backup files (*.sqlite3 *.db *.bak);;All files (*.*)",
+            "Файли резервних копій (*.sqlite3 *.db *.bak);;Усі файли (*.*)",
         )
         if not selected_file_path:
             return
@@ -456,7 +474,7 @@ class SettingsScreen(QWidget):
         """Starts background worker and protects from double-run."""
 
         if self._read_only:
-            self._feedback.show_error("Режим read-only: операція недоступна.")
+            self._feedback.show_error("Режим лише перегляду: операція недоступна.")
             return
         self._active_task_name = task_name
         if not self._task_controller.start_worker(worker):
@@ -540,6 +558,7 @@ class SettingsScreen(QWidget):
         if self._operations_panel is not None:
             self._operations_panel.setEnabled(True)
             self._operations_panel.set_status_text(
-                "Тут запускаються важкі операції у фоновому режимі без блокування інтерфейсу."
+                "Тут виконуються резервне копіювання, відновлення та імпорт даних. "
+                "Операції запускаються у фоновому режимі без блокування вікна."
             )
         self._active_task_name = None

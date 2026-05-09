@@ -33,4 +33,10 @@ def list_default_news_source_presets() -> tuple[NewsSourcePreset, ...]:
             source_url="https://dsp.gov.ua/feed/",
             source_kind=NewsSourceKind.NEWS,
         ),
+        NewsSourcePreset(
+            source_name="Державна регуляторна служба України — RSS новин",
+            site_url="https://drs.gov.ua/",
+            source_url="https://drs.gov.ua/feed/",
+            source_kind=NewsSourceKind.NPA,
+        ),
     )

@@ -21,17 +21,20 @@ class OperationsSettingsPanel(SettingsSectionCard):
         title.setProperty("role", "section_title")
         layout.addWidget(title)
 
-        self._status = QLabel("Тут запускаються важкі операції у фоновому режимі без блокування інтерфейсу.")
+        self._status = QLabel(
+            "Тут виконуються резервне копіювання, відновлення та імпорт даних. "
+            "Операції запускаються у фоновому режимі без блокування вікна."
+        )
         self._status.setProperty("role", "section_header_subtitle")
         self._status.setWordWrap(True)
         layout.addWidget(self._status)
 
-        self._create_backup_button = QPushButton("Створити ручний бекап")
+        self._create_backup_button = QPushButton("Створити резервну копію")
         self._create_backup_button.setProperty("variant", "secondary")
         self._create_backup_button.clicked.connect(self.create_backup_requested.emit)
         layout.addWidget(self._create_backup_button)
 
-        self._restore_backup_button = QPushButton("Відновити з файла бекапу")
+        self._restore_backup_button = QPushButton("Відновити з резервної копії")
         self._restore_backup_button.setProperty("variant", "secondary")
         self._restore_backup_button.clicked.connect(self.restore_backup_requested.emit)
         layout.addWidget(self._restore_backup_button)

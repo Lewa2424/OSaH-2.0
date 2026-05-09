@@ -2,16 +2,23 @@
 Main Qt application shell window.
 """
 
+from datetime import datetime, timedelta
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QComboBox, QLineEdit, QMainWindow, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
 from osah.application.services.application_context import ApplicationContext
+from osah.application.services.load_manual_report_settings import load_manual_report_settings
+from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
 from osah.application.services.visual.load_visual_alert_state import load_visual_alert_state
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
+from osah.domain.entities.manual_report_settings import ManualReportSettings
+from osah.domain.services.should_prompt_manual_report import should_prompt_manual_report
 from osah.ui.qt.components.section_container import SectionContainer
+from osah.ui.qt.components.show_manual_report_prompt_dialog import show_manual_report_prompt_dialog
 from osah.ui.qt.components.side_nav import SideNav
 from osah.ui.qt.components.status_strip import StatusStrip
 from osah.ui.qt.components.top_command_bar import TopCommandBar
@@ -20,6 +27,7 @@ from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
 from osah.ui.qt.routing.map_notification_source_to_problem_key import map_notification_source_to_problem_key
 from osah.ui.qt.routing.qt_context import QtContext
 from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
+from osah.ui.qt.services.save_manual_report_via_dialog import save_manual_report_via_dialog
 from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
 from osah.ui.qt.workers.news_refresh_worker import NewsRefreshWorker
 from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
@@ -78,10 +86,12 @@ class AppWindow(QMainWindow):
         self._install_navigation_shortcuts()
         self._navigate_to(AppSection.DASHBOARD, record_history=False)
         self._news_task_controller = WorkerTaskController()
+        self._manual_report_prompt_open = False
         self._last_time_sync_marker = self._build_time_sync_marker()
         self._last_day_sync_marker = self._build_day_sync_marker()
         self._install_time_tracking()
         self._schedule_news_refresh()
+        self._install_manual_report_reminder()
 
     def _install_navigation_shortcuts(self) -> None:
         """###### ГАРЯЧІ КЛАВІШІ НАВІГАЦІЇ / NAVIGATION SHORTCUTS ######"""
@@ -279,6 +289,15 @@ class AppWindow(QMainWindow):
         self._time_tracking_timer.timeout.connect(self._sync_time_sensitive_views_on_timer)
         self._time_tracking_timer.start()
 
+    def _install_manual_report_reminder(self) -> None:
+        """Schedules periodic checks for the manual daily report reminder."""
+
+        self._manual_report_timer = QTimer(self)
+        self._manual_report_timer.setInterval(60 * 1000)
+        self._manual_report_timer.timeout.connect(self._check_manual_report_reminder)
+        self._manual_report_timer.start()
+        QTimer.singleShot(3000, self._check_manual_report_reminder)
+
     def _build_time_sync_marker(self) -> tuple[int, int, int, int, int]:
         from datetime import datetime
 
@@ -323,6 +342,7 @@ class AppWindow(QMainWindow):
         super().changeEvent(event)
         if event.type() == event.Type.ActivationChange and self.isActiveWindow():
             self._sync_time_sensitive_views()
+            self._check_manual_report_reminder()
 
     def _current_screen_widget(self) -> QWidget | None:
         layout = self._content_container.content_layout()
@@ -333,6 +353,61 @@ class AppWindow(QMainWindow):
 
     def _has_active_editor_focus(self) -> bool:
         return isinstance(self.focusWidget(), (QLineEdit, QTextEdit, QComboBox))
+
+    def _check_manual_report_reminder(self) -> None:
+        """Checks whether it is time to show the manual report reminder dialog."""
+
+        if self._manual_report_prompt_open or self._has_active_editor_focus() or not self.isVisible() or not self.isActiveWindow():
+            return
+        if not should_prompt_manual_report(self._app_context.database_path):
+            return
+
+        self._manual_report_prompt_open = True
+        try:
+            user_choice = show_manual_report_prompt_dialog(self)
+            if user_choice == "build":
+                save_result = save_manual_report_via_dialog(self, self._app_context.database_path)
+                if save_result is None:
+                    self._postpone_manual_report_prompt()
+                else:
+                    self._sync_time_sensitive_views()
+                return
+            if user_choice == "skip":
+                self._skip_manual_report_for_today()
+                return
+            self._postpone_manual_report_prompt()
+        finally:
+            self._manual_report_prompt_open = False
+
+    def _postpone_manual_report_prompt(self) -> None:
+        """Moves the next manual report reminder 30 minutes forward."""
+
+        manual_report_settings = load_manual_report_settings(self._app_context.database_path)
+        postponed_settings = ManualReportSettings(
+            manual_reminder_enabled=manual_report_settings.manual_reminder_enabled,
+            manual_reminder_time=manual_report_settings.manual_reminder_time,
+            last_generated_date=manual_report_settings.last_generated_date,
+            last_skipped_date=manual_report_settings.last_skipped_date,
+            next_prompt_at=(datetime.now() + timedelta(minutes=30)).isoformat(timespec="minutes"),
+            default_save_directory=manual_report_settings.default_save_directory,
+            ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
+        )
+        save_manual_report_settings(self._app_context.database_path, postponed_settings)
+
+    def _skip_manual_report_for_today(self) -> None:
+        """Marks today's manual report reminder as skipped."""
+
+        manual_report_settings = load_manual_report_settings(self._app_context.database_path)
+        skipped_settings = ManualReportSettings(
+            manual_reminder_enabled=manual_report_settings.manual_reminder_enabled,
+            manual_reminder_time=manual_report_settings.manual_reminder_time,
+            last_generated_date=manual_report_settings.last_generated_date,
+            last_skipped_date=datetime.now().strftime("%Y-%m-%d"),
+            next_prompt_at="",
+            default_save_directory=manual_report_settings.default_save_directory,
+            ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
+        )
+        save_manual_report_settings(self._app_context.database_path, skipped_settings)
 
     # ###### ЗАПУСК ЗАПЛАНОВАНОЇ ПЕРЕВІРКИ / RUN SCHEDULED NEWS REFRESH ######
     def _run_scheduled_news_refresh(self) -> None:

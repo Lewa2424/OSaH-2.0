@@ -93,7 +93,7 @@ class TopCommandBar(QWidget):
             AppSection.REPORTS: "щоденний звіт, доставка та службові помилки",
             AppSection.NEWS_NPA: "довірені джерела НПА та новин",
             AppSection.SETTINGS: "резервні копії, імпорт, журнал і параметри системи",
-            AppSection.ABOUT: "версія, склад системи та технічний контекст",
+            AppSection.ABOUT: "призначення, можливості та переваги системи",
         }
         description_text = descriptions.get(section, "керування розділом")
         self._title_label.setText(

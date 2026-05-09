@@ -49,6 +49,24 @@ class InitializeApplicationTests(unittest.TestCase):
             self.assertGreater(medical_total, 30)
             self.assertGreater(work_permit_total, 5)
 
+    def test_initialize_application_does_not_send_email(self) -> None:
+        """Перевіряє, що старт програми не запускає email-відправку звіту.
+        Checks that application startup does not trigger report email sending.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+
+            connection = sqlite3.connect(context.database_path)
+            report_events = connection.execute(
+                "SELECT COUNT(*) FROM audit_log WHERE event_type LIKE 'report.send%' OR module_name = 'reports_mail';"
+            ).fetchone()[0]
+            connection.close()
+
+            self.assertEqual(report_events, 0)
+            shut_down_logging()
+
 
 if __name__ == "__main__":
     unittest.main()

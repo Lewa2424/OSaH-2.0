@@ -11,7 +11,9 @@ from osah.infrastructure.database.queries.list_user_table_names import list_user
 
 # ###### ЗАВАНТАЖЕННЯ ІНФОРМАЦІЇ "ПРО ПРОГРАМУ" / LOAD ABOUT SNAPSHOT ######
 def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
-    """Loads service/product metadata for About screen."""
+    """Загружает служебные данные для экрана «О программе».
+    Loads service metadata for the About screen.
+    """
 
     connection = create_database_connection(database_path)
     try:
@@ -24,8 +26,8 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
     return AboutSnapshot(
         product_name="OSaH 2.0",
         app_version=_read_app_version(),
-        ui_status="Qt industrial control contour",
-        operation_model="Local single-operator desktop with isolated external contour",
+        ui_status="локальний робочий інтерфейс на Qt",
+        operation_model="локальна настільна система з ізольованим зовнішнім контуром",
         database_path=str(database_path),
         data_directory_path=str(database_path.parent),
         log_path=str(log_path),
@@ -38,7 +40,9 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
 
 # ###### ЧИТАННЯ ВЕРСІЇ ПРОЄКТУ / READ PROJECT VERSION ######
 def _read_app_version() -> str:
-    """Reads project version from pyproject.toml."""
+    """Читает версию проекта из pyproject.toml.
+    Reads the project version from pyproject.toml.
+    """
 
     project_root = Path(__file__).resolve().parents[4]
     pyproject_path = project_root / "pyproject.toml"
@@ -55,7 +59,9 @@ def _read_app_version() -> str:
 
 # ###### ВИЗНАЧЕННЯ ГІЛКИ РЕПОЗИТОРІЮ / RESOLVE REPOSITORY BRANCH ######
 def _resolve_branch_name(workspace_path: Path) -> str:
-    """Resolves git branch name when repository metadata is available."""
+    """Определяет имя текущей git-ветки, если метаданные репозитория доступны.
+    Resolves the current git branch name when repository metadata is available.
+    """
 
     try:
         completed = subprocess.run(
@@ -66,6 +72,6 @@ def _resolve_branch_name(workspace_path: Path) -> str:
             text=True,
         )
     except Exception:  # noqa: BLE001
-        return "unknown"
+        return "невідомо"
     branch_name = completed.stdout.strip()
-    return branch_name or "unknown"
+    return branch_name or "невідомо"

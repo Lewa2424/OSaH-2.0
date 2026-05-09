@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -141,7 +142,13 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
 
         self._table = QTableWidget(0, 5)
         self._table.setHorizontalHeaderLabels(["", "Джерело", "Тип", "Активно", "Остання перевірка"])
-        self._table.horizontalHeader().setStretchLastSection(True)
+        header = self._table.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
         self._table.itemChanged.connect(self._on_table_item_changed)
         layout.addWidget(ScrollableTableFrame(self._table))
 
@@ -190,7 +197,8 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
             last_checked = source.last_checked_at_text or "ще не перевірялось"
             self._table.setItem(row_index, 4, QTableWidgetItem(last_checked))
 
-        self._table.resizeColumnToContents(0)
+        for column_index in range(self._table.columnCount()):
+            self._table.resizeColumnToContents(column_index)
         self._table.itemChanged.connect(self._on_table_item_changed)
 
     def _update_delete_button(self) -> None:
