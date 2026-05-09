@@ -95,6 +95,76 @@ class RefreshNewsSourcesTests(unittest.TestCase):
             self.assertEqual(news_items[0].title_text, "Оновлення правил охорони праці")
             shut_down_logging()
 
+    def test_refresh_news_sources_skips_irrelevant_materials(self) -> None:
+        """Перевіряє, що загальні новини без теми ОП не потрапляють у кеш.
+        Checks that general news without OHS topic do not enter the cache.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+            create_news_source(
+                context.database_path,
+                "Широка стрічка",
+                "https://example.com/mixed.xml",
+                NewsSourceKind.NEWS,
+            )
+
+            def fake_feed_fetcher(_: str) -> tuple[RssFeedEntry, ...]:
+                return (
+                    RssFeedEntry(
+                        title_text="Курс валют на сьогодні",
+                        link_url="https://example.com/item-1",
+                        published_at_text="2026-04-10T09:00:00",
+                    ),
+                    RssFeedEntry(
+                        title_text="Оновлення правил охорони праці",
+                        link_url="https://example.com/item-2",
+                        published_at_text="2026-04-10T10:00:00",
+                    ),
+                )
+
+            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher)
+
+            news_items = load_news_items(context.database_path)
+            self.assertEqual(cached_total, 1)
+            self.assertEqual(len(news_items), 1)
+            self.assertEqual(news_items[0].title_text, "Оновлення правил охорони праці")
+            shut_down_logging()
+
+    def test_refresh_news_sources_uses_summary_text_for_relevance(self) -> None:
+        """Перевіряє тематичний відбір за summary, навіть якщо title загальний.
+        Checks thematic selection by summary even when the title is generic.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+            create_news_source(
+                context.database_path,
+                "Широка стрічка",
+                "https://example.com/mixed.xml",
+                NewsSourceKind.NEWS,
+            )
+
+            def fake_feed_fetcher(_: str) -> tuple[RssFeedEntry, ...]:
+                return (
+                    RssFeedEntry(
+                        title_text="Оновлення",
+                        link_url="https://example.com/item-3",
+                        published_at_text="2026-04-10T11:00:00",
+                        summary_text="Нове роз'яснення Держпраці з питань охорони праці.",
+                    ),
+                )
+
+            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher)
+
+            news_items = load_news_items(context.database_path)
+            self.assertEqual(cached_total, 1)
+            self.assertEqual(len(news_items), 1)
+            self.assertEqual(news_items[0].title_text, "Оновлення")
+            shut_down_logging()
+
 
 if __name__ == "__main__":
     unittest.main()

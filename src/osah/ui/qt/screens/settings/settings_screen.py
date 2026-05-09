@@ -1,11 +1,22 @@
 from pathlib import Path
+from urllib.parse import urlparse
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 from PySide6.QtCore import QObject
 
 from osah.application.services.create_news_source import create_news_source
+from osah.application.services.discover_news_feed_url import discover_news_feed_url
 from osah.application.services.delete_news_source import delete_news_source
 from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
@@ -16,9 +27,11 @@ from osah.application.services.toggle_news_source_activity import toggle_news_so
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.mail_settings import MailSettings
 from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.domain.services.build_news_source_name_from_url import build_news_source_name_from_url
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.section_header import SectionHeader
+from osah.ui.qt.components.show_styled_message_box import show_styled_message_box
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
@@ -106,6 +119,8 @@ class SettingsScreen(QWidget):
             news_refresh_time=self._workspace.news_refresh_time,
         )
         sources_panel.source_created.connect(self._create_news_source)
+        sources_panel.preset_source_add_requested.connect(self._create_news_source)
+        sources_panel.site_check_requested.connect(self._check_news_source_site)
         sources_panel.source_toggled.connect(self._toggle_source_activity)
         sources_panel.sources_deleted.connect(self._delete_news_sources)
         sources_panel.refresh_now_requested.connect(self._start_news_refresh)
@@ -208,6 +223,65 @@ class SettingsScreen(QWidget):
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося створити джерело: {error}")
             return
+        self._feedback.show_success("Джерело додано.")
+        self._rebuild_sections()
+
+    # ###### ПЕРЕВІРКА САЙТУ ДЛЯ ДОДАВАННЯ NEWS SOURCE / ПРОВЕРКА САЙТА ДЛЯ ДОБАВЛЕНИЯ NEWS SOURCE ######
+    def _check_news_source_site(self, site_url: str, source_kind_value: str) -> None:
+        """Detects RSS/Atom feed for custom site and offers to save trusted source.
+        Определяет RSS/Atom-ленту для пользовательского сайта и предлагает сохранить trusted-источник.
+        """
+
+        if self._read_only:
+            self._feedback.show_error("Режим read-only: зміни недоступні.")
+            return
+        try:
+            feed_url = discover_news_feed_url(site_url)
+        except Exception as error:  # noqa: BLE001
+            show_styled_message_box(
+                self,
+                "Не знайдено RSS/Atom",
+                f"Не вдалося автоматично знайти RSS/Atom-стрічку.\n\n{error}",
+                QMessageBox.Icon.Warning,
+                QMessageBox.StandardButton.Ok,
+                QMessageBox.StandardButton.Ok,
+            )
+            return
+
+        source_name = build_news_source_name_from_url(site_url)
+        domain_name = urlparse(site_url).netloc.removeprefix("www.") or source_name
+        confirmation_result = show_styled_message_box(
+            self,
+            "Знайдено RSS/Atom-стрічку",
+            "Для вказаного сайту знайдено feed:\n"
+            f"{feed_url}\n\n"
+            f"Додати його як довірене джерело «{domain_name}»?",
+            QMessageBox.Icon.Question,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if confirmation_result != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            create_news_source(
+                self._database_path,
+                source_name,
+                feed_url,
+                NewsSourceKind(source_kind_value),
+            )
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося створити джерело: {error}")
+            return
+
+        show_styled_message_box(
+            self,
+            "Джерело додано",
+            f"Довірене джерело збережено.\n\nRSS/Atom: {feed_url}",
+            QMessageBox.Icon.Information,
+            QMessageBox.StandardButton.Ok,
+            QMessageBox.StandardButton.Ok,
+        )
         self._feedback.show_success("Джерело додано.")
         self._rebuild_sections()
 

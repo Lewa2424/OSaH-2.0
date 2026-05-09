@@ -25,6 +25,7 @@ def parse_atom_feed_entries(root_element: Element) -> tuple[RssFeedEntry, ...]:
         published_at_text = normalize_feed_publication_text(
             extract_xml_child_text(entry_element, "updated") or extract_xml_child_text(entry_element, "published")
         )
+        summary_text = extract_xml_child_text(entry_element, "summary") or extract_xml_child_text(entry_element, "content")
         if not title_text or not link_url:
             continue
         entries.append(
@@ -32,6 +33,7 @@ def parse_atom_feed_entries(root_element: Element) -> tuple[RssFeedEntry, ...]:
                 title_text=title_text,
                 link_url=link_url,
                 published_at_text=published_at_text,
+                summary_text=summary_text,
             )
         )
     return tuple(entries)

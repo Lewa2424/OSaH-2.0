@@ -11,6 +11,7 @@ from osah.application.services.save_failed_report_email_copy import save_failed_
 from osah.application.services.save_mail_settings import save_mail_settings
 from osah.domain.entities.mail_settings import MailSettings
 from osah.domain.services.is_mail_settings_ready import is_mail_settings_ready
+from osah.domain.services.normalize_mail_settings_for_delivery import normalize_mail_settings_for_delivery
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.logging.log_alert_event import log_alert_event
@@ -27,7 +28,7 @@ def send_daily_report_email(
     Отправляет ежедневный отчёт по почте, возвращает путь к копии отчёта и fallback-письму при неудаче.
     """
 
-    mail_settings = load_mail_settings(database_path)
+    mail_settings = normalize_mail_settings_for_delivery(load_mail_settings(database_path))
     if not is_mail_settings_ready(mail_settings):
         log_alert_event("reports_mail", "Daily report send aborted because mail settings are incomplete.")
         raise ValueError("Поштові налаштування неповні. Спочатку збережіть SMTP-параметри.")

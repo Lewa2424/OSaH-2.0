@@ -4,6 +4,9 @@ from typing import Callable
 
 from osah.domain.entities.rss_feed_entry import RssFeedEntry
 from osah.domain.services.build_news_item_fingerprint import build_news_item_fingerprint
+from osah.domain.services.is_occupational_safety_related_feed_entry import (
+    is_occupational_safety_related_feed_entry,
+)
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.update_news_source_last_checked_at import update_news_source_last_checked_at
 from osah.infrastructure.database.commands.upsert_news_item_row import upsert_news_item_row
@@ -28,6 +31,7 @@ def refresh_news_sources(
         news_sources = tuple(news_source for news_source in list_news_sources(connection) if news_source.is_active)
         cached_item_total = 0
         failed_source_total = 0
+        skipped_item_total = 0
         for news_source in news_sources:
             try:
                 feed_entries = feed_fetcher(news_source.source_url)
@@ -40,6 +44,9 @@ def refresh_news_sources(
                 continue
 
             for feed_entry in feed_entries:
+                if not is_occupational_safety_related_feed_entry(feed_entry):
+                    skipped_item_total += 1
+                    continue
                 upsert_news_item_row(
                     connection,
                     source_id=news_source.source_id,
@@ -67,13 +74,17 @@ def refresh_news_sources(
             result_status="partial" if failed_source_total else "success",
             description_text=(
                 f"External news refresh completed for {len(news_sources)} sources; "
-                f"failed_sources={failed_source_total}."
+                f"failed_sources={failed_source_total};skipped_items={skipped_item_total}."
             ),
         )
         connection.commit()
         log_system_event(
             "news_npa",
-            f"External news refresh completed: sources={len(news_sources)};items={cached_item_total};failed={failed_source_total}",
+            (
+                "External news refresh completed: "
+                f"sources={len(news_sources)};items={cached_item_total};"
+                f"skipped={skipped_item_total};failed={failed_source_total}"
+            ),
         )
         return cached_item_total
     finally:

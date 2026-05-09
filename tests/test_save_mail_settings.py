@@ -82,6 +82,37 @@ class SaveMailSettingsTests(unittest.TestCase):
             self.assertNotIn("smtp_password", mail_audit_entry.description_text)
             shut_down_logging()
 
+    def test_save_mail_settings_derives_smtp_values_from_sender_email(self) -> None:
+        """Перевіряє автопідстановку SMTP-параметрів у спрощеному режимі.
+        Checks automatic SMTP filling in the simplified mode.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+
+            save_mail_settings(
+                context.database_path,
+                MailSettings(
+                    daily_report_enabled=True,
+                    smtp_host="",
+                    smtp_port=0,
+                    smtp_username="",
+                    smtp_password="secret",
+                    sender_email="sender@example.com",
+                    recipient_email="boss@example.com",
+                    use_tls=False,
+                    last_sent_date="2026-04-10",
+                ),
+            )
+
+            mail_settings = load_mail_settings(context.database_path)
+            self.assertEqual(mail_settings.smtp_host, "smtp.example.com")
+            self.assertEqual(mail_settings.smtp_port, 587)
+            self.assertEqual(mail_settings.smtp_username, "sender@example.com")
+            self.assertTrue(mail_settings.use_tls)
+            shut_down_logging()
+
 
 if __name__ == "__main__":
     unittest.main()

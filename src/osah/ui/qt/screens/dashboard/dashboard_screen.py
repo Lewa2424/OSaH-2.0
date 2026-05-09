@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 from osah.domain.entities.audit_log_entry import AuditLogEntry
 from osah.domain.entities.dashboard_snapshot import DashboardSnapshot
 from osah.domain.entities.notification_item import NotificationItem
+from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.domain.services.build_news_source_display_name import build_news_source_display_name
 from osah.ui.qt.components.alert_card import AlertCard
 from osah.ui.qt.components.metric_card import MetricCard
 from osah.ui.qt.components.screen_states import EmptyStateWidget
@@ -154,8 +156,10 @@ class DashboardScreen(QWidget):
         layout.addWidget(news_title)
         if snapshot.latest_news_items:
             for news_item in snapshot.latest_news_items[:3]:
+                kind_label = "НПА" if news_item.source_kind == NewsSourceKind.NPA else "Новина"
+                source_label = build_news_source_display_name(news_item.source_name)
                 news_label = QLabel(
-                    f"• {news_item.source_name} | {news_item.published_at_text or '-'}\n{news_item.title_text}"
+                    f"{kind_label} ({source_label})\n{news_item.title_text}"
                 )
                 news_label.setProperty("role", "section_header_subtitle")
                 news_label.setWordWrap(True)

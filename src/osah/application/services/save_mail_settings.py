@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from osah.domain.entities.mail_settings import MailSettings
+from osah.domain.services.normalize_mail_settings_for_delivery import normalize_mail_settings_for_delivery
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_app_setting import upsert_app_setting
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -12,19 +13,20 @@ def save_mail_settings(database_path: Path, mail_settings: MailSettings) -> None
     Сохраняет настройки SMTP и параметры ежедневного отчёта.
     """
 
+    normalized_mail_settings = normalize_mail_settings_for_delivery(mail_settings)
     connection = create_database_connection(database_path)
     try:
         setting_pairs = {
-            "mail.daily_report_enabled": "1" if mail_settings.daily_report_enabled else "0",
-            "mail.smtp_host": mail_settings.smtp_host.strip(),
-            "mail.smtp_port": str(mail_settings.smtp_port),
-            "mail.smtp_username": mail_settings.smtp_username.strip(),
-            "mail.smtp_password": mail_settings.smtp_password,
-            "mail.sender_email": mail_settings.sender_email.strip(),
-            "mail.recipient_email": mail_settings.recipient_email.strip(),
-            "mail.use_tls": "1" if mail_settings.use_tls else "0",
-            "mail.last_sent_date": mail_settings.last_sent_date.strip(),
-            "mail.daily_report_time": mail_settings.daily_report_time.strip() or "08:00",
+            "mail.daily_report_enabled": "1" if normalized_mail_settings.daily_report_enabled else "0",
+            "mail.smtp_host": normalized_mail_settings.smtp_host.strip(),
+            "mail.smtp_port": str(normalized_mail_settings.smtp_port),
+            "mail.smtp_username": normalized_mail_settings.smtp_username.strip(),
+            "mail.smtp_password": normalized_mail_settings.smtp_password,
+            "mail.sender_email": normalized_mail_settings.sender_email.strip(),
+            "mail.recipient_email": normalized_mail_settings.recipient_email.strip(),
+            "mail.use_tls": "1" if normalized_mail_settings.use_tls else "0",
+            "mail.last_sent_date": normalized_mail_settings.last_sent_date.strip(),
+            "mail.daily_report_time": normalized_mail_settings.daily_report_time.strip() or "08:00",
         }
         for setting_key, setting_value in setting_pairs.items():
             upsert_app_setting(connection, setting_key, setting_value)

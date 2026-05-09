@@ -11,7 +11,7 @@ def parse_feed_xml_content(xml_content_text: str) -> tuple[RssFeedEntry, ...]:
     Определяет тип ленты и возвращает нормализованные записи RSS или Atom.
     """
 
-    root_element = ElementTree.fromstring(xml_content_text)
+    root_element = ElementTree.fromstring(xml_content_text.lstrip())
     root_tag_name = root_element.tag.split("}")[-1]
     if root_tag_name == "rss":
         return parse_rss_feed_entries(root_element)

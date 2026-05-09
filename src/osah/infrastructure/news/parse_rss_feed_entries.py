@@ -25,6 +25,10 @@ def parse_rss_feed_entries(root_element: Element) -> tuple[RssFeedEntry, ...]:
         title_text = extract_xml_child_text(item_element, "title")
         link_url = extract_xml_child_text(item_element, "link")
         published_at_text = normalize_feed_publication_text(extract_xml_child_text(item_element, "pubDate"))
+        summary_text = (
+            extract_xml_child_text(item_element, "description")
+            or extract_xml_child_text(item_element, "encoded")
+        )
         if not title_text or not link_url:
             continue
         entries.append(
@@ -32,6 +36,7 @@ def parse_rss_feed_entries(root_element: Element) -> tuple[RssFeedEntry, ...]:
                 title_text=title_text,
                 link_url=link_url,
                 published_at_text=published_at_text,
+                summary_text=summary_text,
             )
         )
     return tuple(entries)

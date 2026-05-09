@@ -10,3 +10,4 @@ class RssFeedEntry:
     title_text: str
     link_url: str
     published_at_text: str
+    summary_text: str = ""

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QTime, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -13,10 +13,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import QTime
 
 from osah.domain.entities.news_source import NewsSource
 from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.domain.entities.news_source_preset import NewsSourcePreset
+from osah.domain.services.list_default_news_source_presets import list_default_news_source_presets
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 
@@ -25,8 +26,10 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
     """Trusted news sources section for Settings screen."""
 
     source_created = Signal(str, str, str)
+    preset_source_add_requested = Signal(str, str, str)
+    site_check_requested = Signal(str, str)
     source_toggled = Signal(int, bool)
-    sources_deleted = Signal(list)  # list[int] — source_ids
+    sources_deleted = Signal(list)  # list[int] - source_ids
     refresh_now_requested = Signal()
     refresh_time_saved = Signal(str)  # HH:MM
 
@@ -39,6 +42,7 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         super().__init__()
         self._read_only = read_only
         self._sources = sources
+        self._presets = list_default_news_source_presets()
         self._news_refresh_time = news_refresh_time
         layout = self.content_layout()
 
@@ -46,7 +50,55 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         title.setProperty("role", "section_title")
         layout.addWidget(title)
 
-        # ###### РЯДОК ДОДАВАННЯ / ADD ROW ######
+        presets_label = QLabel("Довірені RSS/Atom-джерела")
+        presets_label.setProperty("role", "subsection_title")
+        layout.addWidget(presets_label)
+
+        presets_hint = QLabel("Оберіть попередньо перевірене джерело та натисніть «Додати RSS».")
+        presets_hint.setWordWrap(True)
+        layout.addWidget(presets_hint)
+
+        preset_row = QHBoxLayout()
+        self._preset_combo = QComboBox()
+        for preset in self._presets:
+            kind_label = "НПА" if preset.source_kind == NewsSourceKind.NPA else "Новини"
+            self._preset_combo.addItem(f"{preset.source_name} ({kind_label})", preset)
+        preset_row.addWidget(self._preset_combo, stretch=2)
+        self._preset_add_button = QPushButton("Додати RSS")
+        self._preset_add_button.setProperty("variant", "secondary")
+        self._preset_add_button.clicked.connect(self._emit_add_preset)
+        preset_row.addWidget(self._preset_add_button)
+        layout.addLayout(preset_row)
+
+        site_label = QLabel("Перевірка свого сайту")
+        site_label.setProperty("role", "subsection_title")
+        layout.addWidget(site_label)
+
+        site_hint = QLabel(
+            "Якщо потрібного сайту немає у списку, вставте звичайне посилання на сайт. "
+            "Система спробує знайти RSS/Atom-стрічку автоматично."
+        )
+        site_hint.setWordWrap(True)
+        layout.addWidget(site_hint)
+
+        site_row = QHBoxLayout()
+        self._site_url = QLineEdit()
+        self._site_url.setPlaceholderText("https://...")
+        site_row.addWidget(self._site_url, stretch=2)
+        self._site_kind = QComboBox()
+        self._site_kind.addItem("НПА", NewsSourceKind.NPA.value)
+        self._site_kind.addItem("Новини", NewsSourceKind.NEWS.value)
+        site_row.addWidget(self._site_kind)
+        self._site_check_button = QPushButton("Перевірити сайт")
+        self._site_check_button.setProperty("variant", "secondary")
+        self._site_check_button.clicked.connect(self._emit_check_site)
+        site_row.addWidget(self._site_check_button)
+        layout.addLayout(site_row)
+
+        manual_label = QLabel("Пряме додавання RSS/Atom")
+        manual_label.setProperty("role", "subsection_title")
+        layout.addWidget(manual_label)
+
         add_row = QHBoxLayout()
         self._name = QLineEdit()
         self._name.setPlaceholderText("Назва джерела")
@@ -64,16 +116,15 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         add_row.addWidget(self._add_button)
         layout.addLayout(add_row)
 
-        # ###### РЯДОК ДІЙ З ТАБЛИЦЕЮ / ACTION ROW ######
         action_row = QHBoxLayout()
 
-        self._refresh_now_button = QPushButton("⟳  Перевірити зараз")
+        self._refresh_now_button = QPushButton("⟳ Перевірити зараз")
         self._refresh_now_button.setProperty("variant", "secondary")
         self._refresh_now_button.setEnabled(not self._read_only)
         self._refresh_now_button.clicked.connect(self.refresh_now_requested.emit)
         action_row.addWidget(self._refresh_now_button)
 
-        self._schedule_button = QPushButton("🕐  Налаштувати розклад")
+        self._schedule_button = QPushButton("🕐 Налаштувати розклад")
         self._schedule_button.setProperty("variant", "secondary")
         self._schedule_button.setEnabled(not self._read_only)
         self._schedule_button.clicked.connect(self._open_schedule_dialog)
@@ -86,10 +137,8 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         self._delete_button.setEnabled(False)
         self._delete_button.clicked.connect(self._emit_delete_selected)
         action_row.addWidget(self._delete_button)
-
         layout.addLayout(action_row)
 
-        # ###### ТАБЛИЦЯ ДЖЕРЕЛ / SOURCES TABLE ######
         self._table = QTableWidget(0, 5)
         self._table.setHorizontalHeaderLabels(["", "Джерело", "Тип", "Активно", "Остання перевірка"])
         self._table.horizontalHeader().setStretchLastSection(True)
@@ -99,7 +148,6 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         self._render_sources()
         self._apply_read_only()
 
-    # ###### ПОБУДОВА ТАБЛИЦІ ДЖЕРЕЛ / RENDER SOURCES TABLE ######
     def _render_sources(self) -> None:
         """Renders trusted sources table with checkboxes and active controls."""
 
@@ -108,7 +156,6 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         for row_index, source in enumerate(self._sources):
             self._table.insertRow(row_index)
 
-            # Колонка 0: чекбокс вибору
             select_checkbox = QCheckBox()
             select_checkbox.setEnabled(not self._read_only)
             select_checkbox.stateChanged.connect(self._update_delete_button)
@@ -120,9 +167,12 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
 
             self._table.setItem(row_index, 1, QTableWidgetItem(source.source_name))
             kind_map = {NewsSourceKind.NPA.value: "НПА", NewsSourceKind.NEWS.value: "Новини"}
-            self._table.setItem(row_index, 2, QTableWidgetItem(kind_map.get(source.source_kind.value, source.source_kind.value)))
+            self._table.setItem(
+                row_index,
+                2,
+                QTableWidgetItem(kind_map.get(source.source_kind.value, source.source_kind.value)),
+            )
 
-            # Колонка 3: чекбокс активності
             active_checkbox = QCheckBox()
             active_checkbox.setChecked(source.is_active)
             active_checkbox.setEnabled(not self._read_only)
@@ -143,14 +193,12 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         self._table.resizeColumnToContents(0)
         self._table.itemChanged.connect(self._on_table_item_changed)
 
-    # ###### ОНОВЛЕННЯ КНОПКИ ВИДАЛЕННЯ / UPDATE DELETE BUTTON STATE ######
     def _update_delete_button(self) -> None:
         """Enables delete button when at least one source is selected."""
 
         selected_ids = self._get_selected_source_ids()
         self._delete_button.setEnabled(bool(selected_ids) and not self._read_only)
 
-    # ###### ОТРИМАННЯ ОБРАНИХ ID / GET SELECTED SOURCE IDS ######
     def _get_selected_source_ids(self) -> list[int]:
         """Returns source_ids for rows with checked selection checkboxes."""
 
@@ -164,7 +212,6 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
                 selected.append(source.source_id)
         return selected
 
-    # ###### ВИДАЛЕННЯ ОБРАНИХ / EMIT DELETE SELECTED ######
     def _emit_delete_selected(self) -> None:
         """Emits request to delete selected sources."""
 
@@ -172,7 +219,6 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         if selected_ids:
             self.sources_deleted.emit(selected_ids)
 
-    # ###### ДІАЛОГ НАЛАШТУВАННЯ РОЗКЛАДУ / OPEN SCHEDULE DIALOG ######
     def _open_schedule_dialog(self) -> None:
         """Opens a dialog to set the daily news refresh time."""
 
@@ -213,15 +259,22 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
             self._news_refresh_time = selected_time
             self.refresh_time_saved.emit(selected_time)
 
-
-    # ###### РЕЖИМ READ-ONLY / READ-ONLY MODE ######
     def _apply_read_only(self) -> None:
         """Applies read-only restrictions for manager role."""
 
-        for widget in (self._name, self._url, self._kind, self._add_button):
+        for widget in (
+            self._name,
+            self._url,
+            self._kind,
+            self._add_button,
+            self._preset_combo,
+            self._preset_add_button,
+            self._site_url,
+            self._site_kind,
+            self._site_check_button,
+        ):
             widget.setEnabled(not self._read_only)
 
-    # ###### СТВОРЕННЯ ДЖЕРЕЛА / CREATE SOURCE ######
     def _emit_create(self) -> None:
         """Emits request to create new trusted source."""
 
@@ -231,6 +284,25 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
             str(self._kind.currentData() or NewsSourceKind.NEWS.value),
         )
 
-    # ###### ОБРОБНИК ЗМІНИ ЕЛЕМЕНТА / TABLE ITEM CHANGED ######
+    def _emit_add_preset(self) -> None:
+        """Emits request to add selected built-in RSS preset."""
+
+        selected_preset = self._preset_combo.currentData()
+        if not isinstance(selected_preset, NewsSourcePreset):
+            return
+        self.preset_source_add_requested.emit(
+            selected_preset.source_name,
+            selected_preset.source_url,
+            selected_preset.source_kind.value,
+        )
+
+    def _emit_check_site(self) -> None:
+        """Emits request to detect RSS/Atom feed for custom site URL."""
+
+        self.site_check_requested.emit(
+            self._site_url.text().strip(),
+            str(self._site_kind.currentData() or NewsSourceKind.NEWS.value),
+        )
+
     def _on_table_item_changed(self) -> None:
         """Stub handler to avoid unconnected signal warnings."""

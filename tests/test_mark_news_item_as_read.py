@@ -39,7 +39,7 @@ class MarkNewsItemAsReadTests(unittest.TestCase):
                 context.database_path,
                 lambda _: (
                     RssFeedEntry(
-                        title_text="Зміни до нормативного акту",
+                        title_text="Зміни до нормативного акту з охорони праці",
                         link_url="https://example.com/npa-1",
                         published_at_text="2026-04-10T13:00:00",
                     ),
