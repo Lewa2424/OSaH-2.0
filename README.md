@@ -1,43 +1,134 @@
-# OSaH 2.0 🚀
+# OSaH 2.0
 
-**OSaH (Occupational Safety and Health) 2.0** — це сучасний локальний пульт інспектора з охорони праці, розроблений для комплексного контролю строків, допусків та критичних сигналів у приватному або промисловому контурі.
+OSaH 2.0 is a local desktop system for occupational safety workflows. The current production UI is based on `PySide6` and runs entirely on a local SQLite database without a server dependency.
 
-![OSaH Dashboard] (тут міг би бути ваш скріншот)
+## What The Project Does
 
-## ✨ Основні особливості
+The system consolidates the main safety-control areas into one desktop application:
 
-- **Master-Detail Інтерфейс**: Швидкий доступ до деталей кожного запису одним кліком без втрати контексту таблиці.
-- **Інтерактивний Layout**: Рухомі розділювачі (PanedWindow) дозволяють гнучко налаштовувати ширину робочих областей під будь-який екран.
-- **Розумна Система Навігації**: Миттєві візуальні алерти (Critical/Warning) прямо на кнопках меню для оперативного реагування на проблеми.
-- **Повна Автономність**: Робота з локальною базою даних SQLite без необхідності підключення до серверів.
-- **Сучасний Дизайн**: Побудовано на базі `CustomTkinter` з використанням сучасних дизайн-патернів (заокруглені кути, акцентні кольори, скляні ефекти).
+- employee registry and readiness overview;
+- training records and status tracking;
+- PPE accounting and control status;
+- medical examination tracking;
+- work permit management;
+- contractor registry;
+- daily reports and mail settings;
+- news / regulatory source monitoring;
+- backups, audit log, archive, and security settings.
 
-## 🛠 Технологічний стек
+## Current State
 
-- **Мова**: Python 3.12+
-- **UI Фреймворк**: [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
-- **База даних**: SQLite
-- **Архітектура**: Domain-Driven Design (DDD) / Clean Architecture
+- Primary frontend: `src/osah/ui/qt/`
+- Legacy frontend kept as reference only: `src/osah/ui/desktop/`
+- Main entry point: `main.py`
+- Application bootstrap: `src/osah/main.py`
+- Local data directory: `data/`
+- Local logs directory: `logs/`
+- Runtime database path: `data/osah.sqlite3`
 
-## 🚀 Швидкий старт
+The repository still contains the older `CustomTkinter` layer, but the active application startup path goes through the secured Qt shell.
 
-### Встановлення залежностей
-Переконайтеся, що у вас встановлено Python, потім виконайте:
-```bash
-pip install -r requirements.txt
-```
-*(Примітка: якщо файлу requirements.txt ще немає, встановіть `customtkinter` вручну)*
+## Architecture
 
-### Запуск програми
+The project follows a modular layered structure:
+
+- `src/osah/domain`  
+  Domain entities and pure business rules.
+
+- `src/osah/application`  
+  Use-case services that orchestrate domain logic and infrastructure access.
+
+- `src/osah/infrastructure`  
+  SQLite access, logging, backup, import, security, and external I/O.
+
+- `src/osah/ui/qt`  
+  Active Qt user interface, routing, screens, components, workers, and design tokens.
+
+- `src/osah/ui/desktop`  
+  Deprecated desktop layer retained only as migration/reference material.
+
+- `tests`  
+  Automated regression coverage for application, domain, and UI-adjacent behavior.
+
+The application bootstrap initializes storage, logging, schema, demo seed data, notifications, security baseline, and startup backup before opening the UI.
+
+## Main UI Sections
+
+The current Qt shell routes between these sections:
+
+- Dashboard
+- Employees
+- Trainings
+- PPE
+- Medical
+- Work Permits
+- Contractors
+- Archive
+- Reports
+- News / NPA
+- Settings
+- About
+
+## Security Flow
+
+The application starts with a mandatory security flow:
+
+1. First launch initializes the security baseline.
+2. If access is not configured yet, the initial setup screen is shown.
+3. On subsequent launches, the login screen is shown with role-based access.
+4. Recovery flow is available for access reset scenarios.
+5. After authentication, the main Qt shell is opened.
+
+The secured startup path is implemented through `src/osah/ui/qt/run_qt_application_secured.py`.
+
+## Running The Project
+
+Requirements:
+
+- Python `3.12+`
+- `PySide6`
+
+From the repository root:
+
 ```bash
 python main.py
 ```
 
-## 📂 Структура проекту
-- `src/osah/domain`: Бізнес-логіка та сутності.
-- `src/osah/application`: Сервіси та сценарії використання.
-- `src/osah/infrastructure`: Робота з БД та зовнішніми ресурсами.
-- `src/osah/ui`: Весь візуальний шар (Desktop App).
+At startup the app creates required local directories if they do not exist:
 
----
-Розроблено спеціально для Lewa2424.
+- `data/`
+- `logs/`
+
+## Tests
+
+The repository currently contains `67` test files under `tests/`.
+
+If your environment already has the required dependencies installed, run:
+
+```bash
+python -m pytest tests
+```
+
+If `pytest` is not available in the environment, use the project test runner standard adopted in your local setup.
+
+## Packaging
+
+The repository includes a PyInstaller spec:
+
+```bash
+pyinstaller osah.spec
+```
+
+The spec is configured for the Qt application and bundles:
+
+- Qt design resources;
+- Qt assets;
+- required application modules;
+- a windowed executable named `OSaH`.
+
+## Important Notes
+
+- `README` content was aligned to the current codebase state, not the old marketing description.
+- `src/osah/ui/desktop/` should not be used for new feature development.
+- Existing build artifacts in `build/` and `dist/` are generated outputs, not source architecture.
+- The repository currently has unrelated working-tree changes outside this `README` update; they were intentionally left untouched.
