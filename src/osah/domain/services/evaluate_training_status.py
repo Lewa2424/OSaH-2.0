@@ -4,6 +4,7 @@ from osah.domain.entities.training_next_control_basis import TrainingNextControl
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
+from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
 
 
 # ###### ОЦЕНКА СТАТУСА ИНСТРУКТАЖА / EVALUATE TRAINING STATUS ######
@@ -19,6 +20,9 @@ def evaluate_training_status(
 
     current_date = today or date.today()
     related_records = related_training_records or (training_record,)
+    chronology_conflict_reason = find_training_chronology_conflict_reason(training_record, related_records)
+    if chronology_conflict_reason is not None:
+        return TrainingStatus.INVALID
 
     if training_record.training_type == TrainingType.INTRODUCTORY:
         if training_record.next_control_basis == TrainingNextControlBasis.INTRODUCTORY_PRIMARY_NOT_REQUIRED:

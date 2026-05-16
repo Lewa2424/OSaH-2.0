@@ -13,6 +13,8 @@ def build_training_workspace_summary(rows: tuple[TrainingWorkspaceRow, ...]) -> 
         total_rows=len(rows),
         current_total=sum(1 for row in rows if row.status_filter == TrainingRegistryFilter.CURRENT),
         warning_total=sum(1 for row in rows if row.status_filter == TrainingRegistryFilter.WARNING),
-        critical_total=sum(1 for row in rows if row.status_filter == TrainingRegistryFilter.OVERDUE),
+        critical_total=sum(
+            1 for row in rows if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.INVALID}
+        ),
         missing_total=sum(1 for row in rows if row.status_filter == TrainingRegistryFilter.MISSING),
     )

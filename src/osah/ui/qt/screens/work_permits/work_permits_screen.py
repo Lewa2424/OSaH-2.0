@@ -97,6 +97,9 @@ class WorkPermitsScreen(QWidget):
     def _reload_workspace(self) -> None:
         """Reloads data after creating, editing, closing or canceling permit."""
 
+        current_record_id = self.details_pane.editor.current_record_id()
+        if current_record_id is not None:
+            self._initial_record_id = current_record_id
         if not self._reload_task_controller.start_worker(
             WorkspaceReloadWorker(
                 load_callable=lambda: load_work_permit_workspace(self._database_path),
@@ -242,6 +245,7 @@ def _collapse_by_employee(rows: tuple[WorkPermitWorkspaceRow, ...]) -> tuple[Wor
         WorkPermitStatus.ACTIVE: 2,
         WorkPermitStatus.CLOSED: 1,
         WorkPermitStatus.CANCELED: 0,
+        WorkPermitStatus.REISSUED: 0,
     }
     selected: dict[str, WorkPermitWorkspaceRow] = {}
     for row in rows:

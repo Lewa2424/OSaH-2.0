@@ -11,12 +11,12 @@ from osah.domain.services.evaluate_training_status import evaluate_training_stat
 
 
 class EvaluateTrainingStatusTests(unittest.TestCase):
-    """Тесты оценки статуса инструктажа.
+    """Тести оцінки статусу інструктажу.
     Tests for training status evaluation.
     """
 
     def test_warning_when_next_control_is_within_configured_threshold(self) -> None:
-        """Проверяет статус WARNING при приближении повторного контроля.
+        """Перевіряє статус WARNING при наближенні повторного контролю.
         Checks WARNING status when repeated control is within the configured threshold.
         """
 
@@ -33,13 +33,31 @@ class EvaluateTrainingStatusTests(unittest.TestCase):
             work_risk_category=TrainingWorkRiskCategory.REGULAR,
             next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_REPEATED_6M,
         )
+        primary_record = TrainingRecord(
+            record_id=2,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.PRIMARY,
+            event_date="2025-10-10",
+            next_control_date="2026-01-10",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CURRENT,
+            work_risk_category=TrainingWorkRiskCategory.REGULAR,
+            next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_PRIMARY_3M,
+        )
 
-        status = evaluate_training_status(training_record, today=date(2026, 4, 10), warning_days=10)
+        status = evaluate_training_status(
+            training_record,
+            related_training_records=(primary_record, training_record),
+            today=date(2026, 4, 10),
+            warning_days=10,
+        )
 
         self.assertEqual(status, TrainingStatus.WARNING)
 
     def test_overdue_when_next_control_date_has_passed(self) -> None:
-        """Проверяет статус OVERDUE после даты повторного контроля.
+        """Перевіряє статус OVERDUE після дати повторного контролю.
         Checks OVERDUE status after the repeated-control date has passed.
         """
 
@@ -56,13 +74,31 @@ class EvaluateTrainingStatusTests(unittest.TestCase):
             work_risk_category=TrainingWorkRiskCategory.REGULAR,
             next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_REPEATED_6M,
         )
+        primary_record = TrainingRecord(
+            record_id=2,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.PRIMARY,
+            event_date="2025-10-10",
+            next_control_date="2026-01-10",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CURRENT,
+            work_risk_category=TrainingWorkRiskCategory.REGULAR,
+            next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_PRIMARY_3M,
+        )
 
-        status = evaluate_training_status(training_record, today=date(2026, 4, 10), warning_days=30)
+        status = evaluate_training_status(
+            training_record,
+            related_training_records=(primary_record, training_record),
+            today=date(2026, 4, 10),
+            warning_days=30,
+        )
 
         self.assertEqual(status, TrainingStatus.OVERDUE)
 
     def test_introductory_without_required_primary_is_not_required(self) -> None:
-        """Проверяет статус NOT_REQUIRED для вводного без требования первичного.
+        """Перевіряє статус NOT_REQUIRED для вступного без вимоги первинного.
         Checks NOT_REQUIRED status for introductory training without a primary requirement.
         """
 
@@ -87,7 +123,7 @@ class EvaluateTrainingStatusTests(unittest.TestCase):
         self.assertEqual(status, TrainingStatus.NOT_REQUIRED)
 
     def test_introductory_requirement_is_closed_by_primary_after_it(self) -> None:
-        """Проверяет закрытие требования вводного последующим первичным.
+        """Перевіряє закриття вимоги вступного наступним первинним.
         Checks that an introductory requirement is closed by a later primary training.
         """
 
@@ -132,7 +168,7 @@ class EvaluateTrainingStatusTests(unittest.TestCase):
         self.assertEqual(status, TrainingStatus.CLOSED_BY_PRIMARY)
 
     def test_non_control_record_without_transfer_stays_current(self) -> None:
-        """Проверяет, что запись без переноса повторного контроля остаётся CURRENT.
+        """Перевіряє, що запис без переносу повторного контролю залишається CURRENT.
         Checks that a record without repeated-control transfer stays CURRENT.
         """
 
@@ -153,6 +189,29 @@ class EvaluateTrainingStatusTests(unittest.TestCase):
         status = evaluate_training_status(training_record, today=date(2026, 4, 10), warning_days=30)
 
         self.assertEqual(status, TrainingStatus.CURRENT)
+
+    def test_invalid_when_repeated_has_no_previous_cycle_record(self) -> None:
+        """Повертає INVALID для повторного інструктажу без попереднього запису циклу.
+        Returns INVALID for repeated training without a previous cycle record.
+        """
+
+        training_record = TrainingRecord(
+            record_id=1,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.REPEATED,
+            event_date="2026-01-10",
+            next_control_date="2026-04-20",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CURRENT,
+            work_risk_category=TrainingWorkRiskCategory.REGULAR,
+            next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_REPEATED_6M,
+        )
+
+        status = evaluate_training_status(training_record, today=date(2026, 4, 10), warning_days=10)
+
+        self.assertEqual(status, TrainingStatus.INVALID)
 
 
 if __name__ == "__main__":

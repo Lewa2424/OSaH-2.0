@@ -11,3 +11,4 @@ class TrainingRegistryFilter(StrEnum):
     WARNING = "warning"
     OVERDUE = "overdue"
     MISSING = "missing"
+    INVALID = "invalid"

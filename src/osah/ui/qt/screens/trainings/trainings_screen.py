@@ -250,6 +250,7 @@ def _collapse_by_employee(rows: tuple[TrainingWorkspaceRow, ...]) -> tuple[Train
     """Keeps one most-problematic summary row per employee."""
 
     priority = {
+        TrainingRegistryFilter.INVALID: 5,
         TrainingRegistryFilter.MISSING: 4,
         TrainingRegistryFilter.OVERDUE: 3,
         TrainingRegistryFilter.WARNING: 2,
@@ -292,6 +293,8 @@ def _summarize_employee_row_reason(row: TrainingWorkspaceRow) -> str:
     """Builds one concise reason for the most severe employee training state."""
 
     reason_text = row.status_reason.replace("\n", " ").strip()
+    if row.status_filter == TrainingRegistryFilter.INVALID:
+        return f"{row.training_type_label}: {reason_text}"
     if row.status_filter == TrainingRegistryFilter.MISSING:
         return reason_text
     if row.status_filter == TrainingRegistryFilter.OVERDUE:

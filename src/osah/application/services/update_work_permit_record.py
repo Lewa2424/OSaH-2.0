@@ -7,9 +7,13 @@ from osah.domain.entities.work_permit_participant_role import WorkPermitParticip
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
+from osah.domain.services.has_work_permit_participant_composition_changed import (
+    has_work_permit_participant_composition_changed,
+)
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
+from osah.domain.services.validate_work_permit_timeline import validate_work_permit_base_timeline
 from osah.infrastructure.database.commands.delete_work_permit_participants import delete_work_permit_participants
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_work_permit_participant import insert_work_permit_participant
@@ -39,8 +43,8 @@ def update_work_permit_record(
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> None:
-    """Оновлює наряд-допуск і синхронізує пов'язані записи.
-    Updates a work permit and synchronizes linked records.
+    """Оновлює наряд-допуск.
+    Updates a work permit.
     """
 
     normalized = _validate_work_permit_input(
@@ -69,6 +73,20 @@ def update_work_permit_record(
             raise ValueError("Обраний наряд-допуск не знайдено.")
         if previous_record.closed_at or previous_record.canceled_at:
             raise ValueError("Закритий або скасований наряд не редагується.")
+        if previous_record.extension_count > 0 and (
+            str(normalized["starts_at"]) != previous_record.starts_at or str(normalized["ends_at"]) != previous_record.ends_at
+        ):
+            raise ValueError("Після продовження строку дії дати наряду змінюються лише через окрему дію продовження.")
+        if (
+            str(normalized["work_kind"]) != previous_record.work_kind
+            or str(normalized["work_location"]) != previous_record.work_location
+        ):
+            raise ValueError("Зміну виду робіт або місця виконання оформлюйте через окремий перевипуск наряду.")
+        if participants is not None and has_work_permit_participant_composition_changed(
+            previous_record.participants,
+            normalized["participants"],
+        ):
+            raise ValueError("Зміну складу бригади виконуйте окремою дією, а не через загальне редагування наряду.")
 
         updated_record = WorkPermitRecord(
             record_id=record_id,
@@ -76,6 +94,14 @@ def update_work_permit_record(
             closed_at=None,
             canceled_at=None,
             cancel_reason_text="",
+            daily_checks=previous_record.daily_checks,
+            reissued_from_record_id=previous_record.reissued_from_record_id,
+            reissued_to_record_id=previous_record.reissued_to_record_id,
+            reissue_reason_text=previous_record.reissue_reason_text,
+            base_ends_at=previous_record.base_ends_at if previous_record.extension_count > 0 else str(normalized["ends_at"]),
+            extension_count=previous_record.extension_count,
+            extended_at=previous_record.extended_at,
+            extension_reason_text=previous_record.extension_reason_text,
             **normalized,
         )
         update_work_permit_record_row(connection, updated_record)
@@ -123,8 +149,7 @@ def _validate_work_permit_input(
 ) -> dict[str, object]:
     starts_at = parse_ui_datetime_text(starts_at_text)
     ends_at = parse_ui_datetime_text(ends_at_text)
-    if ends_at <= starts_at:
-        raise ValueError("Час завершення має бути пізніше часу початку.")
+    validate_work_permit_base_timeline(starts_at, ends_at)
 
     normalized_permit_number = permit_number.strip()
     normalized_work_kind = work_kind.strip()
@@ -135,10 +160,8 @@ def _validate_work_permit_input(
     normalized_participant_role = participant_role.strip()
     if not normalized_permit_number or not normalized_work_kind or not normalized_work_location:
         raise ValueError("Номер наряду, вид робіт і місце робіт обов'язкові.")
-    if not normalized_responsible_person or not normalized_issuer_person:
-        raise ValueError("Потрібно вказати керівника робіт та допускаючого.")
-    if not normalized_employee_personnel_number and not participants:
-        raise ValueError("Потрібно вибрати учасника наряду.")
+    if not normalized_responsible_person:
+        raise ValueError("Потрібно вказати керівника робіт.")
 
     target_training_date = ""
     if target_training_date_text.strip():
@@ -152,13 +175,21 @@ def _validate_work_permit_input(
     } and (not target_training_date or not normalized_target_training_conducted_by):
         raise ValueError("Для проведеного цільового інструктажу потрібно вказати дату та особу, яка його провела.")
 
-    effective_participants = participants or (
-        WorkPermitParticipant(
-            employee_personnel_number=normalized_employee_personnel_number,
-            employee_full_name="",
-            participant_role=WorkPermitParticipantRole(normalized_participant_role),
-        ),
-    )
+    effective_participants: tuple[WorkPermitParticipant, ...]
+    if participants is not None:
+        effective_participants = participants
+    elif normalized_employee_personnel_number:
+        effective_participants = (
+            WorkPermitParticipant(
+                employee_personnel_number=normalized_employee_personnel_number,
+                employee_full_name="",
+                participant_role=WorkPermitParticipantRole(
+                    normalized_participant_role or WorkPermitParticipantRole.EXECUTOR.value
+                ),
+            ),
+        )
+    else:
+        effective_participants = ()
 
     return {
         "permit_number": normalized_permit_number,

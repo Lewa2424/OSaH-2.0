@@ -115,6 +115,13 @@ def ensure_core_schema(connection: Connection) -> None:
             work_location TEXT NOT NULL,
             starts_at TEXT NOT NULL,
             ends_at TEXT NOT NULL,
+            reissued_from_record_id INTEGER NULL,
+            reissued_to_record_id INTEGER NULL,
+            reissue_reason_text TEXT NOT NULL DEFAULT '',
+            base_ends_at TEXT NOT NULL DEFAULT '',
+            extension_count INTEGER NOT NULL DEFAULT 0,
+            extended_at TEXT NULL,
+            extension_reason_text TEXT NOT NULL DEFAULT '',
             responsible_person TEXT NOT NULL,
             issuer_person TEXT NOT NULL,
             note_text TEXT NOT NULL DEFAULT '',
@@ -141,6 +148,19 @@ def ensure_core_schema(connection: Connection) -> None:
             FOREIGN KEY (employee_personnel_number)
                 REFERENCES employees(personnel_number)
                 ON DELETE RESTRICT
+                ON UPDATE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS work_permit_daily_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            work_permit_id INTEGER NOT NULL,
+            checked_at TEXT NOT NULL,
+            checked_by TEXT NOT NULL,
+            note_text TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (work_permit_id)
+                REFERENCES work_permits(id)
+                ON DELETE CASCADE
                 ON UPDATE CASCADE
         );
 
@@ -217,6 +237,8 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_ppe_normative_columns(connection)
     _ensure_medical_normative_columns(connection)
     _ensure_work_permit_target_training_columns(connection)
+    _ensure_work_permit_extension_columns(connection)
+    _ensure_work_permit_reissue_columns(connection)
     connection.commit()
 
 
@@ -515,3 +537,40 @@ def _ensure_work_permit_target_training_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE work_permits ADD COLUMN basis_text TEXT NOT NULL DEFAULT '';")
     if "basis_note" not in columns:
         connection.execute("ALTER TABLE work_permits ADD COLUMN basis_note TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_work_permit_extension_columns(connection: Connection) -> None:
+    """Додає поля первинного строку та одноразового продовження для нарядів-допусків.
+    Adds base-term and one-time extension fields for work permits.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(work_permits);").fetchall()
+    }
+    if "base_ends_at" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN base_ends_at TEXT NOT NULL DEFAULT '';")
+        connection.execute("UPDATE work_permits SET base_ends_at = ends_at WHERE base_ends_at = '';")
+    if "extension_count" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN extension_count INTEGER NOT NULL DEFAULT 0;")
+    if "extended_at" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN extended_at TEXT NULL;")
+    if "extension_reason_text" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN extension_reason_text TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_work_permit_reissue_columns(connection: Connection) -> None:
+    """Додає поля перевипуску та зв'язку між старим і новим нарядами.
+    Adds reissue fields and linkage between old and new permits.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(work_permits);").fetchall()
+    }
+    if "reissued_from_record_id" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN reissued_from_record_id INTEGER NULL;")
+    if "reissued_to_record_id" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN reissued_to_record_id INTEGER NULL;")
+    if "reissue_reason_text" not in columns:
+        connection.execute("ALTER TABLE work_permits ADD COLUMN reissue_reason_text TEXT NOT NULL DEFAULT '';")

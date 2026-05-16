@@ -1,16 +1,18 @@
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 
 
-# ###### ФОРМАТУВАННЯ МІТКИ ФІЛЬТРА ІНСТРУКТАЖІВ / ФОРМАТИРОВАНИЕ МЕТКИ ФИЛЬТРА ИНСТРУКТАЖЕЙ ######
+# ###### ФОРМАТУВАННЯ МІТКИ ФІЛЬТРА ІНСТРУКТАЖІВ / FORMAT TRAINING FILTER LABEL ######
 def format_training_registry_filter_label(registry_filter: TrainingRegistryFilter) -> str:
     """Повертає локалізовану мітку фільтра реєстру інструктажів.
-    Возвращает локализованную метку фильтра реестра инструктажей.
+    Returns a localized label for the trainings registry filter.
     """
 
     if registry_filter == TrainingRegistryFilter.ALL:
         return "Усі"
     if registry_filter == TrainingRegistryFilter.CURRENT:
         return "Актуальні"
+    if registry_filter == TrainingRegistryFilter.INVALID:
+        return "Конфлікт"
     if registry_filter == TrainingRegistryFilter.WARNING:
         return "Потребують уваги"
     if registry_filter == TrainingRegistryFilter.OVERDUE:

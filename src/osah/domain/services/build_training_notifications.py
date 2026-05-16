@@ -7,6 +7,7 @@ from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.services.build_training_status_reason import build_training_status_reason
+from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
 
 
 # ###### ПОСТРОЕНИЕ УВЕДОМЛЕНИЙ ИНСТРУКТАЖЕЙ / BUILD TRAINING NOTIFICATIONS ######
@@ -46,7 +47,20 @@ def build_training_notifications(
             )
 
         for training_record in employee_records:
-            if training_record.status == TrainingStatus.OVERDUE:
+            if training_record.status == TrainingStatus.INVALID:
+                notifications.append(
+                    NotificationItem(
+                        notification_kind=NotificationKind.CONTROL,
+                        notification_level=NotificationLevel.CRITICAL,
+                        source_module="trainings.registry",
+                        title_text="Порушена послідовність інструктажів",
+                        message_text=find_training_chronology_conflict_reason(training_record, employee_records)
+                        or "Виявлено конфлікт дат у хронології інструктажів.",
+                        employee_personnel_number=employee.personnel_number,
+                        employee_full_name=employee.full_name,
+                    )
+                )
+            elif training_record.status == TrainingStatus.OVERDUE:
                 notifications.append(
                     NotificationItem(
                         notification_kind=NotificationKind.CONTROL,

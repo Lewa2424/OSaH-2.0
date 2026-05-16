@@ -12,15 +12,11 @@ from osah.domain.services.build_training_workspace_rows import build_training_wo
 
 
 class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
-    """Тесты построения строк рабочего пространства инструктажей.
+    """Тести побудови рядків робочого простору інструктажів.
     Tests for building trainings workspace rows.
     """
 
     def test_active_employee_without_records_gets_missing_primary_row(self) -> None:
-        """Проверяет, что активный сотрудник без записей получает проблему по первичному.
-        Checks that an active employee without records gets a missing-primary problem row.
-        """
-
         employee = Employee(
             personnel_number="0001",
             full_name="Працівник",
@@ -36,10 +32,6 @@ class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
         self.assertEqual(rows[0].training_type, TrainingType.PRIMARY)
 
     def test_targeted_training_without_primary_keeps_missing_primary_problem(self) -> None:
-        """Проверяет, что целевой инструктаж не закрывает отсутствие первичного.
-        Checks that targeted training does not close a missing primary requirement.
-        """
-
         employee = Employee(
             personnel_number="0001",
             full_name="Працівник",
@@ -69,10 +61,6 @@ class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
         self.assertTrue(any(row.record_id is None for row in rows))
 
     def test_contractor_introductory_without_primary_requirement_does_not_create_missing_row(self) -> None:
-        """Проверяет, что подрядчик без требования первичного не получает ложный missing.
-        Checks that a contractor without a primary requirement does not get a false missing row.
-        """
-
         employee = Employee(
             personnel_number="0001",
             full_name="Підрядник",
@@ -103,10 +91,6 @@ class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
         self.assertIn("не потрібен", rows[0].status_reason.lower())
 
     def test_introductory_without_primary_uses_own_row_without_duplicate_missing_primary(self) -> None:
-        """Перевіряє, що вступний запис сам показує потребу в первинному без дублюючого synthetic-row.
-        Checks that an introductory record carries the primary reminder without a duplicate synthetic row.
-        """
-
         employee = Employee(
             personnel_number="0001",
             full_name="Працівник",
@@ -138,10 +122,6 @@ class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
         self.assertIn("первинний", rows[0].status_reason.lower())
 
     def test_primary_closed_by_later_repeated_is_not_shown_as_overdue(self) -> None:
-        """Перевіряє, що первинний інструктаж закривається пізнішим повторним.
-        Checks that a primary training is closed by a later repeated training.
-        """
-
         employee = Employee(
             personnel_number="0001",
             full_name="Працівник",
@@ -202,6 +182,67 @@ class BuildTrainingWorkspaceRowsTests(unittest.TestCase):
         self.assertEqual(primary_row.status_label, "Закрито")
         self.assertEqual(primary_row.next_control_date, "-")
         self.assertIn("повторний", primary_row.status_reason.lower())
+
+    def test_repeated_before_primary_is_marked_as_conflict(self) -> None:
+        employee = Employee(
+            personnel_number="0001",
+            full_name="Працівник",
+            position_name="Слюсар",
+            department_name="Цех",
+            employment_status="active",
+        )
+        repeated_record = TrainingRecord(
+            record_id=1,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.REPEATED,
+            event_date="2025-06-22",
+            next_control_date="2025-12-22",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CURRENT,
+            person_category=TrainingPersonCategory.OWN_EMPLOYEE,
+            requires_primary_on_workplace=True,
+            work_risk_category=TrainingWorkRiskCategory.REGULAR,
+            next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_REPEATED_6M,
+        )
+        introductory_record = TrainingRecord(
+            record_id=2,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.INTRODUCTORY,
+            event_date="2026-05-08",
+            next_control_date="2026-05-08",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CLOSED_BY_PRIMARY,
+            person_category=TrainingPersonCategory.OWN_EMPLOYEE,
+            requires_primary_on_workplace=True,
+            work_risk_category=TrainingWorkRiskCategory.NOT_APPLICABLE,
+            next_control_basis=TrainingNextControlBasis.REQUIRES_PRIMARY_AFTER_INTRODUCTORY,
+        )
+        primary_record = TrainingRecord(
+            record_id=3,
+            employee_personnel_number="0001",
+            employee_full_name="Працівник",
+            training_type=TrainingType.PRIMARY,
+            event_date="2026-05-08",
+            next_control_date="2026-11-08",
+            conducted_by="Інспектор",
+            note_text="",
+            status=TrainingStatus.CURRENT,
+            person_category=TrainingPersonCategory.OWN_EMPLOYEE,
+            requires_primary_on_workplace=True,
+            work_risk_category=TrainingWorkRiskCategory.REGULAR,
+            next_control_basis=TrainingNextControlBasis.CALCULATED_AFTER_PRIMARY_6M,
+        )
+
+        rows = build_training_workspace_rows((employee,), (repeated_record, introductory_record, primary_record))
+        repeated_row = next(row for row in rows if row.record_id == 1)
+
+        self.assertEqual(repeated_row.status_filter, TrainingRegistryFilter.INVALID)
+        self.assertEqual(repeated_row.status_label, "Конфлікт")
+        self.assertIn("послідовність", repeated_row.status_reason.lower())
 
 
 if __name__ == "__main__":

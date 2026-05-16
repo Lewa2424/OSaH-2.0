@@ -1,32 +1,50 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QLabel, QFormLayout, QHBoxLayout, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
+from osah.application.services.apply_work_permit_participant_change import apply_work_permit_participant_change
+from osah.application.services.cancel_work_permit_record import cancel_work_permit_record
+from osah.application.services.close_work_permit_record import close_work_permit_record
 from osah.application.services.create_work_permit_record import create_work_permit_record
+from osah.application.services.extend_work_permit_record import extend_work_permit_record
 from osah.application.services.load_employee_work_readiness import load_employee_work_readiness
+from osah.application.services.record_work_permit_daily_check import record_work_permit_daily_check
+from osah.application.services.suggest_followup_work_permit_number import suggest_followup_work_permit_number
 from osah.application.services.update_work_permit_record import update_work_permit_record
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.employee_readiness_level import EmployeeReadinessLevel
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
+from osah.domain.entities.work_permit_record import WorkPermitRecord
+from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
+from osah.domain.services.build_work_permit_daily_check_summary import build_work_permit_daily_check_summary
 from osah.domain.services.format_ui_datetime import format_ui_datetime
 from osah.domain.services.format_work_permit_participant_role_label import format_work_permit_participant_role_label
 from osah.domain.services.format_work_permit_target_training_status_label import format_work_permit_target_training_status_label
+from osah.domain.services.list_work_permit_kind_options import list_work_permit_kind_options
 from osah.domain.services.normalize_work_permit_target_training_status import normalize_work_permit_target_training_status
+from osah.domain.services.parse_ui_date_text import parse_ui_date_text
+from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.ui.qt.components.basis_note_panel import BasisNotePanel
 from osah.ui.qt.components.date_line_edit import DateLineEdit
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.info_tooltip_icon import InfoTooltipIcon
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, SPACING
 from osah.ui.qt.hints.normative_hints import (
     WORK_PERMIT_KIND_HINT,
     WORK_PERMIT_PARTICIPANT_READINESS_HINT,
     WORK_PERMIT_TARGET_TRAINING_HINT,
 )
+from osah.ui.qt.screens.work_permits.build_work_permit_extension_summary import build_work_permit_extension_summary
+from osah.ui.qt.screens.work_permits.cancel_work_permit_dialog import CancelWorkPermitDialog
+from osah.ui.qt.screens.work_permits.change_work_permit_participants_dialog import ChangeWorkPermitParticipantsDialog
+from osah.ui.qt.screens.work_permits.close_work_permit_dialog import CloseWorkPermitDialog
+from osah.ui.qt.screens.work_permits.extend_work_permit_dialog import ExtendWorkPermitDialog
+from osah.ui.qt.screens.work_permits.record_work_permit_daily_check_dialog import RecordWorkPermitDailyCheckDialog
 
 
 class WorkPermitEditor(QWidget):
@@ -41,18 +59,33 @@ class WorkPermitEditor(QWidget):
         super().__init__()
         self._database_path = database_path
         self._current_record_id: int | None = None
+        self._current_record: WorkPermitRecord | None = None
         self._active_employees = tuple(
             employee for employee in employees if employee.employment_status.strip().lower() == "active"
         )
         self._participants: tuple[WorkPermitParticipant, ...] = ()
+        self._pending_reissue_participants: tuple[WorkPermitParticipant, ...] = ()
+        self._work_permit_kind_options = list_work_permit_kind_options()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING["md"])
 
+        intro_label = QLabel(
+            "Реєстр нарядів: спочатку лише основні дані. Склад бригади, інструктаж і щоденні перевірки ведуться лише за потреби."
+        )
+        intro_label.setWordWrap(True)
+        intro_label.setStyleSheet(f"color: {COLOR['text_muted']};")
+        layout.addWidget(intro_label)
+
         self._participants_summary_label = QLabel("Учасники: 0")
         self._participants_summary_label.setWordWrap(True)
         layout.addWidget(self._participants_summary_label)
+
+        self.manage_participants_button = QPushButton("Задати склад бригади")
+        self.manage_participants_button.setProperty("variant", "secondary")
+        self.manage_participants_button.clicked.connect(self._manage_participants)
+        layout.addWidget(self.manage_participants_button)
 
         layout.addWidget(self._section_title("Дані наряду"))
         permit_form = QFormLayout()
@@ -60,11 +93,22 @@ class WorkPermitEditor(QWidget):
         self.permit_number_input = QLineEdit()
         permit_form.addRow("Номер", self.permit_number_input)
 
+        self.work_kind_selector = QComboBox()
+        self._populate_work_kind_selector()
+        self.work_kind_selector.currentIndexChanged.connect(self._apply_selected_work_kind_option)
+        permit_form.addRow("Тип наряду", self.work_kind_selector)
+
         self.work_kind_input = QLineEdit()
+        self.work_kind_input.textChanged.connect(self._handle_work_kind_text_changed)
         self.work_kind_input.setPlaceholderText(
             "Наприклад: вогневі, газонебезпечні, висотні, ремонтні, вантажопідіймальні."
         )
         permit_form.addRow(self._with_info("Вид робіт", WORK_PERMIT_KIND_HINT), self.work_kind_input)
+
+        self._work_kind_guidance_label = QLabel("Оберіть типовий варіант або задайте вид робіт вручну.")
+        self._work_kind_guidance_label.setWordWrap(True)
+        self._work_kind_guidance_label.setStyleSheet(f"color: {COLOR['text_muted']};")
+        permit_form.addRow("", self._work_kind_guidance_label)
 
         self.work_location_input = QLineEdit()
         permit_form.addRow("Місце", self.work_location_input)
@@ -81,12 +125,66 @@ class WorkPermitEditor(QWidget):
         permit_form.addRow("Керівник робіт", self.responsible_input)
 
         self.issuer_input = QLineEdit()
+        self.issuer_input.setPlaceholderText("Необов'язково для контрольного реєстру")
         permit_form.addRow("Допускаючий", self.issuer_input)
 
         self.note_input = QTextEdit()
         self.note_input.setMaximumHeight(76)
         permit_form.addRow("Примітка", self.note_input)
         layout.addLayout(permit_form)
+
+        layout.addWidget(self._section_title("Строк дії та продовження"))
+        self._base_term_label = QLabel()
+        self._current_term_label = QLabel()
+        self._extension_state_label = QLabel()
+        self._extension_reason_label = QLabel()
+        self._schedule_notice_label = QLabel()
+        self._schedule_notice_label.setWordWrap(True)
+        self._schedule_notice_label.setStyleSheet(f"color: {COLOR['text_muted']};")
+        layout.addWidget(self._base_term_label)
+        layout.addWidget(self._current_term_label)
+        layout.addWidget(self._extension_state_label)
+        layout.addWidget(self._extension_reason_label)
+        layout.addWidget(self._schedule_notice_label)
+
+        self.extend_button = QPushButton("Продовжити наряд")
+        self.extend_button.setProperty("variant", "secondary")
+        self.extend_button.clicked.connect(self._extend_record)
+        layout.addWidget(self.extend_button)
+
+        self.reissue_button = QPushButton("Перевипустити наряд")
+        self.reissue_button.setProperty("variant", "secondary")
+        self.reissue_button.setText("Створити новий на основі цього")
+        self.reissue_button.clicked.connect(self._reissue_record)
+        layout.addWidget(self.reissue_button)
+
+        lifecycle_actions = QHBoxLayout()
+        self.close_button = QPushButton("Закрити наряд")
+        self.close_button.setProperty("variant", "secondary")
+        self.close_button.clicked.connect(self._close_record)
+        lifecycle_actions.addWidget(self.close_button)
+
+        self.cancel_button = QPushButton("Скасувати наряд")
+        self.cancel_button.setProperty("variant", "secondary")
+        self.cancel_button.clicked.connect(self._cancel_record)
+        lifecycle_actions.addWidget(self.cancel_button)
+        layout.addLayout(lifecycle_actions)
+
+        layout.addWidget(self._section_title("Щоденні перевірки"))
+        self._daily_check_requirement_label = QLabel()
+        self._daily_check_requirement_label.setWordWrap(True)
+        self._daily_check_last_label = QLabel()
+        self._daily_check_history_label = QLabel()
+        self._daily_check_history_label.setWordWrap(True)
+        self._daily_check_history_label.setStyleSheet(f"color: {COLOR['text_muted']};")
+        layout.addWidget(self._daily_check_requirement_label)
+        layout.addWidget(self._daily_check_last_label)
+        layout.addWidget(self._daily_check_history_label)
+
+        self.record_daily_check_button = QPushButton("Зафіксувати щоденну перевірку")
+        self.record_daily_check_button.setProperty("variant", "secondary")
+        self.record_daily_check_button.clicked.connect(self._record_daily_check)
+        layout.addWidget(self.record_daily_check_button)
 
         layout.addWidget(self._section_title("Цільовий інструктаж"))
         target_form = QFormLayout()
@@ -182,18 +280,31 @@ class WorkPermitEditor(QWidget):
 
         return str(self.employee_input.currentData() or "").strip()
 
+    def current_record_id(self) -> int | None:
+        """Повертає id поточного відкритого наряду.
+        Returns the current open work-permit id.
+        """
+
+        return self._current_record_id
+
     def set_row(self, row: WorkPermitWorkspaceRow) -> None:
         """Заповнює форму значеннями вибраного наряду.
         Populates the form with the selected permit values.
         """
 
         self._current_record_id = row.record_id
+        self._current_record = row.record
         self._participants = row.record.participants
+        self._pending_reissue_participants = ()
         self._set_participant_options(self._participants, row.employee_numbers[0] if row.employee_numbers else None)
         self._update_participants_summary()
+        self._apply_participants_mode()
+        self._apply_reissue_mode()
+        self._apply_lifecycle_actions_mode()
 
         self.permit_number_input.setText(row.permit_number)
         self.work_kind_input.setText(row.work_kind)
+        self._sync_work_kind_selector(row.work_kind)
         self.work_location_input.setText(row.work_location)
         self.starts_at_input.setText(format_ui_datetime(row.starts_at))
         self.ends_at_input.setText(format_ui_datetime(row.ends_at))
@@ -212,6 +323,8 @@ class WorkPermitEditor(QWidget):
         self.save_button.setText("Зберегти зміни")
         self._sync_role_for_current_participant()
         self._refresh_readiness_panel()
+        self._apply_extension_summary()
+        self._apply_daily_check_summary()
 
     def clear_form(self) -> None:
         """Очищує форму та переводить редактор у режим нового наряду.
@@ -219,7 +332,9 @@ class WorkPermitEditor(QWidget):
         """
 
         self._current_record_id = None
+        self._current_record = None
         self._participants = ()
+        self._pending_reissue_participants = ()
         for field in (
             self.permit_number_input,
             self.work_kind_input,
@@ -236,10 +351,17 @@ class WorkPermitEditor(QWidget):
         self.target_training_note_input.clear()
         self.basis_panel.clear()
         self.target_training_status_input.setCurrentIndex(0)
+        self.work_kind_selector.setCurrentIndex(0)
+        self._sync_work_kind_selector("")
         self._set_participant_options(None, None)
         self._update_participants_summary()
+        self._apply_participants_mode()
+        self._apply_reissue_mode()
+        self._apply_lifecycle_actions_mode()
         self.save_button.setText("Створити наряд")
         self._refresh_readiness_panel()
+        self._apply_extension_summary()
+        self._apply_daily_check_summary()
 
     def _section_title(self, text: str) -> QLabel:
         """Створює простий внутрішній заголовок блоку форми.
@@ -249,6 +371,65 @@ class WorkPermitEditor(QWidget):
         title = QLabel(text)
         title.setStyleSheet("font-size: 14px; font-weight: 900;")
         return title
+
+    def _populate_work_kind_selector(self) -> None:
+        """Наповнює список типових видів нарядів без жорсткої галузевої валідації.
+        Populates the list of typical permit kinds without strict sector-specific validation.
+        """
+
+        self.work_kind_selector.addItem("Оберіть типовий варіант", "")
+        for option in self._work_permit_kind_options:
+            self.work_kind_selector.addItem(option.label, option.key)
+
+    def _apply_selected_work_kind_option(self) -> None:
+        """Підставляє вибраний типовий вид наряду та коротку підказку в форму.
+        Applies the selected typical permit kind and a short guidance note to the form.
+        """
+
+        option_key = str(self.work_kind_selector.currentData() or "").strip()
+        if not option_key:
+            self._work_kind_guidance_label.setText("Оберіть типовий варіант або задайте вид робіт вручну.")
+            return
+
+        for option in self._work_permit_kind_options:
+            if option.key != option_key:
+                continue
+            if option.key != "other":
+                self.work_kind_input.setText(option.label)
+            self._work_kind_guidance_label.setText(option.guidance_text)
+            return
+
+    def _handle_work_kind_text_changed(self, value: str) -> None:
+        """Синхронізує ручний текст виду робіт із типовим списком, якщо знайдено збіг.
+        Synchronizes the manual work-kind text with the typical list when a match exists.
+        """
+
+        self._sync_work_kind_selector(value)
+
+    def _sync_work_kind_selector(self, work_kind_text: str) -> None:
+        """Вирівнює випадаючий список із поточним текстом виду робіт.
+        Aligns the dropdown with the current work-kind text.
+        """
+
+        normalized_text = work_kind_text.strip().lower()
+        matched_index = 0
+        guidance_text = "Оберіть типовий варіант або задайте вид робіт вручну."
+        if normalized_text:
+            other_index = self.work_kind_selector.findData("other")
+            matched_index = other_index if other_index >= 0 else 0
+            guidance_text = "Користувацький вид робіт. Система збереже його як універсальний наряд без окремої галузевої валідації."
+        for option in self._work_permit_kind_options:
+            if option.label.strip().lower() != normalized_text:
+                continue
+            found_index = self.work_kind_selector.findData(option.key)
+            matched_index = found_index if found_index >= 0 else matched_index
+            guidance_text = option.guidance_text
+            break
+
+        self.work_kind_selector.blockSignals(True)
+        self.work_kind_selector.setCurrentIndex(matched_index)
+        self.work_kind_selector.blockSignals(False)
+        self._work_kind_guidance_label.setText(guidance_text)
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
         """Повертає підпис поля з нормативною підказкою.
@@ -275,6 +456,7 @@ class WorkPermitEditor(QWidget):
 
         self.employee_input.blockSignals(True)
         self.employee_input.clear()
+        self.employee_input.addItem("Не вибрано", "")
         if participants:
             for participant in participants:
                 self.employee_input.addItem(
@@ -285,7 +467,7 @@ class WorkPermitEditor(QWidget):
         else:
             for employee in self._active_employees:
                 self.employee_input.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
-            target_personnel_number = selected_personnel_number
+            target_personnel_number = selected_personnel_number or ""
 
         if target_personnel_number:
             self.employee_input.setCurrentIndex(max(0, self.employee_input.findData(target_personnel_number)))
@@ -304,10 +486,117 @@ class WorkPermitEditor(QWidget):
             self._participants_summary_label.setText(f"Учасники: {len(self._participants)} — {names}")
             return
         current_text = self.employee_input.currentText().strip()
-        if current_text:
+        if current_text and self.current_employee_personnel_number():
             self._participants_summary_label.setText(f"Учасники: 1 — {current_text}")
             return
-        self._participants_summary_label.setText("Учасники: 0")
+        self._participants_summary_label.setText("Склад бригади не ведеться")
+
+    def _apply_participants_mode(self) -> None:
+        """Оновлює підпис кнопки окремого керування складом бригади.
+        Refreshes the separate brigade-management button label.
+        """
+
+        if self._current_record_id is None:
+            self.manage_participants_button.setText("Задати склад бригади")
+            return
+        self.manage_participants_button.setText("Змінити склад бригади")
+
+    def _apply_reissue_mode(self) -> None:
+        """Оновлює доступність окремої дії перевипуску наряду.
+        Refreshes availability of the separate permit-reissue action.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.reissue_button.setEnabled(False)
+            return
+        self.reissue_button.setEnabled(
+            self._current_record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}
+        )
+
+    def _apply_lifecycle_actions_mode(self) -> None:
+        """Оновлює доступність явних дій життєвого циклу наряду.
+        Refreshes availability of explicit permit lifecycle actions.
+        """
+
+        is_editable_record = (
+            self._current_record is not None
+            and self._current_record.record_id is not None
+            and not self._current_record.closed_at
+            and not self._current_record.canceled_at
+        )
+        self.close_button.setEnabled(is_editable_record)
+        self.cancel_button.setEnabled(is_editable_record)
+
+    def _start_new_record_from_current(self) -> None:
+        """Р“РѕС‚СѓС” РЅРѕРІРёР№ С‡РµСЂРЅРѕРІРёРє РЅР° РѕСЃРЅРѕРІС– РїРѕС‚РѕС‡РЅРѕРіРѕ РЅР°СЂСЏРґСѓ.
+        Prepares a new draft based on the current permit.
+        """
+
+        if self._current_record is None:
+            raise ValueError("Поточний наряд не вибрано.")
+
+        source_permit_number = self.permit_number_input.text().strip()
+        suggested_number = suggest_followup_work_permit_number(self._database_path, source_permit_number)
+        participants = self._pending_reissue_participants or self._effective_participants()
+        work_kind = self.work_kind_input.text()
+        work_location = self.work_location_input.text()
+        responsible_person = self.responsible_input.text()
+        issuer_person = self.issuer_input.text()
+        note_text = self.note_input.toPlainText()
+        target_training_status = str(
+            self.target_training_status_input.currentData() or WorkPermitTargetTrainingStatus.LEGACY_NOT_TRACKED.value
+        )
+        target_training_date = self.target_training_date_input.text()
+        target_training_conducted_by = self.target_training_conducted_by_input.text()
+        target_training_note = self.target_training_note_input.toPlainText()
+        basis_text, basis_note = self.basis_panel.values()
+
+        self.clear_form()
+        self._participants = participants
+        selected_personnel_number = participants[0].employee_personnel_number if participants else None
+        self._set_participant_options(participants, selected_personnel_number)
+        self._update_participants_summary()
+        self._refresh_readiness_panel()
+        self.permit_number_input.setText(suggested_number)
+        self.work_kind_input.setText(work_kind)
+        self._sync_work_kind_selector(work_kind)
+        self.work_location_input.setText(work_location)
+        self.responsible_input.setText(responsible_person)
+        self.issuer_input.setText(issuer_person)
+        self.note_input.setPlainText(note_text)
+        self.target_training_status_input.setCurrentIndex(max(0, self.target_training_status_input.findData(target_training_status)))
+        self.target_training_date_input.setText(target_training_date)
+        self.target_training_conducted_by_input.setText(target_training_conducted_by)
+        self.target_training_note_input.setPlainText(target_training_note)
+        self.basis_panel.set_values(basis_text, basis_note)
+        self.feedback_label.show_success(
+            "Підготовлено новий чернетковий наряд на основі поточного. Вкажіть нові строки та перевірте цільовий інструктаж перед збереженням."
+        )
+
+    def _seed_participants_for_management(self) -> tuple[WorkPermitParticipant, ...]:
+        """Повертає стартовий склад для окремого діалогу бригади.
+        Returns the initial participant set for the dedicated brigade dialog.
+        """
+
+        participants = self._effective_participants()
+        if participants:
+            return participants
+
+        personnel_number = self.current_employee_personnel_number()
+        if not personnel_number:
+            return ()
+
+        current_text = self.employee_input.currentText().strip()
+        full_name = current_text.rsplit("(", 1)[0].strip() if "(" in current_text else current_text
+        return (
+            WorkPermitParticipant(
+                employee_personnel_number=personnel_number,
+                employee_full_name=full_name,
+                participant_role=WorkPermitParticipantRole(
+                    str(self.role_input.currentData() or WorkPermitParticipantRole.EXECUTOR.value)
+                ),
+            ),
+        )
 
     def _handle_current_participant_changed(self) -> None:
         """Синхронізує роль і стан після зміни поточного учасника.
@@ -407,6 +696,282 @@ class WorkPermitEditor(QWidget):
         personnel_number = self.current_employee_personnel_number()
         if personnel_number:
             self.module_navigation_requested.emit(section, personnel_number)
+
+    def _manage_participants(self) -> None:
+        """Запускає окремий сценарій зміни складу бригади.
+        Opens the dedicated brigade-composition workflow.
+        """
+
+        dialog = ChangeWorkPermitParticipantsDialog(
+            self._active_employees,
+            self._seed_participants_for_management(),
+            enforce_change_rules=False,
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        participants = dialog.participants()
+        if self._current_record_id is None:
+            self._participants = participants
+            selected_personnel_number = participants[0].employee_personnel_number if participants else None
+            self._set_participant_options(participants, selected_personnel_number)
+            self._update_participants_summary()
+            self._refresh_readiness_panel()
+            self.feedback_label.show_success("Склад бригади підготовлено для нового наряду.")
+            return
+
+        try:
+            outcome = apply_work_permit_participant_change(
+                self._database_path,
+                int(self._current_record_id),
+                participants,
+            )
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            if False:
+                message = ""
+                message += " Новий склад підготовлено для кнопки 'Перевипустити наряд'."
+            return
+
+        self._current_record_id = int(outcome.applied_record_id)
+        self._participants = participants
+        self._pending_reissue_participants = ()
+        selected_personnel_number = participants[0].employee_personnel_number if participants else None
+        self._set_participant_options(participants, selected_personnel_number)
+        self._update_participants_summary()
+        self._refresh_readiness_panel()
+        if outcome.reissued:
+            self.feedback_label.show_success(
+                "Склад бригади змінено. Через заміну понад 50% автоматично створено новий наряд."
+            )
+            self.saved.emit()
+            return
+        self.feedback_label.show_success("Склад бригади оновлено.")
+        self.saved.emit()
+
+    def _apply_extension_summary(self) -> None:
+        """Оновлює блок строку дії та режим редагування дат.
+        Refreshes the term/extension block and the date-edit mode.
+        """
+
+        summary = build_work_permit_extension_summary(self._current_record)
+        self._base_term_label.setText(str(summary["base_term_text"]))
+        self._current_term_label.setText(str(summary["current_term_text"]))
+        self._extension_state_label.setText(str(summary["state_text"]))
+        self._extension_reason_label.setText(str(summary["reason_text"]))
+        self._schedule_notice_label.setText(str(summary["notice_text"]))
+        self.extend_button.setEnabled(bool(summary["can_extend"]))
+        self.starts_at_input.setReadOnly(bool(summary["lock_dates"]))
+        self.ends_at_input.setReadOnly(bool(summary["lock_dates"]))
+
+    def _apply_daily_check_summary(self) -> None:
+        """Оновлює блок щоденних перевірок для поточного наряду.
+        Refreshes the daily-check block for the current permit.
+        """
+
+        summary = build_work_permit_daily_check_summary(self._current_record)
+        self._daily_check_requirement_label.setText(str(summary["requirement_text"]))
+        self._daily_check_last_label.setText(str(summary["last_check_text"]))
+        self._daily_check_history_label.setText(str(summary["history_text"]))
+        self.record_daily_check_button.setEnabled(bool(summary["can_record"]))
+
+    def _build_reissued_record(self) -> WorkPermitRecord:
+        """Готує новий наряд для операції перевипуску з поточних полів форми.
+        Builds the new permit payload for a reissue operation from current form fields.
+        """
+
+        starts_at = parse_ui_datetime_text(self.starts_at_input.text())
+        ends_at = parse_ui_datetime_text(self.ends_at_input.text())
+        permit_number = self.permit_number_input.text().strip()
+        work_kind = self.work_kind_input.text().strip()
+        work_location = self.work_location_input.text().strip()
+        responsible_person = self.responsible_input.text().strip()
+        issuer_person = self.issuer_input.text().strip()
+        participants = self._pending_reissue_participants or self._effective_participants()
+        if not permit_number or not work_kind or not work_location:
+            raise ValueError("Номер наряду, вид робіт і місце робіт обов'язкові.")
+        if not responsible_person:
+            raise ValueError("Потрібно вказати керівника робіт.")
+        target_training_date = ""
+        if self.target_training_date_input.text().strip():
+            target_training_date = parse_ui_date_text(self.target_training_date_input.text().strip()).isoformat()
+        target_training_status = WorkPermitTargetTrainingStatus(
+            str(self.target_training_status_input.currentData() or WorkPermitTargetTrainingStatus.LEGACY_NOT_TRACKED.value)
+        )
+        target_training_conducted_by = self.target_training_conducted_by_input.text().strip()
+        if target_training_status in {
+            WorkPermitTargetTrainingStatus.DONE_PASSED,
+            WorkPermitTargetTrainingStatus.DONE_FAILED,
+            WorkPermitTargetTrainingStatus.DONE,
+        } and (not target_training_date or not target_training_conducted_by):
+            raise ValueError("Для проведеного цільового інструктажу потрібно вказати дату та особу, яка його провела.")
+
+        basis_text, basis_note = self.basis_panel.values()
+        return WorkPermitRecord(
+            record_id=None,
+            permit_number=permit_number,
+            work_kind=work_kind,
+            work_location=work_location,
+            starts_at=starts_at.isoformat(sep=" ", timespec="minutes"),
+            ends_at=ends_at.isoformat(sep=" ", timespec="minutes"),
+            responsible_person=responsible_person,
+            issuer_person=issuer_person,
+            note_text=self.note_input.toPlainText().strip(),
+            closed_at=None,
+            participants=participants,
+            status=WorkPermitStatus.ACTIVE,
+            base_ends_at=ends_at.isoformat(sep=" ", timespec="minutes"),
+            target_training_status=target_training_status,
+            target_training_date=target_training_date,
+            target_training_conducted_by=target_training_conducted_by,
+            target_training_note=self.target_training_note_input.toPlainText().strip(),
+            basis_text=basis_text,
+            basis_note=basis_note,
+        )
+
+    def _extend_record(self) -> None:
+        """Відкриває діалог і виконує одноразове продовження строку наряду.
+        Opens the dialog and performs one-time permit extension.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.feedback_label.show_error("Продовження доступне лише для збереженого наряду.")
+            return
+
+        summary = build_work_permit_extension_summary(self._current_record)
+        if not bool(summary["can_extend"]):
+            self.feedback_label.show_error(str(summary["state_text"]))
+            return
+
+        dialog = ExtendWorkPermitDialog(format_ui_datetime(self._current_record.ends_at), self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        try:
+            extend_work_permit_record(
+                self._database_path,
+                int(self._current_record.record_id),
+                dialog.extended_until_text(),
+                dialog.extension_reason_text(),
+            )
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+
+        target_training_status = WorkPermitTargetTrainingStatus(
+            str(self.target_training_status_input.currentData() or WorkPermitTargetTrainingStatus.LEGACY_NOT_TRACKED.value)
+        )
+        if target_training_status in {
+            WorkPermitTargetTrainingStatus.NOT_DONE,
+            WorkPermitTargetTrainingStatus.LEGACY_NOT_TRACKED,
+        }:
+            self.feedback_label.show_success(
+                "Наряд продовжено. Перевірте, чи потрібен повторний допуск і цільовий/позачерговий інструктаж. У реєстрі цільовий інструктаж зараз не зафіксовано."
+            )
+        else:
+            self.feedback_label.show_success(
+                "Наряд продовжено. Перевірте, чи потрібен повторний допуск і цільовий/позачерговий інструктаж за вашими правилами."
+            )
+        self.saved.emit()
+
+    def _record_daily_check(self) -> None:
+        """Фіксує щоденну перевірку місця виконання робіт через окремий діалог.
+        Records a daily work-area check through a dedicated dialog.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.feedback_label.show_error("Щоденна перевірка доступна лише для збереженого наряду.")
+            return
+
+        summary = build_work_permit_daily_check_summary(self._current_record)
+        if not bool(summary["can_record"]):
+            self.feedback_label.show_error(str(summary["requirement_text"]))
+            return
+
+        dialog = RecordWorkPermitDailyCheckDialog(self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        try:
+            record_work_permit_daily_check(
+                self._database_path,
+                int(self._current_record.record_id),
+                dialog.checked_at_text(),
+                dialog.checked_by_text(),
+                dialog.note_text(),
+            )
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+
+        self.feedback_label.show_success("Щоденну перевірку зафіксовано.")
+        self.saved.emit()
+
+    def _reissue_record(self) -> None:
+        """Готує новий чернетковий наряд на основі поточного.
+        Prepares a new draft permit based on the current record.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.feedback_label.show_error("Створення нового наряду доступне лише для збереженого запису.")
+            return
+
+        try:
+            self._start_new_record_from_current()
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+
+        self._pending_reissue_participants = ()
+
+    def _close_record(self) -> None:
+        """Закриває поточний наряд через окрему підтверджену дію.
+        Closes the current permit through a dedicated confirmed action.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.feedback_label.show_error("Закриття доступне лише для збереженого наряду.")
+            return
+
+        dialog = CloseWorkPermitDialog(self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        try:
+            close_work_permit_record(self._database_path, int(self._current_record.record_id))
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+
+        self.feedback_label.show_success("Наряд закрито вручну.")
+        self.saved.emit()
+
+    def _cancel_record(self) -> None:
+        """Скасовує поточний наряд із фіксацією причини.
+        Cancels the current permit with a recorded reason.
+        """
+
+        if self._current_record is None or self._current_record.record_id is None:
+            self.feedback_label.show_error("Скасування доступне лише для збереженого наряду.")
+            return
+
+        dialog = CancelWorkPermitDialog(self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        try:
+            cancel_work_permit_record(
+                self._database_path,
+                int(self._current_record.record_id),
+                dialog.reason_text(),
+            )
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            return
+
+        self.feedback_label.show_success("Наряд скасовано.")
+        self.saved.emit()
 
     def _save_record(self) -> None:
         """Створює або оновлює наряд-допуск через application services.

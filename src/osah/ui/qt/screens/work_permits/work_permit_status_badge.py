@@ -25,6 +25,7 @@ def _build_badge_style(status: WorkPermitStatus) -> str:
         WorkPermitStatus.INVALID: (COLOR["critical_subtle"], COLOR["critical"]),
         WorkPermitStatus.CLOSED: (COLOR["status_archive_bg"], COLOR["status_archive_text"]),
         WorkPermitStatus.CANCELED: (COLOR["restricted_subtle"], COLOR["restricted"]),
+        WorkPermitStatus.REISSUED: (COLOR["restricted_subtle"], COLOR["restricted"]),
     }
     background, foreground = palette[status]
     return (

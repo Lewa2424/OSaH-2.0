@@ -8,6 +8,7 @@ from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_admission_status import TrainingWorkAdmissionStatus
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
+from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
 from osah.domain.services.serialize_training_record_for_audit import serialize_training_record_for_audit
@@ -16,6 +17,7 @@ from osah.infrastructure.database.commands.insert_audit_log import insert_audit_
 from osah.infrastructure.database.commands.insert_training_record import insert_training_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.get_training_record_by_id import get_training_record_by_id
+from osah.infrastructure.database.queries.list_training_records import list_training_records
 
 
 def create_current_training_record(
@@ -114,6 +116,16 @@ def create_current_training_record(
             source_record_id=source_record_id,
             source_key=normalized_source_key,
         )
+        chronology_conflict_reason = find_training_chronology_conflict_reason(
+            training_record,
+            tuple(
+                record
+                for record in list_training_records(connection)
+                if record.employee_personnel_number == normalized_personnel_number
+            ),
+        )
+        if chronology_conflict_reason is not None:
+            raise ValueError(chronology_conflict_reason)
         created_record_id = insert_training_record(connection, training_record)
         created_record = get_training_record_by_id(connection, created_record_id)
 

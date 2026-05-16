@@ -105,7 +105,7 @@ class WorkPermitsRegistryTable(QTableWidget):
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status == WorkPermitStatus.WARNING:
             item.setForeground(QColor(COLOR["warning"]))
-        elif row.status == WorkPermitStatus.CLOSED:
+        elif row.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.REISSUED}:
             item.setForeground(QColor(COLOR["text_muted"]))
         self.setItem(row_index, column_index, item)
 

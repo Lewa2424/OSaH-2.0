@@ -73,6 +73,8 @@ def _format_training_status(training_status: TrainingStatus) -> str:
         return "Увага"
     if training_status == TrainingStatus.MISSING:
         return "Відсутній"
+    if training_status == TrainingStatus.INVALID:
+        return "Конфлікт"
     return "Прострочено"
 
 
@@ -84,6 +86,8 @@ def _map_status_to_filter(training_status: TrainingStatus) -> TrainingRegistryFi
 
     if training_status in {TrainingStatus.CURRENT, TrainingStatus.NOT_REQUIRED, TrainingStatus.CLOSED_BY_PRIMARY}:
         return TrainingRegistryFilter.CURRENT
+    if training_status == TrainingStatus.INVALID:
+        return TrainingRegistryFilter.INVALID
     if training_status == TrainingStatus.WARNING:
         return TrainingRegistryFilter.WARNING
     if training_status == TrainingStatus.MISSING:

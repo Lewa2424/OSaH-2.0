@@ -28,6 +28,7 @@ def _build_badge_style(status_filter: TrainingRegistryFilter) -> str:
         TrainingRegistryFilter.WARNING: (COLOR["warning_subtle"], COLOR["warning"]),
         TrainingRegistryFilter.OVERDUE: (COLOR["critical_subtle"], COLOR["critical"]),
         TrainingRegistryFilter.MISSING: (COLOR["critical_subtle"], COLOR["critical"]),
+        TrainingRegistryFilter.INVALID: (COLOR["critical_subtle"], COLOR["critical"]),
         TrainingRegistryFilter.ALL: (COLOR["bg_panel"], COLOR["text_secondary"]),
     }
     background, foreground = palette[status_filter]

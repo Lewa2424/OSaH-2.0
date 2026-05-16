@@ -10,13 +10,12 @@ from osah.domain.services.evaluate_work_permit_status import evaluate_work_permi
 
 class EvaluateWorkPermitStatusTests(unittest.TestCase):
     """Тести оцінки статусу наряду-допуску.
-    Тесты оценки статуса наряда-допуска.
+    Tests for work permit status evaluation.
     """
 
-    # ###### ПЕРЕВІРКА СТАТУСУ ПРОСТРОЧЕНОГО НАРЯДУ / ПРОВЕРКА СТАТУСА ПРОСРОЧЕННОГО НАРЯДА ######
     def test_evaluate_work_permit_status_returns_expired_for_unclosed_past_record(self) -> None:
-        """Перевіряє повернення статусу прострочення для незакритого наряду після строку завершення.
-        Проверяет возврат статуса просрочки для незакрытого наряда после срока завершения.
+        """Повертає прострочення для відкритого минулого наряду.
+        Returns expired for an open past permit.
         """
 
         work_permit_record = WorkPermitRecord(
@@ -45,15 +44,64 @@ class EvaluateWorkPermitStatusTests(unittest.TestCase):
             WorkPermitStatus.EXPIRED,
         )
 
-    # ###### ПЕРЕВІРКА СТАТУСУ ЗАКРИТОГО НАРЯДУ / ПРОВЕРКА СТАТУСА ЗАКРЫТОГО НАРЯДА ######
-    def test_evaluate_work_permit_status_returns_closed_for_manually_closed_record(self) -> None:
-        """Перевіряє повернення статусу закриття для вручну закритого наряду.
-        Проверяет возврат статуса закрытия для вручную закрытого наряда.
+    def test_evaluate_work_permit_status_returns_active_for_lightweight_registry_record(self) -> None:
+        """Легкий реєстровий запис лишається активним.
+        A lightweight registry entry remains active.
         """
 
         work_permit_record = WorkPermitRecord(
             record_id=2,
             permit_number="НД-002",
+            work_kind="Ремонтні роботи",
+            work_location="Цех 2",
+            starts_at="2026-04-10 08:00",
+            ends_at="2026-04-20 18:00",
+            responsible_person="Майстер",
+            issuer_person="",
+            note_text="",
+            closed_at=None,
+            participants=(),
+            status=WorkPermitStatus.ACTIVE,
+        )
+
+        self.assertEqual(
+            evaluate_work_permit_status(work_permit_record, current_moment=datetime(2026, 4, 10, 9, 0)),
+            WorkPermitStatus.ACTIVE,
+        )
+
+    def test_evaluate_work_permit_status_returns_invalid_without_responsible_person(self) -> None:
+        """Без керівника робіт запис проблемний.
+        A record without responsible person is invalid.
+        """
+
+        work_permit_record = WorkPermitRecord(
+            record_id=3,
+            permit_number="НД-003",
+            work_kind="Ремонтні роботи",
+            work_location="Цех 3",
+            starts_at="2026-04-10 08:00",
+            ends_at="2026-04-10 18:00",
+            responsible_person="",
+            issuer_person="",
+            note_text="",
+            closed_at=None,
+            participants=(),
+            status=WorkPermitStatus.ACTIVE,
+        )
+
+        self.assertEqual(
+            evaluate_work_permit_status(work_permit_record, current_moment=datetime(2026, 4, 10, 9, 0)),
+            WorkPermitStatus.INVALID,
+        )
+
+    def test_evaluate_work_permit_status_returns_closed_for_manually_closed_record(self) -> None:
+        """Повертає закритий статус для вручну закритого наряду.
+        Returns closed for a manually closed permit.
+        """
+
+        work_permit_record = WorkPermitRecord(
+            record_id=4,
+            permit_number="НД-004",
             work_kind="Вогневі роботи",
             work_location="Цех 2",
             starts_at="2026-04-10 08:00",
@@ -75,6 +123,39 @@ class EvaluateWorkPermitStatusTests(unittest.TestCase):
         self.assertEqual(
             evaluate_work_permit_status(work_permit_record, current_moment=datetime(2026, 4, 10, 17, 31)),
             WorkPermitStatus.CLOSED,
+        )
+
+    def test_evaluate_work_permit_status_returns_canceled_for_superseded_record(self) -> None:
+        """Повертає перевипущений статус для заміненого наряду.
+        Returns reissued for a superseded permit.
+        """
+
+        work_permit_record = WorkPermitRecord(
+            record_id=5,
+            permit_number="НД-005",
+            work_kind="Газонебезпечні роботи",
+            work_location="Цех 3",
+            starts_at="2026-04-10 08:00",
+            ends_at="2026-04-10 18:00",
+            responsible_person="Майстер",
+            issuer_person="Інспектор",
+            note_text="",
+            closed_at=None,
+            canceled_at="2026-04-10 10:00",
+            reissued_to_record_id=17,
+            participants=(
+                WorkPermitParticipant(
+                    employee_personnel_number="0001",
+                    employee_full_name="Тестовий працівник",
+                    participant_role=WorkPermitParticipantRole.EXECUTOR,
+                ),
+            ),
+            status=WorkPermitStatus.ACTIVE,
+        )
+
+        self.assertEqual(
+            evaluate_work_permit_status(work_permit_record, current_moment=datetime(2026, 4, 10, 10, 1)),
+            WorkPermitStatus.CANCELED,
         )
 
 

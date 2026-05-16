@@ -6,6 +6,7 @@ from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
 from osah.domain.services.build_training_status_reason import build_training_status_reason
+from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
 from osah.domain.services.format_training_status_label import format_training_status_label
 from osah.domain.services.format_training_type_label import format_training_type_label
 
@@ -105,6 +106,11 @@ def _build_record_row(
         record.next_control_date,
         record.next_control_basis,
     )
+    chronology_conflict_reason = find_training_chronology_conflict_reason(record, employee_records)
+    if chronology_conflict_reason is not None:
+        status_filter = TrainingRegistryFilter.INVALID
+        status_label = format_training_status_label(TrainingStatus.INVALID)
+        status_reason = chronology_conflict_reason
 
     if record.training_type == TrainingType.INTRODUCTORY:
         primary_record = _find_closing_primary_record(employee_records, record)
@@ -125,7 +131,7 @@ def _build_record_row(
         else:
             next_control_date = "-"
 
-    elif record.training_type == TrainingType.PRIMARY:
+    elif chronology_conflict_reason is None and record.training_type == TrainingType.PRIMARY:
         if _find_required_introductory_record(employee_records, record) is None:
             next_control_date = "Потрібен"
             status_filter = TrainingRegistryFilter.MISSING
@@ -145,11 +151,11 @@ def _build_record_row(
                     f"{format_training_type_label(later_cycle_record.training_type)} від {later_cycle_record.event_date}."
                 )
 
-    elif record.training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED}:
+    elif chronology_conflict_reason is None and record.training_type in {TrainingType.UNSCHEDULED, TrainingType.TARGETED}:
         if not record.next_control_date.strip():
             next_control_date = "-"
 
-    elif record.training_type == TrainingType.REPEATED:
+    elif chronology_conflict_reason is None and record.training_type == TrainingType.REPEATED:
         later_cycle_record = _find_later_repeated_cycle_record(employee_records, record)
         if later_cycle_record is not None:
             next_control_date = "-"
@@ -243,6 +249,8 @@ def _is_repeated_cycle_record(training_record: TrainingRecord) -> bool:
 
 
 def _map_status_to_filter(status: TrainingStatus) -> TrainingRegistryFilter:
+    if status == TrainingStatus.INVALID:
+        return TrainingRegistryFilter.INVALID
     if status == TrainingStatus.WARNING:
         return TrainingRegistryFilter.WARNING
     if status == TrainingStatus.OVERDUE:
@@ -256,6 +264,6 @@ def _infer_site_name(department_name: str) -> str:
     lowered = department_name.lower()
     if "дільниц" in lowered:
         return department_name
-    if "служба" in lowered or "адміністрац" in lowered:
+    if "служба" in lowered or "адмініст" in lowered:
         return "Адміністративний контур"
     return "Основний виробничий контур"

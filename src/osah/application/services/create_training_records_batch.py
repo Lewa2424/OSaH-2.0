@@ -6,10 +6,12 @@ from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
+from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
 from osah.infrastructure.database.commands.insert_training_record import insert_training_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
+from osah.infrastructure.database.queries.list_training_records import list_training_records
 
 
 # ###### МАССОВОЕ СОЗДАНИЕ ИНСТРУКТАЖЕЙ / CREATE TRAINING RECORDS BATCH ######
@@ -67,9 +69,7 @@ def create_training_records_batch(
     connection = create_database_connection(database_path)
     try:
         for personnel_number in normalized_personnel_numbers:
-            insert_training_record(
-                connection,
-                TrainingRecord(
+            training_record = TrainingRecord(
                     record_id=None,
                     employee_personnel_number=personnel_number,
                     employee_full_name="",
@@ -83,8 +83,18 @@ def create_training_records_batch(
                     requires_primary_on_workplace=requires_primary_on_workplace,
                     work_risk_category=resolved_work_risk_category,
                     next_control_basis=next_control_basis,
+            )
+            chronology_conflict_reason = find_training_chronology_conflict_reason(
+                training_record,
+                tuple(
+                    record
+                    for record in list_training_records(connection)
+                    if record.employee_personnel_number == personnel_number
                 ),
             )
+            if chronology_conflict_reason is not None:
+                raise ValueError(f"{personnel_number}: {chronology_conflict_reason}")
+            insert_training_record(connection, training_record)
         sync_control_notifications(connection)
         connection.commit()
     finally:

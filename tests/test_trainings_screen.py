@@ -10,9 +10,9 @@ class TrainingsScreenCollapseTests(unittest.TestCase):
     Tests for compact employee-oriented trainings view.
     """
 
-    def test_collapse_by_employee_builds_one_summary_row_with_problem_list(self) -> None:
-        """Повертає один рядок на працівника зі стислим переліком проблем.
-        Returns one row per employee with a compact list of issues.
+    def test_collapse_by_employee_builds_one_summary_row_with_most_severe_reason(self) -> None:
+        """Повертає один рядок на працівника з причиною найтяжчого стану.
+        Returns one row per employee with the reason for the most severe state.
         """
 
         rows = (
@@ -60,7 +60,6 @@ class TrainingsScreenCollapseTests(unittest.TestCase):
         self.assertEqual(collapsed[0].training_type_label, "Стан працівника")
         self.assertEqual(collapsed[0].status_filter, TrainingRegistryFilter.MISSING)
         self.assertIn("первинний", collapsed[0].status_reason.lower())
-        self.assertIn("повторний", collapsed[0].status_reason.lower())
 
 
 if __name__ == "__main__":

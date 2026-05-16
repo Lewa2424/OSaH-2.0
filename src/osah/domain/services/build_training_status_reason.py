@@ -21,6 +21,8 @@ def build_training_status_reason(
 
     if status in {TrainingStatus.MISSING, TrainingRegistryFilter.MISSING}:
         return "Критично - відсутній первинний інструктаж"
+    if status in {TrainingStatus.INVALID, TrainingRegistryFilter.INVALID}:
+        return "Конфлікт - порушена хронологія інструктажів"
 
     if status == TrainingStatus.NOT_REQUIRED and training_type == TrainingType.INTRODUCTORY:
         return "Вступний інструктаж зафіксовано. Первинний у системі підприємства не потрібен"

@@ -38,6 +38,6 @@ def load_archive_workspace(database_path: Path) -> ArchiveWorkspace:
             can_reactivate=False,
         )
         for record in load_work_permit_registry(database_path)
-        if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}
+        if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED, WorkPermitStatus.REISSUED}
     )
     return ArchiveWorkspace(entries=employee_entries + permit_entries)

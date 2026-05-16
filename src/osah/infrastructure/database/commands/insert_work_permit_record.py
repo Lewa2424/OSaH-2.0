@@ -17,6 +17,13 @@ def insert_work_permit_record(connection: Connection, work_permit_record: WorkPe
             work_location,
             starts_at,
             ends_at,
+            reissued_from_record_id,
+            reissued_to_record_id,
+            reissue_reason_text,
+            base_ends_at,
+            extension_count,
+            extended_at,
+            extension_reason_text,
             responsible_person,
             issuer_person,
             note_text,
@@ -30,7 +37,7 @@ def insert_work_permit_record(connection: Connection, work_permit_record: WorkPe
             basis_text,
             basis_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             work_permit_record.permit_number,
@@ -38,6 +45,13 @@ def insert_work_permit_record(connection: Connection, work_permit_record: WorkPe
             work_permit_record.work_location,
             work_permit_record.starts_at,
             work_permit_record.ends_at,
+            work_permit_record.reissued_from_record_id,
+            work_permit_record.reissued_to_record_id,
+            work_permit_record.reissue_reason_text,
+            work_permit_record.base_ends_at,
+            work_permit_record.extension_count,
+            work_permit_record.extended_at,
+            work_permit_record.extension_reason_text,
             work_permit_record.responsible_person,
             work_permit_record.issuer_person,
             work_permit_record.note_text,

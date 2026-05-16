@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from osah.application.services.create_current_training_record import create_current_training_record
+from osah.application.services.create_training_record import create_training_record
 from osah.application.services.create_work_permit_record import create_work_permit_record
 from osah.application.services.initialize_application import initialize_application
 from osah.application.services.load_training_registry import load_training_registry
@@ -18,10 +19,32 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
     Tests for the current/archive model for trainings.
     """
 
+    def _seed_training_cycle(self, database_path: Path, personnel_number: str) -> None:
+        create_training_record(
+            database_path=database_path,
+            employee_personnel_number=personnel_number,
+            training_type="introductory",
+            event_date_text="09.04.2026",
+            next_control_date_text="",
+            conducted_by="Інспектор",
+            note_text="Вступний",
+        )
+        create_training_record(
+            database_path=database_path,
+            employee_personnel_number=personnel_number,
+            training_type="primary",
+            event_date_text="10.04.2026",
+            next_control_date_text="",
+            work_risk_category="regular",
+            conducted_by="Інспектор",
+            note_text="Первинний",
+        )
+
     def test_create_new_same_type_archives_old_training(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
+                self._seed_training_cycle(context.database_path, "0001")
                 first_record_id = create_current_training_record(
                     context.database_path,
                     "0001",
@@ -70,6 +93,7 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
+                self._seed_training_cycle(context.database_path, "0001")
                 create_current_training_record(
                     context.database_path,
                     "0001",
@@ -103,6 +127,7 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
+                self._seed_training_cycle(context.database_path, "0001")
                 create_current_training_record(
                     context.database_path,
                     "0001",
@@ -140,6 +165,25 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
+                create_training_record(
+                    database_path=context.database_path,
+                    employee_personnel_number="0001",
+                    training_type="introductory",
+                    event_date_text="09.01.2026",
+                    next_control_date_text="",
+                    conducted_by="Інспектор",
+                    note_text="Вступний",
+                )
+                create_training_record(
+                    database_path=context.database_path,
+                    employee_personnel_number="0001",
+                    training_type="primary",
+                    event_date_text="10.01.2026",
+                    next_control_date_text="",
+                    work_risk_category="regular",
+                    conducted_by="Інспектор",
+                    note_text="Первинний",
+                )
                 create_current_training_record(
                     context.database_path,
                     "0001",
@@ -177,6 +221,24 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
                     connection.close()
 
                 self.assertEqual(rows[0], 0)
+            finally:
+                shut_down_logging()
+
+    def test_create_current_training_record_rejects_repeated_without_base_cycle(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            context = initialize_application(build_application_paths(Path(temporary_directory)))
+            try:
+                with self.assertRaisesRegex(ValueError, "послідовність інструктажів"):
+                    create_current_training_record(
+                        context.database_path,
+                        "0001",
+                        "repeated",
+                        "10.04.2026",
+                        "",
+                        "Інспектор 1",
+                        "Помилковий повторний",
+                        work_risk_category="regular",
+                    )
             finally:
                 shut_down_logging()
 

@@ -57,7 +57,7 @@ def _build_conflict_reasons(
     employee_lookup: dict[str, EmployeeWorkspaceRow],
     normalized_target_training_status: WorkPermitTargetTrainingStatus,
 ) -> tuple[str, ...]:
-    if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}:
+    if record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED, WorkPermitStatus.REISSUED}:
         return ()
 
     reasons: list[str] = []

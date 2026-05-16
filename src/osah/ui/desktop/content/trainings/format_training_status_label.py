@@ -17,4 +17,6 @@ def format_training_status_label(training_status: TrainingStatus) -> str:
         return "Увага"
     if training_status == TrainingStatus.MISSING:
         return "Відсутній"
+    if training_status == TrainingStatus.INVALID:
+        return "Конфлікт"
     return "Прострочено"

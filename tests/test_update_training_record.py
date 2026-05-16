@@ -29,6 +29,15 @@ class UpdateTrainingRecordTests(unittest.TestCase):
                 create_training_record(
                     database_path=context.database_path,
                     employee_personnel_number="0001",
+                    training_type="introductory",
+                    event_date_text="2026-04-09",
+                    next_control_date_text="",
+                    conducted_by="Інспектор з ОП",
+                    note_text="Вступний запис",
+                )
+                create_training_record(
+                    database_path=context.database_path,
+                    employee_personnel_number="0001",
                     training_type="primary",
                     event_date_text="2026-04-10",
                     next_control_date_text="",
@@ -36,12 +45,22 @@ class UpdateTrainingRecordTests(unittest.TestCase):
                     conducted_by="Інспектор з ОП",
                     note_text="Початковий запис",
                 )
+                create_training_record(
+                    database_path=context.database_path,
+                    employee_personnel_number="0001",
+                    training_type="repeated",
+                    event_date_text="2026-04-11",
+                    next_control_date_text="",
+                    work_risk_category="regular",
+                    conducted_by="Інспектор з ОП",
+                    note_text="Початковий повторний",
+                )
 
                 created_record = next(
                     training_record
                     for training_record in load_training_registry(context.database_path)
                     if training_record.employee_personnel_number == "0001"
-                    and training_record.note_text == "Початковий запис"
+                    and training_record.note_text == "Початковий повторний"
                 )
                 update_training_record(
                     database_path=context.database_path,
@@ -138,6 +157,46 @@ class UpdateTrainingRecordTests(unittest.TestCase):
                 self.assertEqual(updated_record.source_record_id, previous_source_record_id)
                 self.assertEqual(updated_record.source_key, previous_source_key)
                 self.assertEqual(updated_record.conducted_by, "Петренко І.В.")
+            finally:
+                shut_down_logging()
+
+    def test_update_training_record_rejects_invalid_chronology(self) -> None:
+        """Не дозволяє оновити запис до хронологічно неможливого повторного інструктажу.
+        Rejects updating a record to an impossible repeated-training chronology.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+            try:
+                create_training_record(
+                    database_path=context.database_path,
+                    employee_personnel_number="0001",
+                    training_type="introductory",
+                    event_date_text="2026-04-10",
+                    next_control_date_text="",
+                    conducted_by="Інспектор з ОП",
+                    note_text="Вступний запис",
+                )
+                created_record = next(
+                    training_record
+                    for training_record in load_training_registry(context.database_path)
+                    if training_record.employee_personnel_number == "0001"
+                    and training_record.training_type.value == "introductory"
+                )
+
+                with self.assertRaisesRegex(ValueError, "послідовність інструктажів"):
+                    update_training_record(
+                        database_path=context.database_path,
+                        record_id=int(created_record.record_id),
+                        employee_personnel_number="0001",
+                        training_type="repeated",
+                        event_date_text="2026-04-09",
+                        next_control_date_text="",
+                        work_risk_category="regular",
+                        conducted_by="Головний інспектор",
+                        note_text="Конфліктний запис",
+                    )
             finally:
                 shut_down_logging()
 

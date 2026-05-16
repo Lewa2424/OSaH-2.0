@@ -13,4 +13,8 @@ def format_work_permit_status_label(work_permit_status: WorkPermitStatus) -> str
         return "Увага"
     if work_permit_status == WorkPermitStatus.EXPIRED:
         return "Прострочено"
+    if work_permit_status == WorkPermitStatus.REISSUED:
+        return "Перевипущено"
+    if work_permit_status == WorkPermitStatus.CANCELED:
+        return "Скасовано"
     return "Закрито"

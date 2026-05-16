@@ -11,6 +11,7 @@ from osah.domain.entities.work_permit_target_training_status import WorkPermitTa
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
+from osah.domain.services.validate_work_permit_timeline import validate_work_permit_base_timeline
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_work_permit_participant import insert_work_permit_participant
 from osah.infrastructure.database.commands.insert_work_permit_record import insert_work_permit_record
@@ -37,8 +38,8 @@ def create_work_permit_record(
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> None:
-    """Створює новий наряд-допуск і синхронізує пов'язані записи.
-    Creates a new work permit and synchronizes linked records.
+    """Створює новий наряд-допуск.
+    Creates a new work permit.
     """
 
     normalized_permit_number = permit_number.strip()
@@ -49,6 +50,7 @@ def create_work_permit_record(
     normalized_employee_personnel_number = employee_personnel_number.strip()
     normalized_note_text = note_text.strip()
     normalized_participant_role = participant_role.strip()
+
     if not normalized_permit_number:
         raise ValueError("Потрібно вказати номер наряду-допуску.")
     if not normalized_work_kind:
@@ -57,17 +59,10 @@ def create_work_permit_record(
         raise ValueError("Потрібно вказати місце виконання робіт.")
     if not normalized_responsible_person:
         raise ValueError("Потрібно вказати керівника робіт.")
-    if not normalized_issuer_person:
-        raise ValueError("Потрібно вказати допускаючого.")
-    if not normalized_employee_personnel_number and not participants:
-        raise ValueError("Потрібно вибрати учасника наряду.")
-    if not normalized_participant_role and not participants:
-        raise ValueError("Потрібно вибрати роль учасника.")
 
     starts_at = parse_ui_datetime_text(starts_at_text)
     ends_at = parse_ui_datetime_text(ends_at_text)
-    if ends_at <= starts_at:
-        raise ValueError("Час завершення має бути пізніше часу початку.")
+    validate_work_permit_base_timeline(starts_at, ends_at)
 
     target_training_date = ""
     if target_training_date_text.strip():
@@ -81,13 +76,21 @@ def create_work_permit_record(
     } and (not target_training_date or not normalized_target_training_conducted_by):
         raise ValueError("Для проведеного цільового інструктажу потрібно вказати дату та особу, яка його провела.")
 
-    effective_participants = participants or (
-        WorkPermitParticipant(
-            employee_personnel_number=normalized_employee_personnel_number,
-            employee_full_name="",
-            participant_role=WorkPermitParticipantRole(normalized_participant_role),
-        ),
-    )
+    effective_participants: tuple[WorkPermitParticipant, ...]
+    if participants is not None:
+        effective_participants = participants
+    elif normalized_employee_personnel_number:
+        effective_participants = (
+            WorkPermitParticipant(
+                employee_personnel_number=normalized_employee_personnel_number,
+                employee_full_name="",
+                participant_role=WorkPermitParticipantRole(
+                    normalized_participant_role or WorkPermitParticipantRole.EXECUTOR.value
+                ),
+            ),
+        )
+    else:
+        effective_participants = ()
 
     work_permit_record = WorkPermitRecord(
         record_id=None,
@@ -96,12 +99,16 @@ def create_work_permit_record(
         work_location=normalized_work_location,
         starts_at=starts_at.isoformat(sep=" ", timespec="minutes"),
         ends_at=ends_at.isoformat(sep=" ", timespec="minutes"),
+        base_ends_at=ends_at.isoformat(sep=" ", timespec="minutes"),
         responsible_person=normalized_responsible_person,
         issuer_person=normalized_issuer_person,
         note_text=normalized_note_text,
         closed_at=None,
         participants=effective_participants,
         status=WorkPermitStatus.ACTIVE,
+        reissued_from_record_id=None,
+        reissued_to_record_id=None,
+        reissue_reason_text="",
         target_training_status=normalized_target_training_status,
         target_training_date=target_training_date,
         target_training_conducted_by=normalized_target_training_conducted_by,

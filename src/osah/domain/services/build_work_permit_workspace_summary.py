@@ -16,7 +16,7 @@ def build_work_permit_workspace_summary(rows: tuple[WorkPermitWorkspaceRow, ...]
         warning_total=sum(1 for row in rows if row.status == WorkPermitStatus.WARNING),
         expired_total=sum(1 for row in rows if row.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}),
         closed_total=sum(1 for row in rows if row.status == WorkPermitStatus.CLOSED),
-        canceled_total=sum(1 for row in rows if row.status == WorkPermitStatus.CANCELED),
+        canceled_total=sum(1 for row in rows if row.status in {WorkPermitStatus.CANCELED, WorkPermitStatus.REISSUED}),
         conflict_total=sum(1 for row in rows if row.has_conflicts),
         active_participants_total=sum(row.participant_count for row in rows if row.status in active_statuses),
     )

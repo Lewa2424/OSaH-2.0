@@ -99,9 +99,14 @@ def _build_training_summary(
         )
         return _module_summary("Інструктажі", problem.level, "Критично", problem.title), (problem,)
 
-    if any(row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING} for row in training_rows):
+    if any(
+        row.status_filter in {TrainingRegistryFilter.INVALID, TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}
+        for row in training_rows
+    ):
         critical_row = next(
-            row for row in training_rows if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}
+            row
+            for row in training_rows
+            if row.status_filter in {TrainingRegistryFilter.INVALID, TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}
         )
         problem = EmployeeProblem(
             module_name="Інструктажі",
@@ -220,7 +225,11 @@ def _build_medical_summary(
 def _build_work_permit_summary(
     records: tuple[WorkPermitRecord, ...],
 ) -> tuple[EmployeeModuleStatusSummary, tuple[EmployeeProblem, ...]]:
-    active_records = tuple(record for record in records if record.status not in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED})
+    active_records = tuple(
+        record
+        for record in records
+        if record.status not in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED, WorkPermitStatus.REISSUED}
+    )
     if any(record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID} for record in active_records):
         problem = EmployeeProblem(
             module_name="Наряди-допуски",

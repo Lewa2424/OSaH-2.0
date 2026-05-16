@@ -100,7 +100,7 @@ class TrainingsRegistryTable(QTableWidget):
         item.setToolTip(text)
         if column_index == 7:
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING}:
+        if row.status_filter in {TrainingRegistryFilter.OVERDUE, TrainingRegistryFilter.MISSING, TrainingRegistryFilter.INVALID}:
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status_filter == TrainingRegistryFilter.WARNING:
             item.setForeground(QColor(COLOR["warning"]))

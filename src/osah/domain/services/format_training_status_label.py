@@ -20,4 +20,6 @@ def format_training_status_label(status: TrainingStatus | TrainingRegistryFilter
         return "Критично"
     if status in {TrainingStatus.MISSING, TrainingRegistryFilter.MISSING}:
         return "Відсутній"
+    if status in {TrainingStatus.INVALID, TrainingRegistryFilter.INVALID}:
+        return "Конфлікт"
     return "Архів"

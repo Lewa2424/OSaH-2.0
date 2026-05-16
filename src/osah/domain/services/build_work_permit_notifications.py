@@ -14,8 +14,8 @@ def build_work_permit_notifications(
     employees: tuple[Employee, ...],
     work_permit_records: tuple[WorkPermitRecord, ...],
 ) -> tuple[NotificationItem, ...]:
-    """Повертає активні контрольні сповіщення по модулю нарядів-допусків.
-    Returns active control notifications for the work-permits module.
+    """Повертає контрольні сповіщення по нарядах.
+    Returns control notifications for work permits.
     """
 
     active_employee_numbers = {
@@ -26,16 +26,13 @@ def build_work_permit_notifications(
 
     notifications: list[NotificationItem] = []
     for work_permit_record in work_permit_records:
-        if work_permit_record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED}:
+        if work_permit_record.status in {WorkPermitStatus.CLOSED, WorkPermitStatus.CANCELED, WorkPermitStatus.REISSUED}:
             continue
 
         normalized_target_training_status = normalize_work_permit_target_training_status(
             work_permit_record.target_training_status
         )
-        for participant in work_permit_record.participants:
-            if participant.employee_personnel_number not in active_employee_numbers:
-                continue
-
+        for personnel_number, full_name in _build_notification_targets(work_permit_record, active_employee_numbers):
             if work_permit_record.status in {WorkPermitStatus.EXPIRED, WorkPermitStatus.INVALID}:
                 notifications.append(
                     NotificationItem(
@@ -47,8 +44,8 @@ def build_work_permit_notifications(
                             f"Наряд {work_permit_record.permit_number} вимагає уваги через статус "
                             f"{work_permit_record.status.value}."
                         ),
-                        employee_personnel_number=participant.employee_personnel_number,
-                        employee_full_name=participant.employee_full_name,
+                        employee_personnel_number=personnel_number,
+                        employee_full_name=full_name,
                     )
                 )
             elif work_permit_record.status == WorkPermitStatus.WARNING:
@@ -59,11 +56,13 @@ def build_work_permit_notifications(
                         source_module="work_permits.registry",
                         title_text="Наближається завершення наряду-допуску",
                         message_text=f"Наряд {work_permit_record.permit_number} потребує уваги до {work_permit_record.ends_at}.",
-                        employee_personnel_number=participant.employee_personnel_number,
-                        employee_full_name=participant.employee_full_name,
+                        employee_personnel_number=personnel_number,
+                        employee_full_name=full_name,
                     )
                 )
 
+            if not personnel_number:
+                continue
             if normalized_target_training_status == WorkPermitTargetTrainingStatus.NOT_DONE:
                 starts_at = datetime.fromisoformat(work_permit_record.starts_at)
                 has_started = datetime.now() >= starts_at
@@ -74,8 +73,8 @@ def build_work_permit_notifications(
                         source_module="work_permits.registry",
                         title_text="Не зафіксовано цільовий інструктаж",
                         message_text=f"Для наряду {work_permit_record.permit_number} цільовий інструктаж не проведено.",
-                        employee_personnel_number=participant.employee_personnel_number,
-                        employee_full_name=participant.employee_full_name,
+                        employee_personnel_number=personnel_number,
+                        employee_full_name=full_name,
                     )
                 )
             elif normalized_target_training_status == WorkPermitTargetTrainingStatus.DONE_FAILED:
@@ -89,9 +88,23 @@ def build_work_permit_notifications(
                             f"За нарядом {work_permit_record.permit_number} цільовий інструктаж проведено, "
                             "але перевірка знань не пройдена. Допуск до робіт заборонено."
                         ),
-                        employee_personnel_number=participant.employee_personnel_number,
-                        employee_full_name=participant.employee_full_name,
+                        employee_personnel_number=personnel_number,
+                        employee_full_name=full_name,
                     )
                 )
 
     return tuple(notifications)
+
+
+def _build_notification_targets(
+    work_permit_record: WorkPermitRecord,
+    active_employee_numbers: set[str],
+) -> tuple[tuple[str | None, str | None], ...]:
+    targets = tuple(
+        (participant.employee_personnel_number, participant.employee_full_name)
+        for participant in work_permit_record.participants
+        if participant.employee_personnel_number in active_employee_numbers
+    )
+    if targets:
+        return targets
+    return ((None, None),)

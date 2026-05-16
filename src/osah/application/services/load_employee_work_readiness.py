@@ -55,6 +55,8 @@ def _resolve_training_readiness(
         return EmployeeReadinessLevel.UNKNOWN, "Записи інструктажів відсутні."
     if any(record.knowledge_check_result == TrainingKnowledgeCheckResult.UNSATISFACTORY for record in trainings):
         return EmployeeReadinessLevel.CRITICAL, "Є незадовільна перевірка знань."
+    if any(record.status == TrainingStatus.INVALID for record in trainings):
+        return EmployeeReadinessLevel.CRITICAL, "Є конфлікт дат у хронології інструктажів."
     if any(record.status in {TrainingStatus.OVERDUE, TrainingStatus.MISSING} for record in trainings):
         return EmployeeReadinessLevel.CRITICAL, "Є прострочений або відсутній обов'язковий інструктаж."
     if any(record.status == TrainingStatus.WARNING for record in trainings):
