@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee_import_draft import EmployeeImportDraft
 from osah.domain.entities.employee_import_draft_status import EmployeeImportDraftStatus
 from osah.domain.services.build_employee_import_draft import build_employee_import_draft
@@ -13,11 +15,12 @@ from osah.infrastructure.importing.read_employee_rows_from_xlsx_file import read
 
 
 # ###### СТВОРЕННЯ ПАРТІЇ ЧЕРНЕТОК ІМПОРТУ / СОЗДАНИЕ ПАРТИИ ЧЕРНОВИКОВ ИМПОРТА ######
-def create_employee_import_batch_from_file(database_path: Path, source_path: Path) -> int:
+def create_employee_import_batch_from_file(database_path: Path, source_path: Path, *, access_role: AccessRole) -> int:
     """Створює партію чернеток імпорту працівників з підтриманого файлу.
     Создаёт партию черновиков импорта сотрудников из поддерживаемого файла.
     """
 
+    ensure_write_access(access_role, "create_employee_import_batch_from_file")
     source_format = source_path.suffix.strip().lower()
     row_data = _read_employee_import_rows(source_path, source_format)
 

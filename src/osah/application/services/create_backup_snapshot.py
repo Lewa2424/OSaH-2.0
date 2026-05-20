@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.backup_kind import BackupKind
 from osah.infrastructure.backups.build_backup_directory_path import build_backup_directory_path
 from osah.infrastructure.backups.build_backup_file_name import build_backup_file_name
@@ -11,11 +13,12 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### СТВОРЕННЯ РЕЗЕРВНОЇ КОПІЇ / СОЗДАНИЕ РЕЗЕРВНОЙ КОПИИ ######
-def create_backup_snapshot(database_path: Path, backup_kind: BackupKind) -> Path:
+def create_backup_snapshot(database_path: Path, backup_kind: BackupKind, *, access_role: AccessRole) -> Path:
     """Створює резервну копію локальної БД вказаного типу й повертає шлях до файлу.
     Создаёт резервную копию локальной БД указанного типа и возвращает путь к файлу.
     """
 
+    ensure_write_access(access_role, "create_backup_snapshot")
     created_at = datetime.now()
     backup_directory_path = build_backup_directory_path(database_path)
     backup_file_path = backup_directory_path / build_backup_file_name(backup_kind, created_at)

@@ -1,16 +1,19 @@
-from datetime import date
+from datetime import date, datetime
+
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
-# ###### ФОРМАТ ДАТИ ДЛЯ UI / FORMAT UI DATE ######
-def format_ui_date(date_text: str) -> str:
-    """Повертає дату у форматі ДД.MM.ГГГГ для показу в інтерфейсі.
-    Returns a date in DD.MM.YYYY format for UI display.
+# ###### ФОРМАТ ДАТЫ ДЛЯ UI / FORMAT UI DATE ######
+def format_ui_date(value: str | date | datetime) -> str:
+    """Возвращает дату в формате DD.MM.YYYY для UI.
+    Returns a DD.MM.YYYY string for UI display.
     """
 
-    normalized_date_text = date_text.strip()
-    if not normalized_date_text or normalized_date_text == "-":
-        return normalized_date_text or "-"
+    if isinstance(value, str):
+        normalized_text = value.strip()
+        if not normalized_text or normalized_text == "-":
+            return normalized_text or "-"
     try:
-        return date.fromisoformat(normalized_date_text).strftime("%d.%m.%Y")
+        return parse_storage_date_text(value).strftime("%d.%m.%Y")
     except ValueError:
-        return normalized_date_text
+        return ""

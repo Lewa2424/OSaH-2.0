@@ -2,7 +2,9 @@ from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_timeline import validate_work_permit_extension
@@ -17,11 +19,14 @@ def extend_work_permit_record(
     record_id: int,
     extended_until_text: str,
     extension_reason_text: str,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Продовжує наряд-допуск один раз у межах ще 15 календарних днів.
     Extends a work permit once within another 15 calendar days.
     """
 
+    ensure_write_access(access_role, "extend_work_permit_record")
     normalized_reason = extension_reason_text.strip()
     if not normalized_reason:
         raise ValueError("Потрібно вказати причину продовження наряду-допуску.")

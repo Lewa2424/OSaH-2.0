@@ -1,8 +1,10 @@
 from dataclasses import replace
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.application.services.sync_work_permit_target_training_records import sync_work_permit_target_training_records
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_participant_change import validate_work_permit_participant_change
@@ -18,11 +20,14 @@ def change_work_permit_participants(
     database_path: Path,
     record_id: int,
     participants: tuple[WorkPermitParticipant, ...],
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Изменяет состав бригады наряда отдельной контролируемой операцией.
     Changes the permit brigade through a dedicated controlled operation.
     """
 
+    ensure_write_access(access_role, "change_work_permit_participants")
     connection = create_database_connection(database_path)
     try:
         previous_record = next(

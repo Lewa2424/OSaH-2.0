@@ -239,6 +239,7 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_work_permit_target_training_columns(connection)
     _ensure_work_permit_extension_columns(connection)
     _ensure_work_permit_reissue_columns(connection)
+    _ensure_app_settings_columns(connection)
     connection.commit()
 
 
@@ -574,3 +575,36 @@ def _ensure_work_permit_reissue_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE work_permits ADD COLUMN reissued_to_record_id INTEGER NULL;")
     if "reissue_reason_text" not in columns:
         connection.execute("ALTER TABLE work_permits ADD COLUMN reissue_reason_text TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_app_settings_columns(connection: Connection) -> None:
+    """Мігрує старий формат app_settings у поточну схему налаштувань.
+    Migrates legacy app_settings layout into the current settings schema.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(app_settings);").fetchall()
+    }
+    if "setting_key" in columns and "setting_value" in columns:
+        return
+    if not {"key", "value"}.issubset(columns):
+        return
+
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS app_settings_v2 (
+            setting_key TEXT PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT OR REPLACE INTO app_settings_v2 (setting_key, setting_value)
+        SELECT key, value
+        FROM app_settings;
+
+        DROP TABLE app_settings;
+
+        ALTER TABLE app_settings_v2 RENAME TO app_settings;
+        """
+    )

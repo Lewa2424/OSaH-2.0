@@ -19,6 +19,7 @@ class TrainingsFilterBar(QWidget):
 
     def __init__(self, workspace: TrainingWorkspace) -> None:
         super().__init__()
+        self._validation_error_text = ""
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(SPACING["xs"])
@@ -170,6 +171,9 @@ class TrainingsFilterBar(QWidget):
         Returns the current filter state.
         """
 
+        date_from, date_from_error = _normalize_filter_date(self.date_from_input.text())
+        date_to, date_to_error = _normalize_filter_date(self.date_to_input.text())
+        self._validation_error_text = date_from_error or date_to_error
         values = {
             "mode": self.mode_filter.currentData() or TrainingWorkspaceMode.BY_EMPLOYEES.value,
             "search": self.search_input.text().strip().lower(),
@@ -180,8 +184,9 @@ class TrainingsFilterBar(QWidget):
             "status": self.status_filter.currentData() or "",
             "conducted_by": self.conducted_by_filter.currentData() or "",
             "employee": self.employee_filter.currentData() or "",
-            "date_from": _normalize_filter_date(self.date_from_input.text()),
-            "date_to": _normalize_filter_date(self.date_to_input.text()),
+            "date_from": date_from,
+            "date_to": date_to,
+            "validation_error": self._validation_error_text,
         }
         self._update_active_filters_label()
         return values
@@ -211,15 +216,15 @@ class TrainingsFilterBar(QWidget):
 
 
 # ###### НОРМАЛІЗАЦІЯ ДАТИ ФІЛЬТРА / NORMALIZE FILTER DATE ######
-def _normalize_filter_date(date_text: str) -> str:
+def _normalize_filter_date(date_text: str) -> tuple[str, str]:
     """Нормалізує дату фільтра до ISO для внутрішнього порівняння.
     Normalizes filter date to ISO for internal comparison.
     """
 
     normalized_date_text = date_text.strip()
     if not normalized_date_text:
-        return ""
+        return "", ""
     try:
-        return parse_ui_date_text(normalized_date_text).isoformat()
-    except ValueError:
-        return normalized_date_text
+        return parse_ui_date_text(normalized_date_text).isoformat(), ""
+    except ValueError as error:
+        return "", str(error)

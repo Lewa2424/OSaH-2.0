@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 from osah.application.services.create_current_training_record import create_current_training_record
 from osah.application.services.delete_training_record import delete_training_record
 from osah.application.services.update_training_record import update_training_record
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_next_control_basis import TrainingNextControlBasis
@@ -56,9 +57,11 @@ class TrainingRecordEditor(QWidget):
     saved = Signal()
     deleted = Signal()
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
         self._is_updating = False
 
@@ -189,6 +192,7 @@ class TrainingRecordEditor(QWidget):
         self.employee_label.setVisible(False)
         self.employee_input.setVisible(False)
         self.clear_form()
+        self._apply_read_only_mode()
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
         container = QWidget()
@@ -249,6 +253,7 @@ class TrainingRecordEditor(QWidget):
         self.delete_button.setVisible(not row.is_missing and row.record_id is not None)
         self._is_updating = False
         self._sync_scenario_fields(recalculate=False)
+        self._apply_read_only_mode()
 
     def clear_form(self) -> None:
         self._is_updating = True
@@ -275,6 +280,7 @@ class TrainingRecordEditor(QWidget):
         self.delete_button.setVisible(False)
         self._is_updating = False
         self._sync_scenario_fields()
+        self._apply_read_only_mode()
 
     def current_selection_context(self) -> tuple[int | None, str | None]:
         personnel_number = self.employee_input.currentData()
@@ -376,6 +382,9 @@ class TrainingRecordEditor(QWidget):
                 item.setEnabled(enabled)
 
     def _save_record(self) -> None:
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: збереження недоступне.")
+            return
         training_type = TrainingType(str(self.type_input.currentData()))
         person_category = str(self.person_category_input.currentData())
         requires_primary_on_workplace = self.requires_primary_input.isChecked()
@@ -414,6 +423,7 @@ class TrainingRecordEditor(QWidget):
                     self.knowledge_note_input.toPlainText(),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
             else:
                 update_training_record(
@@ -435,6 +445,7 @@ class TrainingRecordEditor(QWidget):
                     self.knowledge_note_input.toPlainText(),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
@@ -448,6 +459,9 @@ class TrainingRecordEditor(QWidget):
         self.saved.emit()
 
     def _delete_record(self) -> None:
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: видалення недоступне.")
+            return
         if self._current_record_id is None:
             self.feedback_label.show_error("Для видалення потрібно відкрити існуючий запис.")
             return
@@ -455,7 +469,11 @@ class TrainingRecordEditor(QWidget):
             return
 
         try:
-            delete_training_record(self._database_path, self._current_record_id)
+            delete_training_record(
+                self._database_path,
+                self._current_record_id,
+                access_role=self._access_role,
+            )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
             return
@@ -488,3 +506,29 @@ class TrainingRecordEditor(QWidget):
         )
         box.exec()
         return box.clickedButton() == yes_button
+
+    def _apply_read_only_mode(self) -> None:
+        """Locks mutating controls for read-only roles while keeping the card visible."""
+
+        for widget in (
+            self.type_input,
+            self.person_category_input,
+            self.requires_primary_input,
+            self.event_date_input,
+            self.risk_input,
+            self.affects_repeated_input,
+            self.manual_date_input,
+            self.next_date_input,
+            self.conducted_by_input,
+            self.knowledge_result_input,
+            self.work_admission_input,
+            self.knowledge_note_input,
+            self.note_input,
+        ):
+            widget.setEnabled(not self._read_only)
+        self.save_button.setVisible(not self._read_only)
+        self.save_button.setEnabled(not self._read_only)
+        self.delete_button.setVisible(False if self._read_only else self.delete_button.isVisible())
+        self.delete_button.setEnabled(not self._read_only)
+        self.new_button.setVisible(not self._read_only and self.new_button.isVisible())
+        self.new_button.setEnabled(not self._read_only)

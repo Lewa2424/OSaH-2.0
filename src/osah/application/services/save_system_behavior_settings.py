@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_app_settings_batch import upsert_app_settings_batch
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -12,9 +14,12 @@ def save_system_behavior_settings(
     training_warning_days: int,
     backup_auto_enabled: bool,
     backup_max_copies: int,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Persists behavior and backup preferences in app settings."""
 
+    ensure_write_access(access_role, "save_system_behavior_settings")
     normalized_warning_days = min(max(ppe_warning_days, 1), 90)
     normalized_training_warning_days = min(max(training_warning_days, 1), 90)
     normalized_backup_max_copies = min(max(backup_max_copies, 1), 200)

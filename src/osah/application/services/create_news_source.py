@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_news_source_row import upsert_news_source_row
@@ -12,11 +14,14 @@ def create_news_source(
     source_name: str,
     source_url: str,
     source_kind: NewsSourceKind,
+    *,
+    access_role: AccessRole,
 ) -> int:
     """Зберігає довірене джерело новин або НПА для подальшого refresh.
     Сохраняет доверенный источник новостей или НПА для дальнейшего refresh.
     """
 
+    ensure_write_access(access_role, "create_news_source")
     normalized_source_name = source_name.strip()
     normalized_source_url = source_url.strip()
     if not normalized_source_name:

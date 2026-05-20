@@ -1,6 +1,8 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.serialize_training_record_for_audit import serialize_training_record_for_audit
 from osah.infrastructure.database.commands.delete_training_record_row import delete_training_record_row
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -9,11 +11,12 @@ from osah.infrastructure.database.queries.get_training_record_by_id import get_t
 
 
 # ###### ВИДАЛЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / УДАЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
-def delete_training_record(database_path: Path, record_id: int) -> None:
+def delete_training_record(database_path: Path, record_id: int, *, access_role: AccessRole) -> None:
     """Видаляє запис інструктажу, синхронізує сповіщення і пише audit.
     Удаляет запись инструктажа, синхронизирует уведомления и пишет audit.
     """
 
+    ensure_write_access(access_role, "delete_training_record")
     connection = create_database_connection(database_path)
     try:
         previous_record = get_training_record_by_id(connection, record_id)

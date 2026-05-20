@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
@@ -8,11 +10,14 @@ from osah.infrastructure.database.create_database_connection import create_datab
 def archive_employee(
     database_path: Path,
     personnel_number: str,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Переводить працівника в архівний статус та додає audit-лог.
     Sets employee status to archived and adds audit log.
     """
 
+    ensure_write_access(access_role, "archive_employee")
     normalized_personnel_number = personnel_number.strip()
     if not normalized_personnel_number:
         raise ValueError("Потрібно вказати табельний номер.")

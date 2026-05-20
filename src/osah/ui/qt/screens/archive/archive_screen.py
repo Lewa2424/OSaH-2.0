@@ -103,7 +103,11 @@ class ArchiveScreen(QWidget):
             return
         personnel_number = entry_key.split(":", maxsplit=1)[1]
         try:
-            reactivate_archived_employee(self._database_path, personnel_number)
+            reactivate_archived_employee(
+                self._database_path,
+                personnel_number,
+                access_role=self._access_role,
+            )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося реактивувати запис: {error}")
             return

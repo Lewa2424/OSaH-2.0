@@ -3,6 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 
 from osah.application.services.restore_backup_snapshot import restore_backup_snapshot
+from osah.domain.entities.access_role import AccessRole
 
 
 class RestoreBackupWorker(QObject):
@@ -13,10 +14,11 @@ class RestoreBackupWorker(QObject):
     error = Signal(str)
     finished = Signal()
 
-    def __init__(self, database_path: Path, backup_file_path: Path) -> None:
+    def __init__(self, database_path: Path, backup_file_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
         self._backup_file_path = backup_file_path
+        self._access_role = access_role
 
     # ###### ФОНОВЕ ВІДНОВЛЕННЯ З БЕКАПУ / BACKGROUND RESTORE FROM BACKUP ######
     def run(self) -> None:
@@ -24,7 +26,11 @@ class RestoreBackupWorker(QObject):
 
         try:
             self.progress.emit(10, "Підготовка до відновлення з резервної копії.")
-            safety_backup_path = restore_backup_snapshot(self._database_path, self._backup_file_path)
+            safety_backup_path = restore_backup_snapshot(
+                self._database_path,
+                self._backup_file_path,
+                access_role=self._access_role,
+            )
             self.progress.emit(100, "Відновлення завершено.")
             self.success.emit({"restored_from": self._backup_file_path, "safety_copy": safety_backup_path})
         except Exception as error:  # noqa: BLE001

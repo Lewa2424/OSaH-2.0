@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QPushButton, QSplitter, QVBoxLayout, 
 
 from osah.application.services.archive_employee import archive_employee
 from osah.application.services.load_employee_workspace import load_employee_workspace
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
@@ -32,11 +33,14 @@ class EmployeesScreen(QWidget):
         self,
         database_path: Path,
         workspace: EmployeeWorkspace,
+        access_role: AccessRole,
         initial_personnel_number: str | None = None,
         initial_problem_key: str | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._workspace = workspace
         self._initial_personnel_number = initial_personnel_number
         self._initial_problem_key = initial_problem_key
@@ -73,12 +77,14 @@ class EmployeesScreen(QWidget):
         right_layout.setContentsMargins(SPACING["sm"], 0, 0, 0)
         right_layout.setSpacing(SPACING["sm"])
 
-        create_button = QPushButton("Додати працівника")
-        create_button.setProperty("variant", "accent")
-        create_button.clicked.connect(self._open_create_employee_dialog)
-        right_layout.addWidget(create_button)
+        self._create_button = QPushButton("Додати працівника")
+        self._create_button.setProperty("variant", "accent")
+        self._create_button.clicked.connect(self._open_create_employee_dialog)
+        self._create_button.setVisible(not self._read_only)
+        self._create_button.setEnabled(not self._read_only)
+        right_layout.addWidget(self._create_button)
 
-        self.details_pane = EmployeeDetailsPane()
+        self.details_pane = EmployeeDetailsPane(read_only=self._read_only)
         self.details_pane.edit_requested.connect(self._open_edit_employee_dialog)
         self.details_pane.archive_requested.connect(self._archive_employee)
         self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
@@ -161,7 +167,9 @@ class EmployeesScreen(QWidget):
         Opens modal dialog for adding a new employee.
         """
 
-        dialog = CreateEmployeeDialog(self._database_path, self._workspace, self)
+        if self._read_only:
+            return
+        dialog = CreateEmployeeDialog(self._database_path, self._workspace, self._access_role, self)
         dialog.employee_created.connect(self._reload_workspace_after_create)
         dialog.exec()
 
@@ -169,7 +177,9 @@ class EmployeesScreen(QWidget):
     def _open_edit_employee_dialog(self, row: EmployeeWorkspaceRow) -> None:
         """Відкриває модальне вікно редагування працівника."""
 
-        dialog = EditEmployeeDialog(self._database_path, self._workspace, row, self)
+        if self._read_only:
+            return
+        dialog = EditEmployeeDialog(self._database_path, self._workspace, row, self._access_role, self)
         dialog.employee_updated.connect(self._reload_workspace_after_create)
         dialog.exec()
 
@@ -194,7 +204,11 @@ class EmployeesScreen(QWidget):
         
         box.exec()
         if box.clickedButton() == yes_btn:
-            archive_employee(self._database_path, row.employee.personnel_number)
+            archive_employee(
+                self._database_path,
+                row.employee.personnel_number,
+                access_role=self._access_role,
+            )
             self._reload_workspace_after_create("")
 
     # ###### ОНОВЛЕННЯ ПІСЛЯ СТВОРЕННЯ / RELOAD AFTER CREATE ######

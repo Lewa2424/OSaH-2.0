@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.cancel_work_permit_record_row import cancel_work_permit_record_row
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -10,11 +12,18 @@ from osah.infrastructure.database.queries.list_work_permit_records import list_w
 
 
 # ###### СКАСУВАННЯ НАРЯДУ-ДОПУСКУ / CANCEL WORK PERMIT ######
-def cancel_work_permit_record(database_path: Path, record_id: int, cancel_reason_text: str) -> None:
+def cancel_work_permit_record(
+    database_path: Path,
+    record_id: int,
+    cancel_reason_text: str,
+    *,
+    access_role: AccessRole,
+) -> None:
     """Скасовує наряд-допуск із фіксацією причини та audit-подією.
     Cancels a work permit with a reason and audit event.
     """
 
+    ensure_write_access(access_role, "cancel_work_permit_record")
     normalized_reason = cancel_reason_text.strip()
     if not normalized_reason:
         raise ValueError("Потрібно вказати причину скасування наряду.")

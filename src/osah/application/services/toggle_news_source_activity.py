@@ -1,14 +1,23 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_news_source_row import upsert_news_source_row
 from osah.infrastructure.database.create_database_connection import create_database_connection
 
 
 # ###### ПЕРЕМИКАННЯ АКТИВНОСТІ ДЖЕРЕЛА НОВИН / TOGGLE NEWS SOURCE ACTIVITY ######
-def toggle_news_source_activity(database_path: Path, source_id: int, is_active: bool) -> None:
+def toggle_news_source_activity(
+    database_path: Path,
+    source_id: int,
+    is_active: bool,
+    *,
+    access_role: AccessRole,
+) -> None:
     """Updates source active flag while preserving source identity fields."""
 
+    ensure_write_access(access_role, "toggle_news_source_activity")
     connection = create_database_connection(database_path)
     try:
         row = connection.execute(

@@ -5,6 +5,7 @@ from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.services.format_ui_date import format_ui_date
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
 # ###### ПРИЧИНА СТАТУСА ИНСТРУКТАЖА / BUILD TRAINING STATUS REASON ######
@@ -38,7 +39,10 @@ def build_training_status_reason(
         return "Актуально - запис не переносить повторний контроль"
 
     current_date = today or date.today()
-    remaining_days = (date.fromisoformat(next_control_date) - current_date).days
+    try:
+        remaining_days = (parse_storage_date_text(next_control_date) - current_date).days
+    except ValueError:
+        return "Конфлікт - у записі інструктажу вказано некоректну дату повторного контролю"
     if status in {TrainingStatus.OVERDUE, TrainingRegistryFilter.OVERDUE}:
         return "Критично - прострочено повторний інструктаж"
     if status in {TrainingStatus.WARNING, TrainingRegistryFilter.WARNING}:

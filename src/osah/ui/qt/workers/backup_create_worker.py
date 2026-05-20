@@ -3,6 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 
 from osah.application.services.create_backup_snapshot import create_backup_snapshot
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.backup_kind import BackupKind
 
 
@@ -14,9 +15,15 @@ class BackupCreateWorker(QObject):
     error = Signal(str)
     finished = Signal()
 
-    def __init__(self, database_path: Path, backup_kind: BackupKind = BackupKind.MANUAL) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        access_role: AccessRole,
+        backup_kind: BackupKind = BackupKind.MANUAL,
+    ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
         self._backup_kind = backup_kind
 
     # ###### ФОНОВЕ СТВОРЕННЯ БЕКАПУ / BACKGROUND BACKUP CREATION ######
@@ -25,7 +32,11 @@ class BackupCreateWorker(QObject):
 
         try:
             self.progress.emit(15, "Створення резервної копії запущено.")
-            backup_path = create_backup_snapshot(self._database_path, self._backup_kind)
+            backup_path = create_backup_snapshot(
+                self._database_path,
+                self._backup_kind,
+                access_role=self._access_role,
+            )
             self.progress.emit(100, "Резервну копію створено.")
             self.success.emit(backup_path)
         except Exception as error:  # noqa: BLE001

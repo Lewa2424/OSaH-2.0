@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.employee_import_draft_status import EmployeeImportDraftStatus
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -13,11 +15,12 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### ЗАСТОСУВАННЯ ПАРТІЇ ІМПОРТУ ПРАЦІВНИКІВ / ПРИМЕНЕНИЕ ПАРТИИ ИМПОРТА СОТРУДНИКОВ ######
-def apply_employee_import_batch(database_path: Path, batch_id: int) -> None:
+def apply_employee_import_batch(database_path: Path, batch_id: int, *, access_role: AccessRole) -> None:
     """Застосовує валідні чернетки партії імпорту працівників до бойових сутностей.
     Применяет валидные черновики партии импорта сотрудников к боевым сущностям.
     """
 
+    ensure_write_access(access_role, "apply_employee_import_batch")
     connection = create_database_connection(database_path)
     try:
         employee_import_drafts = list_employee_import_drafts_by_batch(connection, batch_id)

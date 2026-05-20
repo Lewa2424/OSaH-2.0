@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QVBoxLayout, 
 
 from osah.application.services.load_news_items import load_news_items
 from osah.application.services.mark_news_item_as_read import mark_news_item_as_read
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.news_item_read_state import NewsItemReadState
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.section_header import SectionHeader
@@ -17,9 +18,11 @@ from osah.ui.qt.screens.news.news_items_table import NewsItemsTable
 class NewsScreen(QWidget):
     """Screen for trusted sources, NPA/news cache and read-state flow."""
 
-    def __init__(self, database_path: Path) -> None:
+    def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -63,6 +66,8 @@ class NewsScreen(QWidget):
         self.mark_read_button = QPushButton("Позначити прочитаним")
         self.mark_read_button.setProperty("variant", "accent")
         self.mark_read_button.clicked.connect(self._mark_selected_read)
+        self.mark_read_button.setVisible(not self._read_only)
+        self.mark_read_button.setEnabled(not self._read_only)
         actions_row.addWidget(self.mark_read_button)
         self.open_link_button = QPushButton("Відкрити оригінал")
         self.open_link_button.setProperty("variant", "accent")
@@ -78,6 +83,9 @@ class NewsScreen(QWidget):
     def _mark_selected_read(self) -> None:
         """Marks selected informational item as read."""
 
+        if self._read_only:
+            self.feedback.show_error("Режим read-only: зміна статусу новини недоступна.")
+            return
         current_item = self.items_table.current_news_item()
         if current_item is None:
             self.feedback.show_error("Оберіть матеріал у списку.")
@@ -90,7 +98,7 @@ class NewsScreen(QWidget):
         Marks the material as read while respecting the current screen filter.
         """
 
-        mark_news_item_as_read(self._database_path, item_id)
+        mark_news_item_as_read(self._database_path, item_id, access_role=self._access_role)
         if self.unread_only.isChecked():
             self._reload_state()
         else:
@@ -115,12 +123,12 @@ class NewsScreen(QWidget):
 
         current_item = self.items_table.current_news_item()
         has_selection = current_item is not None
-        self.mark_read_button.setEnabled(has_selection)
+        self.mark_read_button.setEnabled(has_selection and not self._read_only)
         self.open_link_button.setEnabled(has_selection)
         if current_item is None:
             self.detail_panel.show_placeholder()
             return
-        if current_item.read_state == NewsItemReadState.NEW:
+        if not self._read_only and current_item.read_state == NewsItemReadState.NEW:
             selected_item_id = current_item.item_id
             self._mark_item_as_read(selected_item_id)
             current_item = self.items_table.current_news_item()

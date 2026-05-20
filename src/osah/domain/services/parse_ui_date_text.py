@@ -1,23 +1,28 @@
-from datetime import datetime, date
+import re
+from datetime import date
 
 
-# ###### РОЗБІР ДАТИ З UI / PARSE UI DATE TEXT ######
+_UI_DATE_PATTERN = re.compile(r"^(?P<day>\d{1,2})(?P<sep>[.,])(?P<month>\d{1,2})(?P=sep)(?P<year>\d{2}|\d{4})$")
+_UI_DATE_ERROR_TEXT = "Введите дату в формате ДД.ММ.ГГГГ. Допустимо: 1.1.26 или 01,01,2026."
+
+
+# ###### РАЗБОР ДАТЫ ИЗ UI / PARSE UI DATE TEXT ######
 def parse_ui_date_text(date_text: str) -> date:
-    """Приймає ДД.MM.ГГГГ та сумісні legacy-формати і повертає об'єкт date.
-    Accepts DD.MM.YYYY and compatible legacy formats, returning a date object.
+    """Принимает только пользовательские форматы даты и возвращает date.
+    Accepts only user-facing date formats and returns a date object.
     """
 
     normalized_date_text = date_text.strip()
     if not normalized_date_text:
-        raise ValueError("Дата обов'язкова у форматі ДД.ММ.РРРР.")
+        raise ValueError(_UI_DATE_ERROR_TEXT)
 
-    compact_date_text = normalized_date_text.replace(" ", "")
-    for separator in (",", ":", "/", "-"):
-        compact_date_text = compact_date_text.replace(separator, ".")
+    match = _UI_DATE_PATTERN.fullmatch(normalized_date_text)
+    if match is None:
+        raise ValueError(_UI_DATE_ERROR_TEXT)
 
-    for format_pattern in ("%d.%m.%Y", "%d.%m.%y", "%Y.%m.%d"):
-        try:
-            return datetime.strptime(compact_date_text, format_pattern).date()
-        except ValueError:
-            continue
-    raise ValueError("Дата має бути у форматі ДД.ММ.РРРР.")
+    year_text = match.group("year")
+    year_value = 2000 + int(year_text) if len(year_text) == 2 else int(year_text)
+    try:
+        return date(year_value, int(match.group("month")), int(match.group("day")))
+    except ValueError as error:
+        raise ValueError(_UI_DATE_ERROR_TEXT) from error

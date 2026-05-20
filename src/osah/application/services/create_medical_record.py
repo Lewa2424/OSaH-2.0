@@ -1,6 +1,8 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_exam_basis import MedicalExamBasis
 from osah.domain.entities.medical_record import MedicalRecord
@@ -23,11 +25,14 @@ def create_medical_record(
     medical_exam_basis: str = "legacy_not_tracked",
     basis_text: str = "",
     basis_note: str = "",
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Создаёт новую медицинскую запись и синхронизирует контрольные уведомления.
     Creates a new medical record and synchronizes control notifications.
     """
 
+    ensure_write_access(access_role, "create_medical_record")
     normalized_personnel_number = employee_personnel_number.strip()
     normalized_medical_decision = medical_decision.strip()
     normalized_restriction_note = restriction_note.strip()

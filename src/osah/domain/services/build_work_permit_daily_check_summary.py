@@ -3,6 +3,7 @@ from datetime import datetime
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.services.format_ui_datetime import format_ui_datetime
+from osah.domain.services.parse_storage_datetime_text import parse_storage_datetime_text
 
 
 def build_work_permit_daily_check_summary(work_permit_record: WorkPermitRecord | None) -> dict[str, object]:
@@ -18,8 +19,16 @@ def build_work_permit_daily_check_summary(work_permit_record: WorkPermitRecord |
             "can_record": False,
         }
 
-    starts_at = datetime.fromisoformat(work_permit_record.starts_at)
-    ends_at = datetime.fromisoformat(work_permit_record.ends_at)
+    try:
+        starts_at = parse_storage_datetime_text(work_permit_record.starts_at)
+        ends_at = parse_storage_datetime_text(work_permit_record.ends_at)
+    except ValueError:
+        return {
+            "requirement_text": "Неможливо оцінити щоденні перевірки: у наряді вказано некоректну дату або час.",
+            "last_check_text": "Остання перевірка: -",
+            "history_text": "Журнал перевірок: потрібна перевірка даних наряду",
+            "can_record": False,
+        }
     is_multiday = starts_at.date() != ends_at.date()
     latest_check = work_permit_record.daily_checks[-1] if work_permit_record.daily_checks else None
     history_text = (

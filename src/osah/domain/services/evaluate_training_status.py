@@ -5,6 +5,7 @@ from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
 # ###### ОЦЕНКА СТАТУСА ИНСТРУКТАЖА / EVALUATE TRAINING STATUS ######
@@ -28,10 +29,10 @@ def evaluate_training_status(
         if training_record.next_control_basis == TrainingNextControlBasis.INTRODUCTORY_PRIMARY_NOT_REQUIRED:
             return TrainingStatus.NOT_REQUIRED
         if training_record.next_control_basis == TrainingNextControlBasis.REQUIRES_PRIMARY_AFTER_INTRODUCTORY:
-            introductory_date = date.fromisoformat(training_record.event_date)
+            introductory_date = parse_storage_date_text(training_record.event_date)
             if any(
                 related_record.training_type == TrainingType.PRIMARY
-                and date.fromisoformat(related_record.event_date) >= introductory_date
+                and _is_primary_after_introductory(related_record, introductory_date)
                 for related_record in related_records
                 if related_record.record_id != training_record.record_id
             ):
@@ -43,10 +44,20 @@ def evaluate_training_status(
     ):
         return TrainingStatus.CURRENT
 
-    next_control = date.fromisoformat(training_record.next_control_date)
+    try:
+        next_control = parse_storage_date_text(training_record.next_control_date)
+    except ValueError:
+        return TrainingStatus.INVALID
     remaining_days = (next_control - current_date).days
     if remaining_days < 0:
         return TrainingStatus.OVERDUE
     if remaining_days <= warning_days:
         return TrainingStatus.WARNING
     return TrainingStatus.CURRENT
+
+
+def _is_primary_after_introductory(related_record: TrainingRecord, introductory_date: date) -> bool:
+    try:
+        return parse_storage_date_text(related_record.event_date) >= introductory_date
+    except ValueError:
+        return False

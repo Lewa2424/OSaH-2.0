@@ -1,9 +1,13 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
 
+from osah.domain.entities.contractor_readiness_status import ContractorReadinessStatus
+
 
 class ContractorsFilterBar(QWidget):
-    """Filters for contractors registry."""
+    """Фільтри реєстру підрядників.
+    Contractors registry filters.
+    """
 
     filters_changed = Signal()
 
@@ -13,15 +17,17 @@ class ContractorsFilterBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self._search = QLineEdit()
-        self._search.setPlaceholderText("Пошук: організація, контакт, телефон, email")
+        self._search.setPlaceholderText("Пошук: організація, контакт, телефон, email, робота")
         self._search.textChanged.connect(lambda _text: self.filters_changed.emit())
         layout.addWidget(self._search, stretch=2)
 
         self._status = QComboBox()
         self._status.addItem("Усі статуси", "")
-        self._status.addItem("Активний", "active")
-        self._status.addItem("Завершений", "finished")
-        self._status.addItem("Архівний", "archived")
+        self._status.addItem("Готовий", ContractorReadinessStatus.READY.value)
+        self._status.addItem("Є зауваження", ContractorReadinessStatus.WARNING.value)
+        self._status.addItem("Не готовий", ContractorReadinessStatus.BLOCKED.value)
+        self._status.addItem("Завершений", ContractorReadinessStatus.FINISHED.value)
+        self._status.addItem("Архівний", ContractorReadinessStatus.ARCHIVED.value)
         self._status.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         layout.addWidget(self._status)
 
@@ -33,18 +39,20 @@ class ContractorsFilterBar(QWidget):
         self._active_label = QLabel("Фільтри не активні")
         layout.addWidget(self._active_label)
 
-    # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def _reset(self) -> None:
-        """Resets contractors filters."""
+        """Скидає активні фільтри підрядників.
+        Resets active contractor filters.
+        """
 
         self._search.clear()
         self._status.setCurrentIndex(0)
         self._update_indicator()
         self.filters_changed.emit()
 
-    # ###### ЧИТАННЯ ЗНАЧЕНЬ ФІЛЬТРІВ / READ FILTER VALUES ######
     def values(self) -> dict[str, str]:
-        """Returns current filter values."""
+        """Повертає поточні значення фільтрів.
+        Returns current filters state.
+        """
 
         values = {
             "search": self._search.text().strip().lower(),
@@ -53,9 +61,10 @@ class ContractorsFilterBar(QWidget):
         self._update_indicator()
         return values
 
-    # ###### ІНДИКАТОР АКТИВНИХ ФІЛЬТРІВ / ACTIVE FILTERS INDICATOR ######
     def _update_indicator(self) -> None:
-        """Updates active filters indicator label."""
+        """Оновлює індикатор кількості активних фільтрів.
+        Updates active-filters count label.
+        """
 
         count = int(bool(self._search.text().strip())) + int(bool(self._status.currentData()))
         self._active_label.setText("Фільтри не активні" if count == 0 else f"Активних фільтрів: {count}")

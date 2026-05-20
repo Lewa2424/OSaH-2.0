@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.infrastructure.database.commands.close_work_permit_record_row import close_work_permit_record_row
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -10,11 +12,12 @@ from osah.infrastructure.database.queries.list_work_permit_records import list_w
 
 
 # ###### ЗАКРИТТЯ НАРЯДУ-ДОПУСКУ / ЗАКРЫТИЕ НАРЯДА-ДОПУСКА ######
-def close_work_permit_record(database_path: Path, record_id: int) -> None:
+def close_work_permit_record(database_path: Path, record_id: int, *, access_role: AccessRole) -> None:
     """Закриває наряд-допуск вручну та синхронізує контрольні сповіщення.
     Закрывает наряд-допуск вручную и синхронизирует контрольные уведомления.
     """
 
+    ensure_write_access(access_role, "close_work_permit_record")
     connection = create_database_connection(database_path)
     try:
         work_permit_record = next(

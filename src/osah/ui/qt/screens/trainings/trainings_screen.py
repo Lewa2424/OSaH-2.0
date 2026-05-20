@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_training_workspace import load_training_workspace
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.training_registry_filter import TrainingRegistryFilter
 from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
@@ -30,12 +31,14 @@ class TrainingsScreen(QWidget):
         self,
         database_path: Path,
         workspace: TrainingWorkspace,
+        access_role: AccessRole,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
         initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
         self._workspace = workspace
         self._visible_rows: tuple[TrainingWorkspaceRow, ...] = workspace.rows
         self._current_row: TrainingWorkspaceRow | None = None
@@ -71,7 +74,7 @@ class TrainingsScreen(QWidget):
         center_layout.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True), stretch=1)
         splitter.addWidget(center)
 
-        self.details_pane = TrainingRecordDetailsPane(database_path, workspace.employees)
+        self.details_pane = TrainingRecordDetailsPane(database_path, workspace.employees, access_role)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.editor.deleted.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)
@@ -112,6 +115,16 @@ class TrainingsScreen(QWidget):
         if self._pending_record_id is None and self._pending_personnel_number is None:
             self._remember_selection_context()
         values = self.filter_bar.values()
+        validation_error = values.get("validation_error", "").strip()
+        if validation_error:
+            self.registry_table.set_rows(())
+            self._visible_rows = ()
+            self.loading_state.hide()
+            self.empty_state.hide()
+            self.error_state.show_state(validation_error)
+            self._current_row = None
+            self.details_pane.show_empty_state()
+            return
         rows = tuple(row for row in self._workspace.rows if _row_matches(row, values))
         if values["mode"] == TrainingWorkspaceMode.BY_EMPLOYEES.value:
             rows = _collapse_by_employee(rows)

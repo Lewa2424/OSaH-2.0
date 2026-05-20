@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QComboBox, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from osah.application.services.load_training_registry import load_training_registry
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
@@ -22,15 +23,16 @@ class TrainingRecordDetailsPane(QScrollArea):
 
     employee_requested = Signal(str)
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
+        self._read_only = access_role != AccessRole.INSPECTOR
         self.setWidgetResizable(True)
         self.setMinimumWidth(360)
         self._database_path = database_path
         self._employees_by_number = {employee.personnel_number: employee for employee in employees}
         self._current_personnel_number: str | None = None
         self._row_lookup: dict[int, TrainingWorkspaceRow] = {}
-        self.editor = TrainingRecordEditor(database_path, employees)
+        self.editor = TrainingRecordEditor(database_path, employees, access_role)
         self.open_employee_button = QPushButton("Відкрити картку працівника")
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)
@@ -173,8 +175,9 @@ class TrainingRecordDetailsPane(QScrollArea):
         else:
             self.training_selector.addItem("Цільовий — не створено", ("missing", TrainingType.TARGETED.value))
 
-        self.training_selector.addItem("+ Створити новий інструктаж", ("create_new", ""))
-        self._style_action_item(self.training_selector, self.training_selector.count() - 1)
+        if not self._read_only:
+            self.training_selector.addItem("+ Створити новий інструктаж", ("create_new", ""))
+            self._style_action_item(self.training_selector, self.training_selector.count() - 1)
         self.training_selector.setEnabled(True)
         self.training_selector.blockSignals(False)
         self._select_initial_item(selected_row)

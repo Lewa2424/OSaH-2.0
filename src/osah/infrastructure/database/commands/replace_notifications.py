@@ -38,4 +38,3 @@ def replace_notifications(connection: Connection, notifications: tuple[Notificat
             for notification in notifications
         ],
     )
-    connection.commit()

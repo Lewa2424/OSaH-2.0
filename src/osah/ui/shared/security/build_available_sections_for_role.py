@@ -8,6 +8,4 @@ def build_available_sections_for_role(access_role: AccessRole) -> tuple[AppSecti
     Возвращает список разделов, доступных для текущей роли.
     """
 
-    if access_role == AccessRole.INSPECTOR:
-        return tuple(AppSection)
-    return tuple(section for section in AppSection if section != AppSection.SETTINGS)
+    return tuple(AppSection)

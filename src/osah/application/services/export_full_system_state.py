@@ -2,17 +2,20 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.list_user_table_names import list_user_table_names
 
 
 # ###### ЕКСПОРТ ПОВНОГО СТАНУ СИСТЕМИ / ЭКСПОРТ ПОЛНОГО СОСТОЯНИЯ СИСТЕМЫ ######
-def export_full_system_state(database_path: Path) -> Path:
+def export_full_system_state(database_path: Path, *, access_role: AccessRole) -> Path:
     """Створює JSON-експорт повного стану локальної системи й повертає шлях до файлу.
     Создаёт JSON-экспорт полного состояния локальной системы и возвращает путь к файлу.
     """
 
+    ensure_write_access(access_role, "export_full_system_state")
     export_directory = database_path.parent / "exports"
     export_directory.mkdir(parents=True, exist_ok=True)
     exported_at = datetime.now()

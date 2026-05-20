@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_app_setting import upsert_app_setting
@@ -7,11 +9,17 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### ЗБЕРЕЖЕННЯ НАЛАШТУВАНЬ РУЧНОГО ЗВІТУ / SAVE MANUAL REPORT SETTINGS ######
-def save_manual_report_settings(database_path: Path, manual_report_settings: ManualReportSettings) -> None:
+def save_manual_report_settings(
+    database_path: Path,
+    manual_report_settings: ManualReportSettings,
+    *,
+    access_role: AccessRole,
+) -> None:
     """Зберігає налаштування нагадування та ручного формування щоденного звіту.
     Saves reminder settings and manual daily report workflow state.
     """
 
+    ensure_write_access(access_role, "save_manual_report_settings")
     connection = create_database_connection(database_path)
     try:
         setting_pairs = {

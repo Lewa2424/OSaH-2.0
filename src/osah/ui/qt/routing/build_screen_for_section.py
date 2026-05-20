@@ -43,6 +43,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
         return EmployeesScreen(
             context.application_context.database_path,
             workspace,
+            access_role=context.access_role,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
             initial_problem_key=intent.problem_key if intent else None,
         )
@@ -52,6 +53,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
         return TrainingsScreen(
             context.application_context.database_path,
             load_training_workspace(context.application_context.database_path),
+            access_role=context.access_role,
             initial_status=intent.training_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
             initial_record_id=intent.training_record_id if intent else None,
@@ -62,6 +64,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
         return PpeScreen(
             context.application_context.database_path,
             load_ppe_workspace(context.application_context.database_path),
+            access_role=context.access_role,
             initial_status=intent.ppe_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
             initial_record_id=intent.ppe_record_id if intent else None,
@@ -72,6 +75,7 @@ def build_screen_for_section(context: QtContext) -> QWidget:
         return MedicalScreen(
             context.application_context.database_path,
             load_medical_workspace(context.application_context.database_path),
+            access_role=context.access_role,
             initial_status=intent.medical_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
             initial_record_id=intent.medical_record_id if intent else None,
@@ -82,16 +86,17 @@ def build_screen_for_section(context: QtContext) -> QWidget:
         return WorkPermitsScreen(
             context.application_context.database_path,
             load_work_permit_workspace(context.application_context.database_path),
+            access_role=context.access_role,
             initial_status=intent.work_permit_status_filter if intent else None,
             initial_personnel_number=intent.employee_personnel_number if intent else None,
             initial_record_id=intent.work_permit_record_id if intent else None,
         )
 
     if context.selected_section == AppSection.REPORTS:
-        return ReportsScreen(context.application_context.database_path)
+        return ReportsScreen(context.application_context.database_path, context.access_role)
 
     if context.selected_section == AppSection.NEWS_NPA:
-        return NewsScreen(context.application_context.database_path)
+        return NewsScreen(context.application_context.database_path, context.access_role)
 
     if context.selected_section == AppSection.SETTINGS:
         return SettingsScreen(context.application_context.database_path, context.access_role)

@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_medical_workspace import load_medical_workspace
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.entities.medical_workspace import MedicalWorkspace
 from osah.domain.entities.medical_workspace_mode import MedicalWorkspaceMode
@@ -30,12 +31,14 @@ class MedicalScreen(QWidget):
         self,
         database_path: Path,
         workspace: MedicalWorkspace,
+        access_role: AccessRole,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
         initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
         self._workspace = workspace
         self._initial_personnel_number = initial_personnel_number
         self._initial_record_id = initial_record_id
@@ -69,7 +72,7 @@ class MedicalScreen(QWidget):
         self.registry_table.row_selected.connect(self._show_row)
         splitter.addWidget(ScrollableTableFrame(self.registry_table, snap_to_columns=True))
 
-        self.details_pane = MedicalRecordDetailsPane(database_path, workspace.employees)
+        self.details_pane = MedicalRecordDetailsPane(database_path, workspace.employees, access_role)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)
         splitter.addWidget(self.details_pane)

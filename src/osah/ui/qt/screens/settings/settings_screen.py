@@ -222,7 +222,11 @@ class SettingsScreen(QWidget):
             self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
-            save_manual_report_settings(self._database_path, manual_report_settings)
+            save_manual_report_settings(
+                self._database_path,
+                manual_report_settings,
+                access_role=self._access_role,
+            )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося зберегти налаштування звіту: {error}")
             return
@@ -237,7 +241,13 @@ class SettingsScreen(QWidget):
             self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
-            create_news_source(self._database_path, source_name, source_url, NewsSourceKind(source_kind_value))
+            create_news_source(
+                self._database_path,
+                source_name,
+                source_url,
+                NewsSourceKind(source_kind_value),
+                access_role=self._access_role,
+            )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося створити джерело: {error}")
             return
@@ -287,6 +297,7 @@ class SettingsScreen(QWidget):
                 source_name,
                 feed_url,
                 NewsSourceKind(source_kind_value),
+                access_role=self._access_role,
             )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося створити джерело: {error}")
@@ -312,7 +323,12 @@ class SettingsScreen(QWidget):
             self._rebuild_sections()
             return
         try:
-            toggle_news_source_activity(self._database_path, source_id, is_active)
+            toggle_news_source_activity(
+                self._database_path,
+                source_id,
+                is_active,
+                access_role=self._access_role,
+            )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося оновити джерело: {error}")
             self._rebuild_sections()
@@ -330,7 +346,7 @@ class SettingsScreen(QWidget):
         errors: list[str] = []
         for source_id in source_ids:
             try:
-                delete_news_source(self._database_path, source_id)
+                delete_news_source(self._database_path, source_id, access_role=self._access_role)
             except Exception as error:  # noqa: BLE001
                 errors.append(str(error))
         if errors:
@@ -353,7 +369,7 @@ class SettingsScreen(QWidget):
             self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
             return
         try:
-            save_news_refresh_time(self._database_path, refresh_time)
+            save_news_refresh_time(self._database_path, refresh_time, access_role=self._access_role)
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося зберегти розклад: {error}")
             return
@@ -392,6 +408,7 @@ class SettingsScreen(QWidget):
                 backup_max_copies=backup_max_copies
                 if backup_max_copies is not None
                 else self._workspace.backup_max_copies,
+                access_role=self._access_role,
             )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося зберегти параметри: {error}")
@@ -409,7 +426,10 @@ class SettingsScreen(QWidget):
     def _start_create_backup(self) -> None:
         """Starts manual backup creation in background."""
 
-        self._start_task("backup.create_manual", BackupCreateWorker(self._database_path))
+        self._start_task(
+            "backup.create_manual",
+            BackupCreateWorker(self._database_path, self._access_role),
+        )
 
     # ###### ЗАПУСК ВІДНОВЛЕННЯ / START RESTORE ######
     def _start_restore_backup(self) -> None:
@@ -425,7 +445,7 @@ class SettingsScreen(QWidget):
             return
         self._start_task(
             "backup.restore",
-            RestoreBackupWorker(self._database_path, Path(selected_file_path)),
+            RestoreBackupWorker(self._database_path, Path(selected_file_path), self._access_role),
         )
 
     # ###### ЗАПУСК ІМПОРТУ ЧЕРНЕТОК / START IMPORT DRAFT CREATION ######
@@ -445,6 +465,7 @@ class SettingsScreen(QWidget):
             ImportWorker(
                 database_path=self._database_path,
                 operation_kind="create_batch",
+                access_role=self._access_role,
                 source_file_path=Path(selected_file_path),
             ),
         )
@@ -465,6 +486,7 @@ class SettingsScreen(QWidget):
             ImportWorker(
                 database_path=self._database_path,
                 operation_kind="apply_batch",
+                access_role=self._access_role,
                 batch_id=latest_batch_summary.batch_id,
             ),
         )

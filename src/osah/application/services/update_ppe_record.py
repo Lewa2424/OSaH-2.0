@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from osah.application.services.create_ppe_record import _parse_quantity, _resolve_provision_status
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
 from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
@@ -30,11 +32,14 @@ def update_ppe_record(
     compliance_check_state: str = "legacy_not_tracked",
     basis_text: str = "",
     basis_note: str = "",
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Обновляет запись СИЗ, синхронизирует уведомления и пишет audit.
     Updates a PPE record, synchronizes notifications and writes audit.
     """
 
+    ensure_write_access(access_role, "update_ppe_record")
     normalized_personnel_number = employee_personnel_number.strip()
     normalized_ppe_name = ppe_name.strip()
     normalized_note = note_text.strip()

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from osah.application.services.update_employee import update_employee
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
@@ -27,9 +28,17 @@ class EditEmployeeDialog(QDialog):
 
     employee_updated = Signal(str)
 
-    def __init__(self, database_path: Path, workspace: EmployeeWorkspace, row: EmployeeWorkspaceRow, parent=None) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        workspace: EmployeeWorkspace,
+        row: EmployeeWorkspaceRow,
+        access_role: AccessRole,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._database_path = database_path
+        self._access_role = access_role
         self._row = row
         self._selected_photo_path: str | None = None
         self._remove_photo = False
@@ -136,6 +145,7 @@ class EditEmployeeDialog(QDialog):
                 str(self._status_input.currentData()),
                 self._selected_photo_path,
                 self._remove_photo,
+                access_role=self._access_role,
             )
         except ValueError as error:
             self._feedback_label.show_error(str(error))

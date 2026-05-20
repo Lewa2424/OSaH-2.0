@@ -9,6 +9,7 @@ from osah.application.services.load_mail_settings import load_mail_settings
 from osah.application.services.save_daily_report_copy import save_daily_report_copy
 from osah.application.services.save_failed_report_email_copy import save_failed_report_email_copy
 from osah.application.services.save_mail_settings import save_mail_settings
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.mail_settings import MailSettings
 from osah.domain.services.is_mail_settings_ready import is_mail_settings_ready
 from osah.domain.services.normalize_mail_settings_for_delivery import normalize_mail_settings_for_delivery
@@ -53,7 +54,7 @@ def send_daily_report_email(
                 last_sent_date=datetime.now().strftime("%Y-%m-%d"),
                 daily_report_time=mail_settings.daily_report_time,
             )
-            save_mail_settings(database_path, updated_mail_settings)
+            save_mail_settings(database_path, updated_mail_settings, access_role=AccessRole.INSPECTOR)
             _write_report_delivery_audit_log(
                 database_path,
                 event_type="report.sent",

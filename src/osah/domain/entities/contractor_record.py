@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from osah.domain.entities.contractor_worker import ContractorWorker
+
 
 @dataclass(slots=True)
 class ContractorRecord:
@@ -12,3 +14,6 @@ class ContractorRecord:
     contact_email: str
     activity_status: str
     note_text: str
+    enterprise_supervisor: str = ""
+    work_scope_text: str = ""
+    workers: tuple[ContractorWorker, ...] = ()

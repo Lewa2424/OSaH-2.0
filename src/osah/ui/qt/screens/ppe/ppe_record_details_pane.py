@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QComboBox, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from osah.application.services.load_ppe_registry import load_ppe_registry
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
 from osah.domain.services.build_ppe_workspace_rows import build_ppe_workspace_rows
@@ -20,15 +21,22 @@ class PpeRecordDetailsPane(QScrollArea):
 
     employee_requested = Signal(str)
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...], ppe_names: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        employees: tuple[Employee, ...],
+        ppe_names: tuple[str, ...],
+        access_role: AccessRole,
+    ) -> None:
         super().__init__()
+        self._read_only = access_role != AccessRole.INSPECTOR
         self.setWidgetResizable(True)
         self.setMinimumWidth(360)
         self._database_path = database_path
         self._employees_by_number = {employee.personnel_number: employee for employee in employees}
         self._current_personnel_number: str | None = None
         self._row_lookup: dict[int, PpeWorkspaceRow] = {}
-        self.editor = PpeRecordEditor(database_path, employees, ppe_names)
+        self.editor = PpeRecordEditor(database_path, employees, ppe_names, access_role)
         self.open_employee_button = QPushButton("Відкрити картку працівника")
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)
@@ -123,8 +131,9 @@ class PpeRecordDetailsPane(QScrollArea):
                 f"{employee_row.ppe_name} — {format_ui_date(employee_row.replacement_date)}",
                 ("existing", int(employee_row.record_id)),
             )
-        self.ppe_selector.addItem("+ Створити нову позицію ЗІЗ", ("create_new", ""))
-        self._style_action_item(self.ppe_selector, self.ppe_selector.count() - 1)
+        if not self._read_only:
+            self.ppe_selector.addItem("+ Створити нову позицію ЗІЗ", ("create_new", ""))
+            self._style_action_item(self.ppe_selector, self.ppe_selector.count() - 1)
         self.ppe_selector.setEnabled(True)
         self.ppe_selector.blockSignals(False)
         self._select_initial_item(selected_row)

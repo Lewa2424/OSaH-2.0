@@ -1,8 +1,10 @@
 from dataclasses import replace
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.application.services.sync_work_permit_target_training_records import sync_work_permit_target_training_records
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
@@ -37,11 +39,14 @@ def create_work_permit_record(
     basis_text: str = "",
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Створює новий наряд-допуск.
     Creates a new work permit.
     """
 
+    ensure_write_access(access_role, "create_work_permit_record")
     normalized_permit_number = permit_number.strip()
     normalized_work_kind = work_kind.strip()
     normalized_work_location = work_location.strip()

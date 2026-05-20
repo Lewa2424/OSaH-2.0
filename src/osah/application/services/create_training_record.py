@@ -1,6 +1,8 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
@@ -37,11 +39,14 @@ def create_training_record(
     knowledge_check_note: str = "",
     basis_text: str = "",
     basis_note: str = "",
+    *,
+    access_role: AccessRole,
 ) -> int:
     """Создаёт новую запись инструктажа и синхронизирует уведомления.
     Creates a new training record and synchronizes control notifications.
     """
 
+    ensure_write_access(access_role, "create_training_record")
     normalized_personnel_number = employee_personnel_number.strip()
     normalized_conducted_by = conducted_by.strip()
     normalized_note = note_text.strip()

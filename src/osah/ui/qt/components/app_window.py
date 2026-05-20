@@ -118,6 +118,10 @@ class AppWindow(QMainWindow):
     ) -> None:
         """###### ПЕРЕХІД ДО РОЗДІЛУ / NAVIGATE TO SECTION ######"""
 
+        allowed_sections = build_available_sections_for_role(self._access_role)
+        if section not in allowed_sections:
+            return
+
         effective_intent = intent
         if record_history and self._current_section is not None:
             current_state = (self._current_section, self._current_navigation_intent)
@@ -357,6 +361,8 @@ class AppWindow(QMainWindow):
     def _check_manual_report_reminder(self) -> None:
         """Checks whether it is time to show the manual report reminder dialog."""
 
+        if self._access_role != AccessRole.INSPECTOR:
+            return
         if self._manual_report_prompt_open or self._has_active_editor_focus() or not self.isVisible() or not self.isActiveWindow():
             return
         if not should_prompt_manual_report(self._app_context.database_path):
@@ -366,7 +372,11 @@ class AppWindow(QMainWindow):
         try:
             user_choice = show_manual_report_prompt_dialog(self)
             if user_choice == "build":
-                save_result = save_manual_report_via_dialog(self, self._app_context.database_path)
+                save_result = save_manual_report_via_dialog(
+                    self,
+                    self._app_context.database_path,
+                    access_role=self._access_role,
+                )
                 if save_result is None:
                     self._postpone_manual_report_prompt()
                 else:
@@ -392,7 +402,11 @@ class AppWindow(QMainWindow):
             default_save_directory=manual_report_settings.default_save_directory,
             ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
         )
-        save_manual_report_settings(self._app_context.database_path, postponed_settings)
+        save_manual_report_settings(
+            self._app_context.database_path,
+            postponed_settings,
+            access_role=self._access_role,
+        )
 
     def _skip_manual_report_for_today(self) -> None:
         """Marks today's manual report reminder as skipped."""
@@ -407,7 +421,11 @@ class AppWindow(QMainWindow):
             default_save_directory=manual_report_settings.default_save_directory,
             ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
         )
-        save_manual_report_settings(self._app_context.database_path, skipped_settings)
+        save_manual_report_settings(
+            self._app_context.database_path,
+            skipped_settings,
+            access_role=self._access_role,
+        )
 
     # ###### ЗАПУСК ЗАПЛАНОВАНОЇ ПЕРЕВІРКИ / RUN SCHEDULED NEWS REFRESH ######
     def _run_scheduled_news_refresh(self) -> None:

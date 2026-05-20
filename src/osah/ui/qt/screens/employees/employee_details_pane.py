@@ -22,8 +22,9 @@ class EmployeeDetailsPane(QScrollArea):
     module_navigation_requested = Signal(AppSection, str)
     module_record_navigation_requested = Signal(AppSection, str, int)
 
-    def __init__(self) -> None:
+    def __init__(self, read_only: bool) -> None:
         super().__init__()
+        self._read_only = read_only
         self.setWidgetResizable(True)
         self.setMinimumWidth(560)
         self.setStyleSheet("QScrollArea { border: none; background: transparent; }")
@@ -108,6 +109,8 @@ class EmployeeDetailsPane(QScrollArea):
         edit_button.setProperty("variant", "accent")
         edit_button.setStyleSheet("padding: 10px 24px; font-size: 14px; font-weight: bold;")
         edit_button.clicked.connect(lambda: self.edit_requested.emit(row))
+        edit_button.setVisible(not self._read_only)
+        edit_button.setEnabled(not self._read_only)
         actions_layout.addWidget(edit_button)
 
         actions_layout.addStretch()
@@ -115,6 +118,8 @@ class EmployeeDetailsPane(QScrollArea):
         archive_button = QPushButton("Перемістити в архів")
         archive_button.setStyleSheet("background: #fff0f0; border: 1px solid #ffcdd2; color: #d32f2f; padding: 10px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;")
         archive_button.clicked.connect(lambda: self.archive_requested.emit(row))
+        archive_button.setVisible(not self._read_only)
+        archive_button.setEnabled(not self._read_only)
         actions_layout.addWidget(archive_button)
 
         layout.addLayout(actions_layout)

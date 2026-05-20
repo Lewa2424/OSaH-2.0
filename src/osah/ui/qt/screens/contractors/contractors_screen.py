@@ -3,10 +3,12 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
+from osah.application.services.delete_contractor_record import delete_contractor_record
 from osah.application.services.load_contractor_workspace import load_contractor_workspace
 from osah.application.services.save_contractor_record import save_contractor_record
 from osah.domain.entities.access_role import AccessRole
-from osah.domain.entities.contractor_record import ContractorRecord
+from osah.domain.entities.contractor_workspace_row import ContractorWorkspaceRow
+from osah.domain.services.build_contractor_workspace_rows import build_contractor_workspace_rows
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.screen_states import EmptyStateWidget
@@ -19,13 +21,16 @@ from osah.ui.qt.screens.contractors.contractors_registry_table import Contractor
 
 
 class ContractorsScreen(QWidget):
-    """Contractors screen with unified header, registry and details pane."""
+    """Легкий екран підрядників з контролем готовності до робіт.
+    Lightweight contractors screen with work-readiness control.
+    """
 
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
         self._access_role = access_role
         self._workspace = load_contractor_workspace(database_path)
+        self._rows = build_contractor_workspace_rows(self._workspace.records)
         self._read_only = access_role != AccessRole.INSPECTOR
 
         layout = QVBoxLayout(self)
@@ -34,7 +39,7 @@ class ContractorsScreen(QWidget):
 
         self._section_header = SectionHeader(
             "Підрядники",
-            "Базовий реєстр підрядників: контакти, статус активності, примітки та зв'язок з роботами.",
+            "Легкий контроль підрядників: хто працює, чи готові люди до робіт і де є проблеми з допуском.",
         )
         layout.addWidget(self._section_header)
 
@@ -51,10 +56,11 @@ class ContractorsScreen(QWidget):
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setChildrenCollapsible(False)
         self._table = ContractorsRegistryTable()
-        self._table.row_selected.connect(self._show_record)
+        self._table.row_selected.connect(self._show_row)
         splitter.addWidget(ScrollableTableFrame(self._table))
         self._details = ContractorDetailsPane(read_only=self._read_only)
         self._details.save_requested.connect(self._save_record)
+        self._details.delete_requested.connect(self._delete_record)
         splitter.addWidget(self._details)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
@@ -64,19 +70,22 @@ class ContractorsScreen(QWidget):
         layout.addWidget(self._empty_state)
         self._apply_filters()
 
-    # ###### ОНОВЛЕННЯ ДАНИХ ПІДРЯДНИКІВ / RELOAD CONTRACTORS DATA ######
     def _reload_workspace(self) -> None:
-        """Reloads contractors workspace from storage."""
+        """Перезавантажує робочий простір підрядників зі сховища.
+        Reloads contractors workspace from storage.
+        """
 
         self._workspace = load_contractor_workspace(self._database_path)
+        self._rows = build_contractor_workspace_rows(self._workspace.records)
         self._apply_filters()
 
-    # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ ПІДРЯДНИКІВ / APPLY CONTRACTORS FILTERS ######
     def _apply_filters(self) -> None:
-        """Applies active filters to contractors registry."""
+        """Застосовує активні фільтри до реєстру підрядників.
+        Applies active filters to contractors registry.
+        """
 
         values = self._filter_bar.values()
-        rows = tuple(record for record in self._workspace.records if _contractor_matches(record, values))
+        rows = tuple(row for row in self._rows if _contractor_matches(row, values))
         self._table.set_rows(rows)
         self._table.select_first()
         if rows:
@@ -87,42 +96,73 @@ class ContractorsScreen(QWidget):
             "Створіть перший запис або змініть активні фільтри.",
         )
 
-    # ###### ПОКАЗ КАРТКИ ПІДРЯДНИКА / SHOW CONTRACTOR CARD ######
-    def _show_record(self, record: ContractorRecord) -> None:
-        """Shows selected contractor in details pane."""
+    def _show_row(self, row: ContractorWorkspaceRow) -> None:
+        """Показує вибраний рядок підрядника в картці праворуч.
+        Shows selected contractor row in the right-side details card.
+        """
 
-        self._details.show_record(record)
+        self._details.show_record(row.record, row.readiness)
 
-    # ###### ЗБЕРЕЖЕННЯ КАРТКИ ПІДРЯДНИКА / SAVE CONTRACTOR CARD ######
-    def _save_record(self, record: ContractorRecord) -> None:
-        """Persists contractor card through application service."""
+    def _save_record(self, record) -> None:
+        """Зберігає картку підрядника через application service.
+        Persists contractor card through application service.
+        """
 
         if self._read_only:
             self._feedback.show_error("Режим read-only: редагування недоступне.")
             return
         try:
-            saved = save_contractor_record(self._database_path, record)
+            saved = save_contractor_record(
+                self._database_path,
+                record,
+                access_role=self._access_role,
+            )
         except Exception as error:  # noqa: BLE001
             self._feedback.show_error(f"Не вдалося зберегти підрядника: {error}")
             return
         self._feedback.show_success(f"Запис '{saved.company_name}' збережено.")
         self._reload_workspace()
 
+    def _delete_record(self, contractor_id: str) -> None:
+        """Видаляє картку підрядника через application service.
+        Deletes contractor card through application service.
+        """
 
-# ###### ВІДПОВІДНІСТЬ ПІДРЯДНИКА ФІЛЬТРАМ / MATCH CONTRACTOR TO FILTERS ######
-def _contractor_matches(record: ContractorRecord, values: dict[str, str]) -> bool:
-    """Checks whether contractor record matches active filters."""
+        if self._read_only:
+            self._feedback.show_error("Режим read-only: видалення недоступне.")
+            return
+        try:
+            delete_contractor_record(
+                self._database_path,
+                contractor_id,
+                access_role=self._access_role,
+            )
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося видалити підрядника: {error}")
+            return
+        self._feedback.show_success("Запис підрядника видалено.")
+        self._details._reset_form()
+        self._reload_workspace()
 
-    if values["status"] and record.activity_status != values["status"]:
+
+def _contractor_matches(row: ContractorWorkspaceRow, values: dict[str, str]) -> bool:
+    """Перевіряє, чи відповідає підрядник активним фільтрам.
+    Checks whether contractor row matches active filters.
+    """
+
+    if values["status"] and row.readiness.status.value != values["status"]:
         return False
     if values["search"]:
         haystack = " ".join(
             (
-                record.company_name,
-                record.contact_person,
-                record.contact_phone,
-                record.contact_email,
-                record.note_text,
+                row.record.company_name,
+                row.record.contact_person,
+                row.record.contact_phone,
+                row.record.contact_email,
+                row.record.enterprise_supervisor,
+                row.record.work_scope_text,
+                row.record.note_text,
+                " ".join(worker.full_name for worker in row.record.workers),
             )
         ).lower()
         if values["search"] not in haystack:

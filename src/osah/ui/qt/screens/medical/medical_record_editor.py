@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QPush
 
 from osah.application.services.create_medical_record import create_medical_record
 from osah.application.services.update_medical_record import update_medical_record
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_exam_basis import MedicalExamBasis
@@ -27,9 +28,11 @@ class MedicalRecordEditor(QWidget):
 
     saved = Signal()
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
 
         layout = QVBoxLayout(self)
@@ -101,6 +104,7 @@ class MedicalRecordEditor(QWidget):
         self.new_button.setProperty("variant", "secondary")
         self.new_button.clicked.connect(self.clear_form)
         layout.addWidget(self.new_button)
+        self._apply_read_only_mode()
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
         container = QWidget()
@@ -151,6 +155,7 @@ class MedicalRecordEditor(QWidget):
         self._sync_restriction_selector_from_text(row.restriction_note)
         self.basis_panel.set_values(row.basis_text, row.basis_note)
         self.save_button.setText("Зберегти зміни")
+        self._apply_read_only_mode()
 
     def clear_form(self) -> None:
         self._current_record_id = None
@@ -162,8 +167,12 @@ class MedicalRecordEditor(QWidget):
         self.restriction_selector.clear_checked_values()
         self.basis_panel.clear()
         self.save_button.setText("Створити запис")
+        self._apply_read_only_mode()
 
     def _save_record(self) -> None:
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: збереження недоступне.")
+            return
         basis_text, basis_note = self.basis_panel.values()
         try:
             if self._current_record_id is None:
@@ -177,6 +186,7 @@ class MedicalRecordEditor(QWidget):
                     str(self.basis_input.currentData()),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
             else:
                 update_medical_record(
@@ -190,9 +200,28 @@ class MedicalRecordEditor(QWidget):
                     str(self.basis_input.currentData()),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
             return
         self.feedback_label.show_success("Медичний запис збережено.")
         self.saved.emit()
+
+    def _apply_read_only_mode(self) -> None:
+        """Disables record mutation controls while preserving field visibility."""
+
+        for widget in (
+            self.employee_input,
+            self.basis_input,
+            self.decision_input,
+            self.valid_from_input,
+            self.valid_until_input,
+            self.restriction_input,
+            self.restriction_selector,
+        ):
+            widget.setEnabled(not self._read_only)
+        self.save_button.setVisible(not self._read_only)
+        self.save_button.setEnabled(not self._read_only)
+        self.new_button.setVisible(not self._read_only)
+        self.new_button.setEnabled(not self._read_only)

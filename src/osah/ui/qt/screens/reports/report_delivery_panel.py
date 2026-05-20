@@ -16,8 +16,9 @@ class ReportDeliveryPanel(QFrame):
     open_report_requested = Signal()
     open_reports_directory_requested = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, read_only: bool) -> None:
         super().__init__()
+        self._read_only = read_only
         self.setProperty("card", "true")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -46,6 +47,8 @@ class ReportDeliveryPanel(QFrame):
         self.build_button = QPushButton("Сформувати файл звіту")
         self.build_button.setProperty("variant", "accent")
         self.build_button.clicked.connect(self.build_report_requested.emit)
+        self.build_button.setVisible(not self._read_only)
+        self.build_button.setEnabled(not self._read_only)
         layout.addWidget(self.build_button)
 
         self.report_button = QPushButton("Відкрити останній сформований звіт")

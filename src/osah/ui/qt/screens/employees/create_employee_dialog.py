@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from osah.application.services.create_employee import create_employee
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import COLOR, SPACING
@@ -26,9 +27,16 @@ class CreateEmployeeDialog(QDialog):
 
     employee_created = Signal(str)
 
-    def __init__(self, database_path: Path, workspace: EmployeeWorkspace, parent=None) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        workspace: EmployeeWorkspace,
+        access_role: AccessRole,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._database_path = database_path
+        self._access_role = access_role
         self._selected_photo_path: str | None = None
         self.setWindowTitle("Новий працівник")
         self.setModal(True)
@@ -126,6 +134,7 @@ class CreateEmployeeDialog(QDialog):
                 self._position_input.currentText(),
                 str(self._status_input.currentData()),
                 self._selected_photo_path,
+                access_role=self._access_role,
             )
         except ValueError as error:
             self._feedback_label.show_error(str(error))

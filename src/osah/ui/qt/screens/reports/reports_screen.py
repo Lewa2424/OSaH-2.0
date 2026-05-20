@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from osah.application.services.load_audit_log_entries import load_audit_log_entries
 from osah.application.services.load_latest_manual_report_file_path import load_latest_manual_report_file_path
 from osah.application.services.load_manual_report_settings import load_manual_report_settings
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.build_manual_report_last_action_text import build_manual_report_last_action_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
@@ -24,9 +25,11 @@ class ReportsScreen(QWidget):
     Screen for manual daily report generation and viewing its history.
     """
 
-    def __init__(self, database_path: Path) -> None:
+    def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._last_report_path: Path | None = None
 
         layout = QVBoxLayout(self)
@@ -43,7 +46,7 @@ class ReportsScreen(QWidget):
         self.feedback = FormFeedbackLabel()
         layout.addWidget(self.feedback)
 
-        self.delivery_panel = ReportDeliveryPanel()
+        self.delivery_panel = ReportDeliveryPanel(read_only=self._read_only)
         self.delivery_panel.build_report_requested.connect(self._build_report)
         self.delivery_panel.open_report_requested.connect(self._open_report)
         self.delivery_panel.open_reports_directory_requested.connect(self._open_reports_directory)
@@ -75,7 +78,15 @@ class ReportsScreen(QWidget):
         Starts manual daily report saving through the system file dialog.
         """
 
-        save_result = save_manual_report_via_dialog(self, self._database_path)
+        if self._read_only:
+            self.feedback.show_error("Режим read-only: формування файлу звіту недоступне.")
+            return
+
+        save_result = save_manual_report_via_dialog(
+            self,
+            self._database_path,
+            access_role=self._access_role,
+        )
         if save_result is None:
             self.feedback.show_error("Збереження звіту скасовано.")
             return

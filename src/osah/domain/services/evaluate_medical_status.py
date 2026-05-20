@@ -3,6 +3,7 @@ from datetime import date
 from osah.domain.entities.medical_decision import MedicalDecision
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
 # ###### ОЦІНКА СТАТУСУ МЕДДОПУСКУ / ОЦЕНКА СТАТУСА МЕДДОПУСКА ######
@@ -16,7 +17,10 @@ def evaluate_medical_status(
     """
 
     current_date = today or date.today()
-    valid_until = date.fromisoformat(medical_record.valid_until)
+    try:
+        valid_until = parse_storage_date_text(medical_record.valid_until)
+    except ValueError:
+        return MedicalStatus.EXPIRED
     remaining_days = (valid_until - current_date).days
     if remaining_days < 0:
         return MedicalStatus.EXPIRED

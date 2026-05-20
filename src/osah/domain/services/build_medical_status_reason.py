@@ -3,6 +3,7 @@ from datetime import date
 from osah.domain.entities.medical_record import MedicalRecord
 from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.services.format_ui_date import format_ui_date
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
 # ###### ПРИЧИНА СТАТУСА МЕДИЦИНЫ / BUILD MEDICAL STATUS REASON ######
@@ -12,7 +13,10 @@ def build_medical_status_reason(medical_record: MedicalRecord, today: date | Non
     """
 
     current_date = today or date.today()
-    remaining_days = (date.fromisoformat(medical_record.valid_until) - current_date).days
+    try:
+        remaining_days = (parse_storage_date_text(medical_record.valid_until) - current_date).days
+    except ValueError:
+        return "Критично - у медичному записі вказано некоректний строк дії"
     if medical_record.status == MedicalStatus.EXPIRED:
         return "Не допущено - строк меддопуску минув"
     if medical_record.status == MedicalStatus.NOT_FIT:

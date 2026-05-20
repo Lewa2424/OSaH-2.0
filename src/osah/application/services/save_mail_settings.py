@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.mail_settings import MailSettings
 from osah.domain.services.normalize_mail_settings_for_delivery import normalize_mail_settings_for_delivery
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -8,11 +10,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / СОХРАНЕНИЕ ПОЧТОВЫХ НАСТРОЕК ######
-def save_mail_settings(database_path: Path, mail_settings: MailSettings) -> None:
+def save_mail_settings(database_path: Path, mail_settings: MailSettings, *, access_role: AccessRole) -> None:
     """Зберігає налаштування SMTP та параметри щоденного звіту.
     Сохраняет настройки SMTP и параметры ежедневного отчёта.
     """
 
+    ensure_write_access(access_role, "save_mail_settings")
     normalized_mail_settings = normalize_mail_settings_for_delivery(mail_settings)
     connection = create_database_connection(database_path)
     try:

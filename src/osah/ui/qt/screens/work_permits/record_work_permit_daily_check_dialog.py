@@ -2,6 +2,7 @@ from datetime import datetime
 
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
+from osah.domain.services.normalize_ui_datetime_text import normalize_ui_datetime_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
@@ -24,9 +25,12 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
 
         current_moment_text = datetime.now().strftime("%d.%m.%Y %H:%M")
         self._checked_at_input = QLineEdit(current_moment_text)
+        self._checked_at_input.editingFinished.connect(self._normalize_checked_at_text)
+        self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
         self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM або YYYY-MM-DD HH:MM")
         layout.addWidget(QLabel("Дата та час перевірки"))
         layout.addWidget(self._checked_at_input)
+        self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
 
         self._checked_by_input = QLineEdit()
         self._checked_by_input.setPlaceholderText("Хто виконав перевірку місця робіт")
@@ -76,6 +80,16 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
 
         return self._note_input.toPlainText().strip()
 
+    def _normalize_checked_at_text(self) -> None:
+        normalized_text = self.checked_at_text()
+        if not normalized_text:
+            return
+        try:
+            self._checked_at_input.setText(normalize_ui_datetime_text(normalized_text))
+            self._feedback_label.clear()
+        except ValueError as error:
+            self._feedback_label.show_error(str(error))
+
     def _accept_if_valid(self) -> None:
         """Перевіряє обов'язкові поля перед збереженням.
         Validates required fields before saving.
@@ -83,6 +97,11 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
 
         if not self.checked_at_text():
             self._feedback_label.show_error("Потрібно вказати дату та час щоденної перевірки.")
+            return
+        try:
+            self._checked_at_input.setText(normalize_ui_datetime_text(self.checked_at_text()))
+        except ValueError as error:
+            self._feedback_label.show_error(str(error))
             return
         if not self.checked_by_text():
             self._feedback_label.show_error("Потрібно вказати, хто виконав щоденну перевірку.")

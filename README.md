@@ -1,134 +1,72 @@
 # OSaH 2.0
 
-OSaH 2.0 — це локальна десктопна система для процесів з охорони праці. Поточний production-інтерфейс побудований на `PySide6` і працює повністю на локальній базі SQLite без залежності від сервера.
+OSaH 2.0 is a local desktop system for occupational safety workflows.
 
-## Що Робить Проєкт
+The active production UI is built on `PySide6` / Qt and works against a local `SQLite` database. The repository still contains a legacy `CustomTkinter` desktop layer in `src/osah/ui/desktop/`, but it is kept only for reference and migration support. The current working launch path goes through the Qt application.
 
-Система об'єднує основні напрями контролю охорони праці в одному десктопному застосунку:
+## Stack
 
-- реєстр працівників і огляд готовності;
-- облік інструктажів і контроль їхніх статусів;
-- облік ЗІЗ і контроль забезпечення;
-- облік медичних оглядів;
-- керування нарядами-допусками;
-- реєстр підрядників;
-- щоденні звіти та поштові налаштування;
-- моніторинг новин і нормативних джерел;
-- резервні копії, аудит, архів і налаштування безпеки.
+- Python 3.12+
+- PySide6 / Qt
+- SQLite
+- Clean Architecture / DDD-style modular structure
 
-## Поточний Стан
+## Project State
 
-- основний frontend: `src/osah/ui/qt/`
-- legacy frontend, залишений лише як reference: `src/osah/ui/desktop/`
-- основна точка входу: `main.py`
-- application bootstrap: `src/osah/main.py`
-- локальна директорія даних: `data/`
-- локальна директорія логів: `logs/`
-- runtime-шлях до бази: `data/osah.sqlite3`
+- Active UI: `src/osah/ui/qt/`
+- Legacy desktop UI: `src/osah/ui/desktop/`
+- Entry point: `main.py`
+- Application bootstrap: `src/osah/main.py`
+- Local data directory: `data/`
+- Local logs directory: `logs/`
 
-Репозиторій досі містить старий шар на `CustomTkinter`, але активний шлях запуску застосунку проходить через захищену Qt-оболонку.
+## Installation
 
-## Архітектура
+Create and activate a virtual environment:
 
-Проєкт дотримується модульної багатошарової структури:
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-- `src/osah/domain`  
-  Доменні сутності та чисті бізнес-правила.
+Install runtime dependencies:
 
-- `src/osah/application`  
-  Сервіси сценаріїв використання, які оркеструють доменну логіку та доступ до інфраструктури.
+```powershell
+pip install -r requirements.txt
+```
 
-- `src/osah/infrastructure`  
-  Доступ до SQLite, логування, резервні копії, імпорт, безпека та зовнішній I/O.
+If you need tests and legacy desktop imports in the local environment, install dev dependencies:
 
-- `src/osah/ui/qt`  
-  Активний Qt-інтерфейс, маршрутизація, екрани, компоненти, воркери та дизайн-токени.
+```powershell
+pip install -r requirements-dev.txt
+```
 
-- `src/osah/ui/desktop`  
-  Застарілий desktop-шар, залишений лише як матеріал для міграції та reference.
+## Run
 
-- `tests`  
-  Автоматизоване регресійне покриття для application-, domain- і UI-adjacent-поведінки.
+Run the project from the repository root:
 
-Bootstrap застосунку ініціалізує сховище, логування, схему, demo-дані, сповіщення, базову безпеку та стартовий backup перед відкриттям UI.
-
-## Основні Розділи UI
-
-Поточна Qt-оболонка маршрутизує між такими розділами:
-
-- Головна
-- Працівники
-- Інструктажі
-- ЗІЗ
-- Медицина
-- Наряди-допуски
-- Підрядники
-- Архів
-- Звіти
-- Новини / НПА
-- Налаштування
-- Про програму
-
-## Security Flow
-
-Застосунок запускається з обов'язковим security flow:
-
-1. Перший запуск ініціалізує базову конфігурацію безпеки.
-2. Якщо доступ ще не налаштований, показується екран первинного налаштування.
-3. На наступних запусках показується екран входу з role-based доступом.
-4. Для сценаріїв відновлення доступу доступний recovery flow.
-5. Після автентифікації відкривається основна Qt-оболонка.
-
-Захищений шлях запуску реалізований через `src/osah/ui/qt/run_qt_application_secured.py`.
-
-## Запуск Проєкту
-
-Вимоги:
-
-- Python `3.12+`
-- `PySide6`
-
-Із кореня репозиторію:
-
-```bash
+```powershell
 python main.py
 ```
 
-Під час старту застосунок створює потрібні локальні директорії, якщо їх ще немає:
+`main.py` adds `src/` to `sys.path` and starts the application through `osah.main.main()`.
 
-- `data/`
-- `logs/`
+## Tests
 
-## Тести
+Basic test command:
 
-У репозиторії зараз `67` тестових файлів у директорії `tests/`.
-
-Якщо у вашому середовищі вже встановлені потрібні залежності, запускайте:
-
-```bash
-python -m pytest tests
+```powershell
+pytest
 ```
 
-Якщо `pytest` недоступний у середовищі, використовуйте стандартний для цього проєкту спосіб запуску тестів у вашому локальному оточенні.
+If your environment still contains legacy or transitional tests that are being adapted, you can run profile-specific checks instead, for example:
 
-## Збірка
-
-У репозиторії є PyInstaller spec:
-
-```bash
-pyinstaller osah.spec
+```powershell
+pytest tests/test_date_helpers.py -q
 ```
 
-Spec налаштований для Qt-застосунку та включає:
+## Notes
 
-- Qt design resources;
-- Qt assets;
-- потрібні модулі застосунку;
-- windowed executable з назвою `OSaH`.
-
-## Важливі Примітки
-
-- Вміст `README` приведений у відповідність до поточного стану кодової бази, а не до старого описового тексту.
-- `src/osah/ui/desktop/` не слід використовувати для нової розробки.
-- Наявні артефакти в `build/` і `dist/` є згенерованими результатами, а не частиною вихідної архітектури.
-- У репозиторії є сторонні незакомічені зміни поза цим оновленням `README`; вони навмисно не чіпалися.
+- `CustomTkinter` is not the main UI stack anymore. It remains only because the legacy desktop UI is still present in the repository.
+- `pyproject.toml` was intentionally left unchanged at this step.
+- Build artifacts such as `build/` and `dist/` are not part of the active source architecture.

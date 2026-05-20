@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.backup_kind import BackupKind
 from osah.infrastructure.backups.build_backup_directory_path import build_backup_directory_path
 from osah.infrastructure.backups.list_backup_snapshots_from_directory import list_backup_snapshots_from_directory
@@ -23,4 +24,4 @@ def ensure_startup_auto_backup(database_path: Path, current_moment: datetime | N
     )
     if any(backup_snapshot.created_at_text.startswith(reference_date_text) for backup_snapshot in existing_auto_snapshots):
         return None
-    return create_backup_snapshot(database_path, BackupKind.AUTO)
+    return create_backup_snapshot(database_path, BackupKind.AUTO, access_role=AccessRole.INSPECTOR)

@@ -1,6 +1,8 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.training_knowledge_check_result import TrainingKnowledgeCheckResult
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
@@ -41,11 +43,14 @@ def create_current_training_record(
     source_module: str = "",
     source_record_id: int | None = None,
     source_key: str = "",
+    *,
+    access_role: AccessRole,
 ) -> int:
     """Створює новий актуальний інструктаж і архівує попередній current того ж слота.
     Creates a new current training record and archives the previous current record in the same slot.
     """
 
+    ensure_write_access(access_role, "create_current_training_record")
     normalized_personnel_number = employee_personnel_number.strip()
     normalized_conducted_by = conducted_by.strip()
     normalized_note = note_text.strip()

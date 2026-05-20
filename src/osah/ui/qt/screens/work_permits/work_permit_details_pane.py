@@ -3,6 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
@@ -19,13 +20,13 @@ class WorkPermitDetailsPane(QScrollArea):
     employee_requested = Signal(str)
     module_navigation_requested = Signal(AppSection, str)
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
         self.setWidgetResizable(True)
         self.setMinimumWidth(380)
         self._current_employee_number: str | None = None
         self.participants_panel = PermitParticipantsPanel()
-        self.editor = WorkPermitEditor(database_path, employees)
+        self.editor = WorkPermitEditor(database_path, employees, access_role)
         self.editor.module_navigation_requested.connect(self.module_navigation_requested.emit)
         self.open_employee_button = QPushButton("Відкрити картку учасника")
         self.open_employee_button.setProperty("variant", "secondary")

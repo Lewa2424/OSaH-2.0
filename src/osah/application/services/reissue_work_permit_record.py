@@ -2,8 +2,10 @@ from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.application.services.sync_work_permit_target_training_records import sync_work_permit_target_training_records
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
@@ -19,11 +21,14 @@ def reissue_work_permit_record(
     source_record_id: int,
     reissued_record: WorkPermitRecord,
     reissue_reason_text: str,
+    *,
+    access_role: AccessRole,
 ) -> int:
     """Перевипускає наряд-допуск як новий запис.
     Reissues a work permit as a new record.
     """
 
+    ensure_write_access(access_role, "reissue_work_permit_record")
     normalized_reason = reissue_reason_text.strip()
     if not normalized_reason:
         raise ValueError("Потрібно вказати причину перевипуску наряду.")

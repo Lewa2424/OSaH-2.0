@@ -1,7 +1,9 @@
 from PySide6.QtCore import QDate, QPoint, Qt
-from PySide6.QtGui import QKeyEvent, QMouseEvent, QResizeEvent
-from PySide6.QtWidgets import QCalendarWidget, QFrame, QLineEdit, QToolButton, QVBoxLayout
+from PySide6.QtGui import QFocusEvent, QKeyEvent, QMouseEvent, QResizeEvent
+from PySide6.QtWidgets import QCalendarWidget, QFrame, QLineEdit, QToolButton, QToolTip, QVBoxLayout
 
+from osah.domain.services.format_ui_date import format_ui_date
+from osah.domain.services.normalize_ui_date_text import normalize_ui_date_text
 from osah.ui.qt.design.tokens import COLOR, RADIUS
 
 
@@ -124,6 +126,7 @@ class DateLineEdit(QLineEdit):
             }}
             """
         )
+        self.editingFinished.connect(self._normalize_current_text)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         super().mousePressEvent(event)
@@ -147,6 +150,19 @@ class DateLineEdit(QLineEdit):
             return
         super().keyPressEvent(event)
 
+    def focusOutEvent(self, event: QFocusEvent) -> None:  # type: ignore[override]
+        super().focusOutEvent(event)
+        self._normalize_current_text()
+
+    def setText(self, text: str) -> None:  # type: ignore[override]
+        normalized_text = text.strip()
+        if normalized_text:
+            formatted_value = format_ui_date(normalized_text)
+            if formatted_value:
+                super().setText(formatted_value)
+                return
+        super().setText(text)
+
     def selected_date_or_today(self) -> QDate:
         """Повертає дату з поля або поточну системну дату.
         Returns the field date or the current system date.
@@ -159,6 +175,19 @@ class DateLineEdit(QLineEdit):
         if self.isReadOnly() or not self.isEnabled():
             return
         self._calendar_popup.open_for_owner()
+
+    def _normalize_current_text(self) -> None:
+        if self.isReadOnly():
+            return
+        normalized_text = self.text().strip()
+        if not normalized_text:
+            return
+        try:
+            super().setText(normalize_ui_date_text(normalized_text))
+        except ValueError as error:
+            QToolTip.showText(self.mapToGlobal(QPoint(0, self.height())), str(error), self)
+            self.setFocus()
+            self.selectAll()
 
     def clear(self) -> None:  # type: ignore[override]
         """Очищає поле та скидає popup-календар до системної дати.

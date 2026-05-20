@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.services.parse_storage_datetime_text import parse_storage_datetime_text
 
 
 MAX_WORK_PERMIT_BASE_DURATION = timedelta(days=15)
@@ -38,7 +39,10 @@ def validate_work_permit_extension(
         raise ValueError("Продовжити можна лише діючий або прострочений наряд-допуск.")
 
     reference_moment = current_moment or datetime.now()
-    current_ends_at = datetime.fromisoformat(work_permit_record.ends_at)
+    try:
+        current_ends_at = parse_storage_datetime_text(work_permit_record.ends_at)
+    except ValueError as error:
+        raise ValueError("У наряді вказано некоректну дату або час. Продовження недоступне.") from error
     if extended_until <= current_ends_at:
         raise ValueError("Нова дата завершення має бути пізніше поточного строку наряду-допуску.")
     if extended_until - current_ends_at > MAX_WORK_PERMIT_EXTENSION_DURATION:

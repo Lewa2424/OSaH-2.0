@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
+from osah.domain.services.normalize_ui_datetime_text import normalize_ui_datetime_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import COLOR, SPACING
 
@@ -25,9 +26,12 @@ class ExtendWorkPermitDialog(QDialog):
         layout.addWidget(current_label)
 
         self._extended_until_input = QLineEdit()
+        self._extended_until_input.editingFinished.connect(self._normalize_extended_until_text)
+        self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
         self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM або YYYY-MM-DD HH:MM")
         layout.addWidget(QLabel("Нова дата та час завершення"))
         layout.addWidget(self._extended_until_input)
+        self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
 
         self._reason_input = QTextEdit()
         self._reason_input.setMaximumHeight(88)
@@ -65,6 +69,16 @@ class ExtendWorkPermitDialog(QDialog):
 
         return self._reason_input.toPlainText().strip()
 
+    def _normalize_extended_until_text(self) -> None:
+        normalized_text = self.extended_until_text()
+        if not normalized_text:
+            return
+        try:
+            self._extended_until_input.setText(normalize_ui_datetime_text(normalized_text))
+            self._feedback_label.clear()
+        except ValueError as error:
+            self._feedback_label.show_error(str(error))
+
     def _accept_if_valid(self) -> None:
         """Перевіряє обов'язкові поля діалогу перед закриттям.
         Validates required dialog fields before closing.
@@ -72,6 +86,11 @@ class ExtendWorkPermitDialog(QDialog):
 
         if not self.extended_until_text():
             self._feedback_label.show_error("Потрібно вказати нову дату та час завершення.")
+            return
+        try:
+            self._extended_until_input.setText(normalize_ui_datetime_text(self.extended_until_text()))
+        except ValueError as error:
+            self._feedback_label.show_error(str(error))
             return
         if not self.extension_reason_text():
             self._feedback_label.show_error("Потрібно вказати причину продовження.")

@@ -1,6 +1,8 @@
 from pathlib import Path
 import shutil
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_employee_row import upsert_employee_row
@@ -17,11 +19,14 @@ def update_employee(
     employment_status: str,
     source_photo_path: str | None = None,
     remove_photo: bool = False,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Оновлює існуючого працівника з базовою валідацією та audit-логом.
     Updates an existing employee with basic validation and audit log.
     """
 
+    ensure_write_access(access_role, "update_employee")
     normalized_personnel_number = personnel_number.strip()
     normalized_full_name = full_name.strip()
     normalized_department_name = department_name.strip()

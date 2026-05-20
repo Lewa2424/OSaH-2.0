@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 from osah.application.services.load_ppe_workspace import load_ppe_workspace
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.entities.ppe_workspace import PpeWorkspace
 from osah.domain.entities.ppe_workspace_mode import PpeWorkspaceMode
@@ -30,12 +31,14 @@ class PpeScreen(QWidget):
         self,
         database_path: Path,
         workspace: PpeWorkspace,
+        access_role: AccessRole,
         initial_status: str | None = None,
         initial_personnel_number: str | None = None,
         initial_record_id: int | None = None,
     ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
         self._workspace = workspace
         self._pending_personnel_number: str | None = initial_personnel_number
         self._pending_record_id: int | None = initial_record_id
@@ -74,7 +77,7 @@ class PpeScreen(QWidget):
         splitter.addWidget(center)
 
         names = tuple(sorted({row.ppe_name for row in workspace.rows}))
-        self.details_pane = PpeRecordDetailsPane(database_path, workspace.employees, names)
+        self.details_pane = PpeRecordDetailsPane(database_path, workspace.employees, names, access_role)
         self.details_pane.editor.saved.connect(self._reload_workspace)
         self.details_pane.employee_requested.connect(self.employee_open_requested.emit)
         splitter.addWidget(self.details_pane)

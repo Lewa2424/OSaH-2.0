@@ -1,9 +1,12 @@
-import json
 from pathlib import Path
 from uuid import uuid4
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.load_contractor_workspace import load_contractor_workspace
+from osah.application.services.serialize_contractor_records import serialize_contractor_records
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.contractor_record import ContractorRecord
+from osah.domain.entities.contractor_worker import ContractorWorker
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_app_setting import upsert_app_setting
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -12,14 +15,20 @@ _CONTRACTOR_REGISTRY_SETTING_KEY = "contractors.registry_v1"
 
 
 # ###### ЗБЕРЕЖЕННЯ ЗАПИСУ ПІДРЯДНИКА / SAVE CONTRACTOR RECORD ######
-def save_contractor_record(database_path: Path, record: ContractorRecord) -> ContractorRecord:
+def save_contractor_record(
+    database_path: Path,
+    record: ContractorRecord,
+    *,
+    access_role: AccessRole,
+) -> ContractorRecord:
     """Creates or updates contractor record in staged contractors registry."""
 
+    ensure_write_access(access_role, "save_contractor_record")
     workspace = load_contractor_workspace(database_path)
     normalized_record = _normalize_record(record)
     records_by_id = {entry.contractor_id: entry for entry in workspace.records}
     records_by_id[normalized_record.contractor_id] = normalized_record
-    payload = _serialize_records(tuple(records_by_id.values()))
+    payload = serialize_contractor_records(tuple(records_by_id.values()))
 
     connection = create_database_connection(database_path)
     try:
@@ -57,7 +66,36 @@ def _normalize_record(record: ContractorRecord) -> ContractorRecord:
         contact_email=record.contact_email.strip(),
         activity_status=(record.activity_status.strip() or "active"),
         note_text=record.note_text.strip(),
+        enterprise_supervisor=record.enterprise_supervisor.strip(),
+        work_scope_text=record.work_scope_text.strip(),
+        workers=_normalize_workers(record.workers),
     )
+
+
+def _normalize_workers(workers: tuple[ContractorWorker, ...]) -> tuple[ContractorWorker, ...]:
+    """Нормалізує склад працівників підрядника перед збереженням.
+    Normalizes contractor workers before persistence.
+    """
+
+    normalized_workers: list[ContractorWorker] = []
+    for worker in workers:
+        full_name = worker.full_name.strip()
+        if not full_name:
+            continue
+        worker_id = worker.worker_id.strip() or uuid4().hex[:12]
+        normalized_workers.append(
+            ContractorWorker(
+                worker_id=worker_id,
+                full_name=full_name,
+                role_name=worker.role_name.strip(),
+                training_ok=bool(worker.training_ok),
+                ppe_ok=bool(worker.ppe_ok),
+                medical_ok=bool(worker.medical_ok),
+                access_ok=bool(worker.access_ok),
+                note_text=worker.note_text.strip(),
+            )
+        )
+    return tuple(normalized_workers)
 
 
 # ###### СЕРІАЛІЗАЦІЯ ЗАПИСІВ ПІДРЯДНИКІВ / SERIALIZE CONTRACTOR RECORDS ######
@@ -74,6 +112,21 @@ def _serialize_records(records: tuple[ContractorRecord, ...]) -> str:
                 "contact_email": record.contact_email,
                 "activity_status": record.activity_status,
                 "note_text": record.note_text,
+                "enterprise_supervisor": record.enterprise_supervisor,
+                "work_scope_text": record.work_scope_text,
+                "workers": [
+                    {
+                        "worker_id": worker.worker_id,
+                        "full_name": worker.full_name,
+                        "role_name": worker.role_name,
+                        "training_ok": worker.training_ok,
+                        "ppe_ok": worker.ppe_ok,
+                        "medical_ok": worker.medical_ok,
+                        "access_ok": worker.access_ok,
+                        "note_text": worker.note_text,
+                    }
+                    for worker in record.workers
+                ],
             }
             for record in sorted(records, key=lambda value: (value.company_name.lower(), value.contractor_id))
         ],

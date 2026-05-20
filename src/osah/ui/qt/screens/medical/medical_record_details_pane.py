@@ -3,6 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.medical_workspace_row import MedicalWorkspaceRow
 from osah.ui.qt.design.tokens import COLOR, SPACING
@@ -16,12 +17,12 @@ class MedicalRecordDetailsPane(QScrollArea):
 
     employee_requested = Signal(str)
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
         self.setWidgetResizable(True)
         self.setMinimumWidth(360)
         self._current_personnel_number: str | None = None
-        self.editor = MedicalRecordEditor(database_path, employees)
+        self.editor = MedicalRecordEditor(database_path, employees, access_role)
         self.open_employee_button = QPushButton("Відкрити картку працівника")
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)

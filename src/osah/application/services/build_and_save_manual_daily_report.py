@@ -5,6 +5,8 @@ from osah.application.services.build_daily_report_document import build_daily_re
 from osah.application.services.load_manual_report_settings import load_manual_report_settings
 from osah.application.services.save_daily_report_copy import save_daily_report_copy
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.manual_report_save_result import ManualReportSaveResult
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -12,11 +14,17 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### РУЧНЕ ФОРМУВАННЯ ТА ЗБЕРЕЖЕННЯ ЩОДЕННОГО ЗВІТУ / BUILD AND SAVE MANUAL DAILY REPORT ######
-def build_and_save_manual_daily_report(database_path: Path, target_path: Path) -> ManualReportSaveResult:
+def build_and_save_manual_daily_report(
+    database_path: Path,
+    target_path: Path,
+    *,
+    access_role: AccessRole,
+) -> ManualReportSaveResult:
     """Формує щоденний звіт, зберігає його у вибраний шлях та внутрішню історію.
     Builds the daily report, saves it to the chosen path and to the internal history.
     """
 
+    ensure_write_access(access_role, "build_and_save_manual_daily_report")
     report_document = build_daily_report_document(database_path)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     report_text = f"{report_document.subject_text}\n\n{report_document.body_text}"
@@ -33,7 +41,7 @@ def build_and_save_manual_daily_report(database_path: Path, target_path: Path) -
         default_save_directory=current_settings.default_save_directory,
         ask_save_path_each_time=current_settings.ask_save_path_each_time,
     )
-    save_manual_report_settings(database_path, updated_settings)
+    save_manual_report_settings(database_path, updated_settings, access_role=access_role)
 
     connection = create_database_connection(database_path)
     try:

@@ -6,6 +6,7 @@ from osah.application.services.sync_control_notifications import sync_control_no
 from osah.infrastructure.config.application_paths import ApplicationPaths
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.schema.ensure_core_schema import ensure_core_schema
+from osah.infrastructure.database.seed.seed_demo_contractors import seed_demo_contractors
 from osah.infrastructure.database.seed.seed_demo_employees import seed_demo_employees
 from osah.infrastructure.logging.configure_logging import configure_logging
 from osah.infrastructure.logging.log_system_event import log_system_event
@@ -26,7 +27,9 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
     try:
         ensure_core_schema(connection)
         seed_demo_employees(connection)
+        seed_demo_contractors(connection)
         sync_control_notifications(connection)
+        connection.commit()
     finally:
         connection.close()
 

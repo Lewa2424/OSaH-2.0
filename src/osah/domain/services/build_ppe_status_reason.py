@@ -5,6 +5,7 @@ from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
 from osah.domain.services.format_ui_date import format_ui_date
+from osah.domain.services.parse_storage_date_text import parse_storage_date_text
 
 
 # ###### ПРИЧИНА СТАТУСА СИЗ / BUILD PPE STATUS REASON ######
@@ -18,7 +19,10 @@ def build_ppe_status_reason(ppe_record: PpeRecord, today: date | None = None) ->
     if ppe_record.status == PpeStatus.NOT_ISSUED:
         return f"Критично - {ppe_record.ppe_name} положено, но не выдано"
     current_date = today or date.today()
-    remaining_days = (date.fromisoformat(ppe_record.replacement_date) - current_date).days
+    try:
+        remaining_days = (parse_storage_date_text(ppe_record.replacement_date) - current_date).days
+    except ValueError:
+        return f"Критично - у записі ЗІЗ {ppe_record.ppe_name} вказано некоректну дату заміни"
     if ppe_record.status == PpeStatus.EXPIRED:
         return f"Критично - срок использования {ppe_record.ppe_name} истек"
     if ppe_record.status == PpeStatus.WARNING:

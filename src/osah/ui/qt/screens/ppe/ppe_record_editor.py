@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLine
 
 from osah.application.services.create_ppe_record import create_ppe_record
 from osah.application.services.update_ppe_record import update_ppe_record
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckState
 from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
@@ -26,9 +27,17 @@ class PpeRecordEditor(QWidget):
 
     saved = Signal()
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...], ppe_names: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        database_path: Path,
+        employees: tuple[Employee, ...],
+        ppe_names: tuple[str, ...],
+        access_role: AccessRole,
+    ) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
         self._locked_employee_number: str | None = None
 
@@ -106,6 +115,7 @@ class PpeRecordEditor(QWidget):
         self.new_button.clicked.connect(self.clear_form)
         self.new_button.setVisible(False)
         layout.addWidget(self.new_button)
+        self._apply_read_only_mode()
 
     def _with_info(self, text: str, tooltip_text: str) -> QWidget:
         container = QWidget()
@@ -139,6 +149,7 @@ class PpeRecordEditor(QWidget):
         self.compliance_state_input.setCurrentIndex(max(0, self.compliance_state_input.findData(row.compliance_check_state.value)))
         self.basis_panel.set_values(row.basis_text, row.basis_note)
         self.save_button.setText("Зберегти зміни")
+        self._apply_read_only_mode()
 
     def prepare_card_create_mode(self, employee_personnel_number: str, ppe_name: str | None = None) -> None:
         """Готує картку до створення нової позиції ЗІЗ для працівника.
@@ -165,6 +176,7 @@ class PpeRecordEditor(QWidget):
         self.note_input.clear()
         self.basis_panel.clear()
         self.save_button.setText("Створити запис")
+        self._apply_read_only_mode()
 
     def current_selection_context(self) -> tuple[int | None, str | None]:
         """Повертає контекст вибору для відновлення після reload.
@@ -177,6 +189,9 @@ class PpeRecordEditor(QWidget):
         return self._current_record_id, str(personnel_number) if personnel_number is not None else self._locked_employee_number
 
     def _save_record(self) -> None:
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: збереження недоступне.")
+            return
         basis_text, basis_note = self.basis_panel.values()
         try:
             if self._current_record_id is None:
@@ -194,6 +209,7 @@ class PpeRecordEditor(QWidget):
                     str(self.compliance_state_input.currentData()),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
             else:
                 update_ppe_record(
@@ -211,9 +227,30 @@ class PpeRecordEditor(QWidget):
                     str(self.compliance_state_input.currentData()),
                     basis_text,
                     basis_note,
+                    access_role=self._access_role,
                 )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
             return
         self.feedback_label.show_success("Запис ЗІЗ збережено.")
         self.saved.emit()
+
+    def _apply_read_only_mode(self) -> None:
+        """Disables mutating controls while keeping the current PPE card visible."""
+
+        for widget in (
+            self.ppe_input,
+            self.provision_status_input,
+            self.compliance_state_input,
+            self.required_input,
+            self.issued_input,
+            self.issue_date_input,
+            self.replacement_date_input,
+            self.quantity_input,
+            self.note_input,
+        ):
+            widget.setEnabled(not self._read_only)
+        self.save_button.setVisible(not self._read_only)
+        self.save_button.setEnabled(not self._read_only)
+        self.new_button.setVisible(not self._read_only and self.new_button.isVisible())
+        self.new_button.setEnabled(not self._read_only)

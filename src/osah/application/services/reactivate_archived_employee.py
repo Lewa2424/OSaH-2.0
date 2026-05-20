@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee import Employee
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.upsert_employee_row import upsert_employee_row
@@ -7,9 +9,10 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### РЕАКТИВАЦІЯ АРХІВНОГО ПРАЦІВНИКА / REACTIVATE ARCHIVED EMPLOYEE ######
-def reactivate_archived_employee(database_path: Path, personnel_number: str) -> None:
+def reactivate_archived_employee(database_path: Path, personnel_number: str, *, access_role: AccessRole) -> None:
     """Reactivates archived employee by setting employment status to active."""
 
+    ensure_write_access(access_role, "reactivate_archived_employee")
     connection = create_database_connection(database_path)
     try:
         row = connection.execute(

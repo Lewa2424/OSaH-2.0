@@ -12,6 +12,7 @@ from osah.application.services.load_employee_work_readiness import load_employee
 from osah.application.services.record_work_permit_daily_check import record_work_permit_daily_check
 from osah.application.services.suggest_followup_work_permit_number import suggest_followup_work_permit_number
 from osah.application.services.update_work_permit_record import update_work_permit_record
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.employee_readiness_level import EmployeeReadinessLevel
@@ -22,11 +23,13 @@ from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.entities.work_permit_workspace_row import WorkPermitWorkspaceRow
 from osah.domain.services.build_work_permit_daily_check_summary import build_work_permit_daily_check_summary
+from osah.domain.services.format_ui_date import format_ui_date
 from osah.domain.services.format_ui_datetime import format_ui_datetime
 from osah.domain.services.format_work_permit_participant_role_label import format_work_permit_participant_role_label
 from osah.domain.services.format_work_permit_target_training_status_label import format_work_permit_target_training_status_label
 from osah.domain.services.list_work_permit_kind_options import list_work_permit_kind_options
 from osah.domain.services.normalize_work_permit_target_training_status import normalize_work_permit_target_training_status
+from osah.domain.services.normalize_ui_datetime_text import normalize_ui_datetime_text
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
 from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
 from osah.ui.qt.components.basis_note_panel import BasisNotePanel
@@ -55,9 +58,11 @@ class WorkPermitEditor(QWidget):
     saved = Signal()
     module_navigation_requested = Signal(AppSection, str)
 
-    def __init__(self, database_path: Path, employees: tuple[Employee, ...]) -> None:
+    def __init__(self, database_path: Path, employees: tuple[Employee, ...], access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
+        self._access_role = access_role
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
         self._current_record: WorkPermitRecord | None = None
         self._active_employees = tuple(
@@ -114,10 +119,12 @@ class WorkPermitEditor(QWidget):
         permit_form.addRow("Місце", self.work_location_input)
 
         self.starts_at_input = QLineEdit()
+        self.starts_at_input.editingFinished.connect(lambda: self._normalize_datetime_input(self.starts_at_input))
         self.starts_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
         permit_form.addRow("Початок", self.starts_at_input)
 
         self.ends_at_input = QLineEdit()
+        self.ends_at_input.editingFinished.connect(lambda: self._normalize_datetime_input(self.ends_at_input))
         self.ends_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
         permit_form.addRow("Завершення", self.ends_at_input)
 
@@ -272,6 +279,7 @@ class WorkPermitEditor(QWidget):
         layout.addWidget(self.new_button)
 
         self.clear_form()
+        self._apply_read_only_mode()
 
     def current_employee_personnel_number(self) -> str:
         """Повертає табельний номер поточного учасника.
@@ -316,7 +324,7 @@ class WorkPermitEditor(QWidget):
         self.target_training_status_input.setCurrentIndex(
             max(0, self.target_training_status_input.findData(normalized_status.value))
         )
-        self.target_training_date_input.setText(row.record.target_training_date)
+        self.target_training_date_input.setText(format_ui_date(row.record.target_training_date))
         self.target_training_conducted_by_input.setText(row.record.target_training_conducted_by)
         self.target_training_note_input.setPlainText(row.record.target_training_note)
         self.basis_panel.set_values(row.record.basis_text, row.record.basis_note)
@@ -325,6 +333,7 @@ class WorkPermitEditor(QWidget):
         self._refresh_readiness_panel()
         self._apply_extension_summary()
         self._apply_daily_check_summary()
+        self._apply_read_only_mode()
 
     def clear_form(self) -> None:
         """Очищує форму та переводить редактор у режим нового наряду.
@@ -362,6 +371,7 @@ class WorkPermitEditor(QWidget):
         self._refresh_readiness_panel()
         self._apply_extension_summary()
         self._apply_daily_check_summary()
+        self._apply_read_only_mode()
 
     def _section_title(self, text: str) -> QLabel:
         """Створює простий внутрішній заголовок блоку форми.
@@ -371,6 +381,20 @@ class WorkPermitEditor(QWidget):
         title = QLabel(text)
         title.setStyleSheet("font-size: 14px; font-weight: 900;")
         return title
+
+    def _normalize_datetime_input(self, field: QLineEdit) -> None:
+        """Normalizes flexible datetime input to canonical UI format."""
+
+        normalized_text = field.text().strip()
+        if not normalized_text or field.isReadOnly():
+            return
+        try:
+            field.setText(normalize_ui_datetime_text(normalized_text))
+            self.feedback_label.clear()
+        except ValueError as error:
+            self.feedback_label.show_error(str(error))
+            field.setFocus()
+            field.selectAll()
 
     def _populate_work_kind_selector(self) -> None:
         """Наповнює список типових видів нарядів без жорсткої галузевої валідації.
@@ -506,6 +530,9 @@ class WorkPermitEditor(QWidget):
         Refreshes availability of the separate permit-reissue action.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: продовження недоступне.")
+            return
         if self._current_record is None or self._current_record.record_id is None:
             self.reissue_button.setEnabled(False)
             return
@@ -702,6 +729,10 @@ class WorkPermitEditor(QWidget):
         Opens the dedicated brigade-composition workflow.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: зміна складу бригади недоступна.")
+            return
+
         dialog = ChangeWorkPermitParticipantsDialog(
             self._active_employees,
             self._seed_participants_for_management(),
@@ -726,6 +757,7 @@ class WorkPermitEditor(QWidget):
                 self._database_path,
                 int(self._current_record_id),
                 participants,
+                access_role=self._access_role,
             )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
@@ -749,6 +781,40 @@ class WorkPermitEditor(QWidget):
             return
         self.feedback_label.show_success("Склад бригади оновлено.")
         self.saved.emit()
+
+    def _apply_read_only_mode(self) -> None:
+        """Disables mutating permit controls for read-only roles."""
+
+        for widget in (
+            self.manage_participants_button,
+            self.permit_number_input,
+            self.work_kind_selector,
+            self.work_kind_input,
+            self.work_location_input,
+            self.starts_at_input,
+            self.ends_at_input,
+            self.responsible_input,
+            self.issuer_input,
+            self.note_input,
+            self.target_training_status_input,
+            self.target_training_date_input,
+            self.target_training_conducted_by_input,
+            self.target_training_note_input,
+            self.employee_input,
+            self.role_input,
+        ):
+            widget.setEnabled(not self._read_only)
+        for button in (
+            self.extend_button,
+            self.reissue_button,
+            self.close_button,
+            self.cancel_button,
+            self.record_daily_check_button,
+            self.save_button,
+            self.new_button,
+        ):
+            button.setVisible(not self._read_only)
+            button.setEnabled(not self._read_only)
 
     def _apply_extension_summary(self) -> None:
         """Оновлює блок строку дії та режим редагування дат.
@@ -854,6 +920,7 @@ class WorkPermitEditor(QWidget):
                 int(self._current_record.record_id),
                 dialog.extended_until_text(),
                 dialog.extension_reason_text(),
+                access_role=self._access_role,
             )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
@@ -880,6 +947,9 @@ class WorkPermitEditor(QWidget):
         Records a daily work-area check through a dedicated dialog.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: щоденна перевірка недоступна.")
+            return
         if self._current_record is None or self._current_record.record_id is None:
             self.feedback_label.show_error("Щоденна перевірка доступна лише для збереженого наряду.")
             return
@@ -900,6 +970,7 @@ class WorkPermitEditor(QWidget):
                 dialog.checked_at_text(),
                 dialog.checked_by_text(),
                 dialog.note_text(),
+                access_role=self._access_role,
             )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
@@ -913,6 +984,9 @@ class WorkPermitEditor(QWidget):
         Prepares a new draft permit based on the current record.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: закриття недоступне.")
+            return
         if self._current_record is None or self._current_record.record_id is None:
             self.feedback_label.show_error("Створення нового наряду доступне лише для збереженого запису.")
             return
@@ -939,7 +1013,11 @@ class WorkPermitEditor(QWidget):
             return
 
         try:
-            close_work_permit_record(self._database_path, int(self._current_record.record_id))
+            close_work_permit_record(
+                self._database_path,
+                int(self._current_record.record_id),
+                access_role=self._access_role,
+            )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
             return
@@ -952,6 +1030,9 @@ class WorkPermitEditor(QWidget):
         Cancels the current permit with a recorded reason.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: скасування недоступне.")
+            return
         if self._current_record is None or self._current_record.record_id is None:
             self.feedback_label.show_error("Скасування доступне лише для збереженого наряду.")
             return
@@ -965,6 +1046,7 @@ class WorkPermitEditor(QWidget):
                 self._database_path,
                 int(self._current_record.record_id),
                 dialog.reason_text(),
+                access_role=self._access_role,
             )
         except ValueError as error:
             self.feedback_label.show_error(str(error))
@@ -978,6 +1060,9 @@ class WorkPermitEditor(QWidget):
         Creates or updates a work permit through application services.
         """
 
+        if self._read_only:
+            self.feedback_label.show_error("Режим read-only: збереження недоступне.")
+            return
         basis_text, basis_note = self.basis_panel.values()
         participants = self._effective_participants()
         try:
@@ -1001,6 +1086,7 @@ class WorkPermitEditor(QWidget):
                     basis_text,
                     basis_note,
                     participants=participants,
+                    access_role=self._access_role,
                 )
             else:
                 update_work_permit_record(
@@ -1023,6 +1109,7 @@ class WorkPermitEditor(QWidget):
                     basis_text,
                     basis_note,
                     participants=participants,
+                    access_role=self._access_role,
                 )
         except ValueError as error:
             self.feedback_label.show_error(str(error))

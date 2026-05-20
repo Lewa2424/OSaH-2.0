@@ -2,6 +2,7 @@ from datetime import datetime
 
 from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
+from osah.domain.services.parse_storage_datetime_text import parse_storage_datetime_text
 
 
 def evaluate_work_permit_status(
@@ -23,7 +24,10 @@ def evaluate_work_permit_status(
         return WorkPermitStatus.INVALID
 
     reference_moment = current_moment or datetime.now()
-    ends_at = datetime.fromisoformat(work_permit_record.ends_at)
+    try:
+        ends_at = parse_storage_datetime_text(work_permit_record.ends_at)
+    except ValueError:
+        return WorkPermitStatus.INVALID
     remaining_seconds = (ends_at - reference_moment).total_seconds()
     if remaining_seconds < 0:
         return WorkPermitStatus.EXPIRED

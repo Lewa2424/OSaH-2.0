@@ -8,6 +8,7 @@ from osah.domain.entities.work_permit_record import WorkPermitRecord
 from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.services.normalize_work_permit_target_training_status import normalize_work_permit_target_training_status
+from osah.domain.services.parse_storage_datetime_text import parse_storage_datetime_text
 
 
 def build_work_permit_notifications(
@@ -64,8 +65,11 @@ def build_work_permit_notifications(
             if not personnel_number:
                 continue
             if normalized_target_training_status == WorkPermitTargetTrainingStatus.NOT_DONE:
-                starts_at = datetime.fromisoformat(work_permit_record.starts_at)
-                has_started = datetime.now() >= starts_at
+                try:
+                    starts_at = parse_storage_datetime_text(work_permit_record.starts_at)
+                    has_started = datetime.now() >= starts_at
+                except ValueError:
+                    has_started = True
                 notifications.append(
                     NotificationItem(
                         notification_kind=NotificationKind.CONTROL,

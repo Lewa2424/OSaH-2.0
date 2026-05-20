@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from osah.domain.entities.employee_topbar_summary import EmployeeTopbarSummary
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
+from osah.domain.services.parse_storage_datetime_text import parse_storage_datetime_text
 
 
 # ###### КАДРОВА СВОДКА ДЛЯ ВЕРХНЬОЇ ПАНЕЛІ / EMPLOYEE TOPBAR SUMMARY ######
@@ -43,7 +44,6 @@ def _is_created_after(created_at_text: str, threshold: datetime) -> bool:
     if not created_at_text:
         return False
     try:
-        normalized_text = created_at_text.replace("Z", "").replace("T", " ")
-        return datetime.fromisoformat(normalized_text) >= threshold
+        return parse_storage_datetime_text(created_at_text) >= threshold
     except ValueError:
         return False
