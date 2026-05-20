@@ -9,7 +9,14 @@ ENV/
 .idea/
 .vscode/
 *.db
+*.sqlite
+*.sqlite3
 *.db-shm
 *.db-wal
+*.log
+*.tmp
+*.bak
+build/
+dist/
 data/
 logs/

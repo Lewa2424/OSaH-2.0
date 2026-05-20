@@ -62,7 +62,7 @@ class MailSettingsPanel(SettingsSectionCard):
         layout.addWidget(self._password)
 
         password_hint = QLabel(
-            "Не пароль входу в OSaH. Якщо поштовий сервер вимагає окремий пароль для зовнішніх застосунків, використовуйте саме його."
+            "Не пароль входу в ClearWork. Якщо поштовий сервер вимагає окремий пароль для зовнішніх застосунків, використовуйте саме його."
         )
         password_hint.setWordWrap(True)
         password_hint.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")

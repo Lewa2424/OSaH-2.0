@@ -104,7 +104,7 @@ class MailSettingsForm(QFrame):
         secret_label = QLabel("Пароль для пошти / пароль застосунку Google")
         secret_box.addWidget(secret_label)
         secret_box.addWidget(self.smtp_secret)
-        secret_hint = QLabel("Не пароль входу в OSaH. Для Gmail використовуйте пароль застосунку Google.")
+        secret_hint = QLabel("Не пароль входу в ClearWork. Для Gmail використовуйте пароль застосунку Google.")
         secret_hint.setWordWrap(True)
         secret_hint.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
         secret_box.addWidget(secret_hint)

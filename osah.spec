@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# OSaH 2.0 — PyInstaller build specification
+# ClearWork — PyInstaller build specification
 # Запускати: pyinstaller osah.spec
 
 import sys
@@ -61,7 +61,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="OSaH",
+    name="ClearWork",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -72,7 +72,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,               # Тут можна вказати шлях до .ico файлу
+    icon=str(src_root / "osah" / "ui" / "qt" / "assets" / "icons" / "clearwork.ico"),
 )
 
 coll = COLLECT(
@@ -82,5 +82,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="OSaH",
+    name="ClearWork",
 )

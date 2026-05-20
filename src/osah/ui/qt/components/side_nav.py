@@ -5,13 +5,14 @@ SideNav — left navigation panel containing logo, buttons and footer.
 """
 from typing import Callable
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtGui import QFont, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.notification_level import NotificationLevel
+from osah.ui.qt.branding import DISPLAY_NAME, LOGO_MARK_PATH
 from osah.ui.qt.components.nav_button import NavButton
 from osah.ui.qt.design.tokens import COLOR, FONT, SIZE, SPACING
 
@@ -37,16 +38,29 @@ class SideNav(QWidget):
         layout.setSpacing(SPACING["sm"])
 
         # ---- Логотип ----
-        logo = QLabel("OSaH 2.0 🚀")
-        logo.setProperty("role", "logo")
-        logo_font = QFont(FONT["title_xl"][0], 18)
-        logo_font.setBold(True)
-        logo.setFont(logo_font)
+        logo = QLabel()
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_size = int((SIZE["nav_width"] - (SPACING["lg"] * 2)) * 0.9)
+        logo.setFixedSize(logo_size, logo_size)
+        logo_pixmap = _build_rounded_logo_pixmap(LOGO_MARK_PATH, logo_size, 8)
+        if not logo_pixmap.isNull():
+            logo.setPixmap(logo_pixmap)
+        else:
+            logo.setText(DISPLAY_NAME)
+            logo.setProperty("role", "logo")
+            logo_font = QFont(FONT["title_xl"][0], 18)
+            logo_font.setBold(True)
+            logo.setFont(logo_font)
         layout.addWidget(logo)
 
         desc = QLabel("Локальний пульт інспектора з охорони праці.")
         desc.setWordWrap(True)
         desc.setProperty("role", "status_muted")
+        desc.setStyleSheet(
+            f"color: {COLOR['text_muted']}; "
+            f"font-size: {FONT['nav_item'][1]}px; "
+            f"font-weight: 700;"
+        )
         layout.addWidget(desc)
 
         layout.addSpacing(SPACING["lg"])
@@ -88,3 +102,38 @@ class SideNav(QWidget):
         """Оновлює рівні сповіщень для всіх кнопок без перестворення меню."""
         for section, btn in self._buttons.items():
             btn.set_alert_level(section_levels.get(section))
+
+
+def _build_rounded_logo_pixmap(image_path, size: int, radius: int) -> QPixmap:
+    """Готує квадратну логомарку зі збереженням пропорцій та округленням кутів.
+    Builds a square logo mark with preserved aspect ratio and rounded corners.
+    """
+
+    source = QPixmap(str(image_path))
+    if source.isNull():
+        return QPixmap()
+
+    scaled = source.scaled(
+        size,
+        size,
+        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    crop_x = max(0, (scaled.width() - size) // 2)
+    crop_y = max(0, (scaled.height() - size) // 2)
+    square = scaled.copy(crop_x, crop_y, size, size)
+
+    rounded = QPixmap(size, size)
+    rounded.fill(Qt.GlobalColor.transparent)
+
+    painter = QPainter(rounded)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+
+    clip_path = QPainterPath()
+    clip_path.addRoundedRect(QRectF(0, 0, size, size), radius, radius)
+    painter.setClipPath(clip_path)
+    painter.drawPixmap(0, 0, square)
+    painter.end()
+
+    return rounded

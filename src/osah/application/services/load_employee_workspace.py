@@ -44,7 +44,7 @@ def load_employee_workspace(database_path: Path) -> EmployeeWorkspace:
         for employee in employees
     )
 
-    return EmployeeWorkspace(enterprise_name="OSaH Demo Plant", rows=rows)
+    return EmployeeWorkspace(enterprise_name="ClearWork Demo Plant", rows=rows)
 
 
 def _resolve_employee_photo_path(database_path: Path, employee: Employee) -> Employee:

@@ -24,7 +24,7 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
         connection.close()
 
     return AboutSnapshot(
-        product_name="OSaH 2.0",
+        product_name="ClearWork",
         app_version=_read_app_version(),
         ui_status="локальний робочий інтерфейс на Qt",
         operation_model="локальна настільна система з ізольованим зовнішнім контуром",

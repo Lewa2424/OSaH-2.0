@@ -24,7 +24,7 @@ class ManualReportSettingsPanel(SettingsSectionCard):
         layout.addWidget(title)
 
         help_label = QLabel(
-            "OSaH не надсилає звіт автоматично. У заданий час програма нагадає сформувати файл звіту. "
+            "ClearWork не надсилає звіт автоматично. У заданий час програма нагадає сформувати файл звіту. "
             "Після збереження користувач може самостійно надіслати файл будь-яким зручним способом."
         )
         help_label.setWordWrap(True)
@@ -46,7 +46,7 @@ class ManualReportSettingsPanel(SettingsSectionCard):
         self._time.setFixedWidth(120)
         time_row.addWidget(self._time)
 
-        time_hint = QLabel("У цей час OSaH покаже запит на формування файла звіту.")
+        time_hint = QLabel("У цей час ClearWork покаже запит на формування файла звіту.")
         time_hint.setWordWrap(True)
         time_hint.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
         time_row.addWidget(time_hint, stretch=1)

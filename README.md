@@ -1,8 +1,8 @@
-# OSaH 2.0
+# ClearWork
 
-OSaH 2.0 is a local desktop system for occupational safety workflows.
+ClearWork is a local desktop system for occupational safety workflows.
 
-The active production UI is built on `PySide6` / Qt and works against a local `SQLite` database. The repository still contains a legacy `CustomTkinter` desktop layer in `src/osah/ui/desktop/`, but it is kept only for reference and migration support. The current working launch path goes through the Qt application.
+The active production UI is built on `PySide6` / Qt and works against a local `SQLite` database. The repository still contains a legacy `CustomTkinter` desktop layer in `src/osah/ui/desktop/`, but it is kept only for reference and migration support. The current working launch path goes through the Qt application. The internal service/package name remains `osah`.
 
 ## Stack
 

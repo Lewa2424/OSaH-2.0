@@ -17,6 +17,7 @@ from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.services.should_prompt_manual_report import should_prompt_manual_report
+from osah.ui.qt.branding import DISPLAY_NAME
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.show_manual_report_prompt_dialog import show_manual_report_prompt_dialog
 from osah.ui.qt.components.side_nav import SideNav
@@ -44,7 +45,7 @@ class AppWindow(QMainWindow):
         self._current_navigation_intent: QtNavigationIntent | None = None
         self._navigation_history: list[tuple[AppSection, QtNavigationIntent | None]] = []
 
-        self.setWindowTitle("OSaH 2.0")
+        self.setWindowTitle(DISPLAY_NAME)
         self.setMinimumSize(SIZE["window_min_w"], SIZE["window_min_h"])
 
         central_widget = QWidget()

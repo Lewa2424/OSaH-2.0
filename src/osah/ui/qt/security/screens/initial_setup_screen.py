@@ -22,6 +22,7 @@ from osah.application.services.application_context import ApplicationContext
 from osah.application.services.security.configure_program_access import configure_program_access
 from osah.application.services.security.load_security_profile import load_security_profile
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
+from osah.ui.qt.security.screens.security_background_shell import SecurityBackgroundShell
 
 
 class InitialSetupScreen(QWidget):
@@ -39,21 +40,22 @@ class InitialSetupScreen(QWidget):
         self._security_profile = load_security_profile(application_context.database_path)
 
         self.setObjectName("initialSetupRoot")
-        self.setStyleSheet(
-            f"QWidget#initialSetupRoot {{ "
-            f"background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-            f"stop:0 {COLOR['bg_app']}, stop:1 {COLOR['bg_workspace']}); "
-            f"}}"
-        )
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         """###### ІНТЕРФЕЙС ПЕРШОГО ЗАПУСКУ / INITIAL SETUP UI ######"""
 
         root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(44, 36, 44, 36)
-        root_layout.setSpacing(SPACING["lg"])
-        root_layout.addStretch(1)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        shell = SecurityBackgroundShell()
+        root_layout.addWidget(shell)
+
+        shell_layout = shell.content_layout()
+        shell_layout.setContentsMargins(44, 36, 44, 36)
+        shell_layout.setSpacing(SPACING["lg"])
+        shell_layout.addStretch(1)
 
         content = QWidget()
         content.setMinimumWidth(960)
@@ -66,8 +68,8 @@ class InitialSetupScreen(QWidget):
         content_layout.addWidget(self._build_setup_card())
         content_layout.addWidget(self._build_service_strip())
 
-        root_layout.addWidget(content, 0, Qt.AlignmentFlag.AlignHCenter)
-        root_layout.addStretch(2)
+        shell_layout.addWidget(content, 0, Qt.AlignmentFlag.AlignHCenter)
+        shell_layout.addStretch(2)
 
     def _build_setup_card(self) -> QFrame:
         """###### КАРТКА ПАРАМЕТРІВ / SETUP CARD ######"""

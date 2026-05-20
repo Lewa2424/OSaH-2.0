@@ -5,11 +5,12 @@
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from osah.application.services.application_context import ApplicationContext
 from osah.domain.entities.access_role import AccessRole
+from osah.ui.qt.branding import DISPLAY_NAME, ICON_PATH
 from osah.ui.qt.components.app_window import AppWindow
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.design.stylesheet import build_global_stylesheet
@@ -31,7 +32,9 @@ class QtApplicationShell(QMainWindow):
         self._app_context = application_context
         self._authenticated_window: AppWindow | None = None
 
-        self.setWindowTitle("OSaH 2.0")
+        self.setWindowTitle(DISPLAY_NAME)
+        if ICON_PATH.exists():
+            self.setWindowIcon(QIcon(str(ICON_PATH)))
         self.setMinimumSize(1200, 700)
 
         # Стеколо для перемикання екранів
@@ -96,6 +99,10 @@ def run_qt_application(application_context: ApplicationContext) -> None:
     if not app:
         app = QApplication(sys.argv)
 
+    app.setApplicationName(DISPLAY_NAME)
+    app.setApplicationDisplayName(DISPLAY_NAME)
+    if ICON_PATH.exists():
+        app.setWindowIcon(QIcon(str(ICON_PATH)))
     app.setStyleSheet(build_global_stylesheet())
 
     # Створити головне вікно із security flow

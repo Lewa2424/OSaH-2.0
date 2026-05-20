@@ -8,4 +8,4 @@ def build_manual_report_default_file_name(current_moment: datetime | None = None
     """
 
     moment = current_moment or datetime.now()
-    return f"OSaH_щоденний_звіт_{moment.strftime('%Y-%m-%d_%H-%M')}.txt"
+    return f"ClearWork_щоденний_звіт_{moment.strftime('%Y-%m-%d_%H-%M')}.txt"

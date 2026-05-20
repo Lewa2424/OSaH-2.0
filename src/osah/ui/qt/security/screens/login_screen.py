@@ -24,6 +24,7 @@ from osah.application.services.security.authenticate_program_access import authe
 from osah.application.services.security.build_service_reset_request import build_service_reset_request
 from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
+from osah.ui.qt.security.screens.security_background_shell import SecurityBackgroundShell
 
 
 class LoginScreen(QWidget):
@@ -42,21 +43,22 @@ class LoginScreen(QWidget):
         self._service_reset_request = build_service_reset_request(application_context.database_path)
 
         self.setObjectName("loginScreenRoot")
-        self.setStyleSheet(
-            f"QWidget#loginScreenRoot {{ "
-            f"background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-            f"stop:0 {COLOR['bg_app']}, stop:1 {COLOR['bg_workspace']}); "
-            f"}}"
-        )
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         """###### ІНТЕРФЕЙС ВХОДУ / LOGIN UI ######"""
 
         root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(44, 36, 44, 36)
-        root_layout.setSpacing(SPACING["lg"])
-        root_layout.addStretch(1)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        shell = SecurityBackgroundShell()
+        root_layout.addWidget(shell)
+
+        shell_layout = shell.content_layout()
+        shell_layout.setContentsMargins(44, 36, 44, 36)
+        shell_layout.setSpacing(SPACING["lg"])
+        shell_layout.addStretch(1)
 
         content = QWidget()
         content.setObjectName("loginContent")
@@ -70,8 +72,8 @@ class LoginScreen(QWidget):
         content_layout.addWidget(self._build_auth_card())
         content_layout.addWidget(self._build_service_strip())
 
-        root_layout.addWidget(content, 0, Qt.AlignmentFlag.AlignHCenter)
-        root_layout.addStretch(2)
+        shell_layout.addWidget(content, 0, Qt.AlignmentFlag.AlignHCenter)
+        shell_layout.addStretch(2)
 
     def _build_auth_card(self) -> QFrame:
         """###### КАРТКА АВТОРИЗАЦІЇ / AUTHORIZATION CARD ######"""

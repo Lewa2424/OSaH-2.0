@@ -14,6 +14,7 @@ from osah.application.services.security.build_service_reset_request import build
 from osah.application.services.security.reset_program_access_with_recovery_code import reset_program_access_with_recovery_code
 from osah.application.services.security.reset_program_access_with_service_code import reset_program_access_with_service_code
 from osah.ui.qt.design.tokens import COLOR
+from osah.ui.qt.security.screens.security_background_shell import SecurityBackgroundShell
 
 
 class RecoveryAccessScreen(QWidget):
@@ -31,13 +32,23 @@ class RecoveryAccessScreen(QWidget):
         self._on_back_to_login = on_back_to_login
         self._service_reset_request = build_service_reset_request(application_context.database_path)
 
-        self.setStyleSheet(f"background-color: {COLOR['bg_app']};")
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         """Будує інтерфейс екрана відновлення."""
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(28, 28, 28, 28)
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        shell = SecurityBackgroundShell()
+        root_layout.addWidget(shell)
+
+        shell_layout = shell.content_layout()
+        shell_layout.setContentsMargins(28, 28, 28, 28)
+        shell_layout.setSpacing(0)
+
+        main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(14)
 
         # ---- Ліва панель ----
@@ -183,6 +194,7 @@ class RecoveryAccessScreen(QWidget):
 
         right_card = self._create_card(right_panel)
         main_layout.addWidget(right_card, 6)
+        shell_layout.addLayout(main_layout)
 
     def _on_recovery_reset_clicked(self) -> None:
         """Обробник скидання паролів через recovery-код."""
