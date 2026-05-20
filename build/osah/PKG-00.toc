@@ -1,4 +1,4 @@
-('E:\\Programming\\Python projects\\OSaH 2.0\\build\\osah\\OSaH.pkg',
+('E:\\Programming\\Python projects\\OSaH 2.0\\build\\osah\\ClearWork.pkg',
  {'BINARY': True,
   'DATA': True,
   'EXECUTABLE': True,

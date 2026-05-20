@@ -17,6 +17,9 @@
   ('_compression',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\_compression.py',
    'PYMODULE-1'),
+  ('_markupbase',
+   'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\_markupbase.py',
+   'PYMODULE-1'),
   ('_py_abc',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\_py_abc.py',
    'PYMODULE-1'),
@@ -188,6 +191,15 @@
   ('hmac',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\hmac.py',
    'PYMODULE-1'),
+  ('html',
+   'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\html\\__init__.py',
+   'PYMODULE-1'),
+  ('html.entities',
+   'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\html\\entities.py',
+   'PYMODULE-1'),
+  ('html.parser',
+   'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\html\\parser.py',
+   'PYMODULE-1'),
   ('http',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\http\\__init__.py',
    'PYMODULE-1'),
@@ -324,9 +336,17 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\apply_employee_import_batch.py',
    'PYMODULE-1'),
+  ('osah.application.services.apply_work_permit_participant_change',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\apply_work_permit_participant_change.py',
+   'PYMODULE-1'),
   ('osah.application.services.archive_employee',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\archive_employee.py',
+   'PYMODULE-1'),
+  ('osah.application.services.build_and_save_manual_daily_report',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\build_and_save_manual_daily_report.py',
    'PYMODULE-1'),
   ('osah.application.services.build_daily_report_document',
    'E:\\Programming\\Python projects\\OSaH '
@@ -340,6 +360,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\cancel_work_permit_record.py',
    'PYMODULE-1'),
+  ('osah.application.services.change_work_permit_participants',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\change_work_permit_participants.py',
+   'PYMODULE-1'),
   ('osah.application.services.close_work_permit_record',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\close_work_permit_record.py',
@@ -347,6 +371,10 @@
   ('osah.application.services.create_backup_snapshot',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\create_backup_snapshot.py',
+   'PYMODULE-1'),
+  ('osah.application.services.create_current_training_record',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\create_current_training_record.py',
    'PYMODULE-1'),
   ('osah.application.services.create_employee',
    'E:\\Programming\\Python projects\\OSaH '
@@ -368,21 +396,33 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\create_ppe_record.py',
    'PYMODULE-1'),
-  ('osah.application.services.create_training_record',
-   'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\application\\services\\create_training_record.py',
-   'PYMODULE-1'),
   ('osah.application.services.create_work_permit_record',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\create_work_permit_record.py',
+   'PYMODULE-1'),
+  ('osah.application.services.delete_contractor_record',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\delete_contractor_record.py',
    'PYMODULE-1'),
   ('osah.application.services.delete_news_source',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\delete_news_source.py',
    'PYMODULE-1'),
+  ('osah.application.services.delete_training_record',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\delete_training_record.py',
+   'PYMODULE-1'),
+  ('osah.application.services.discover_news_feed_url',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\discover_news_feed_url.py',
+   'PYMODULE-1'),
   ('osah.application.services.ensure_startup_auto_backup',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\ensure_startup_auto_backup.py',
+   'PYMODULE-1'),
+  ('osah.application.services.extend_work_permit_record',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\extend_work_permit_record.py',
    'PYMODULE-1'),
   ('osah.application.services.initialize_application',
    'E:\\Programming\\Python projects\\OSaH '
@@ -420,6 +460,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\load_employee_registry.py',
    'PYMODULE-1'),
+  ('osah.application.services.load_employee_work_readiness',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\load_employee_work_readiness.py',
+   'PYMODULE-1'),
   ('osah.application.services.load_employee_workspace',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\load_employee_workspace.py',
@@ -428,9 +472,17 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\load_latest_employee_import_review.py',
    'PYMODULE-1'),
+  ('osah.application.services.load_latest_manual_report_file_path',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\load_latest_manual_report_file_path.py',
+   'PYMODULE-1'),
   ('osah.application.services.load_mail_settings',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\load_mail_settings.py',
+   'PYMODULE-1'),
+  ('osah.application.services.load_manual_report_settings',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\load_manual_report_settings.py',
    'PYMODULE-1'),
   ('osah.application.services.load_medical_registry',
    'E:\\Programming\\Python projects\\OSaH '
@@ -484,9 +536,17 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\reactivate_archived_employee.py',
    'PYMODULE-1'),
+  ('osah.application.services.record_work_permit_daily_check',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\record_work_permit_daily_check.py',
+   'PYMODULE-1'),
   ('osah.application.services.refresh_news_sources',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\refresh_news_sources.py',
+   'PYMODULE-1'),
+  ('osah.application.services.reissue_work_permit_record',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\reissue_work_permit_record.py',
    'PYMODULE-1'),
   ('osah.application.services.restore_backup_snapshot',
    'E:\\Programming\\Python projects\\OSaH '
@@ -511,6 +571,10 @@
   ('osah.application.services.save_mail_settings',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\save_mail_settings.py',
+   'PYMODULE-1'),
+  ('osah.application.services.save_manual_report_settings',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\save_manual_report_settings.py',
    'PYMODULE-1'),
   ('osah.application.services.save_news_refresh_time',
    'E:\\Programming\\Python projects\\OSaH '
@@ -540,6 +604,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\security\\ensure_security_baseline.py',
    'PYMODULE-1'),
+  ('osah.application.services.security.ensure_write_access',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\security\\ensure_write_access.py',
+   'PYMODULE-1'),
   ('osah.application.services.security.load_security_profile',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\security\\load_security_profile.py',
@@ -560,13 +628,21 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\send_daily_report_email.py',
    'PYMODULE-1'),
-  ('osah.application.services.send_daily_report_if_due',
+  ('osah.application.services.serialize_contractor_records',
    'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\application\\services\\send_daily_report_if_due.py',
+   '2.0\\src\\osah\\application\\services\\serialize_contractor_records.py',
+   'PYMODULE-1'),
+  ('osah.application.services.suggest_followup_work_permit_number',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\suggest_followup_work_permit_number.py',
    'PYMODULE-1'),
   ('osah.application.services.sync_control_notifications',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\application\\services\\sync_control_notifications.py',
+   'PYMODULE-1'),
+  ('osah.application.services.sync_work_permit_target_training_records',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\application\\services\\sync_work_permit_target_training_records.py',
    'PYMODULE-1'),
   ('osah.application.services.toggle_news_source_activity',
    'E:\\Programming\\Python projects\\OSaH '
@@ -652,13 +728,29 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\backup_snapshot.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.contractor_readiness_snapshot',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\contractor_readiness_snapshot.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.contractor_readiness_status',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\contractor_readiness_status.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.contractor_record',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\contractor_record.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.contractor_worker',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\contractor_worker.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.contractor_workspace',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\contractor_workspace.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.contractor_workspace_row',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\contractor_workspace_row.py',
    'PYMODULE-1'),
   ('osah.domain.entities.daily_report_document',
    'E:\\Programming\\Python projects\\OSaH '
@@ -688,9 +780,21 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\employee_problem.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.employee_readiness_level',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\employee_readiness_level.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.employee_status_level',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\employee_status_level.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.employee_topbar_summary',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\employee_topbar_summary.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.employee_work_readiness',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\employee_work_readiness.py',
    'PYMODULE-1'),
   ('osah.domain.entities.employee_workspace',
    'E:\\Programming\\Python projects\\OSaH '
@@ -708,9 +812,21 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\mail_settings.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.manual_report_save_result',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\manual_report_save_result.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.manual_report_settings',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\manual_report_settings.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.medical_decision',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\medical_decision.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.medical_exam_basis',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\medical_exam_basis.py',
    'PYMODULE-1'),
   ('osah.domain.entities.medical_record',
    'E:\\Programming\\Python projects\\OSaH '
@@ -752,6 +868,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\news_source_kind.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.news_source_preset',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\news_source_preset.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.notification_item',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\notification_item.py',
@@ -763,6 +883,14 @@
   ('osah.domain.entities.notification_level',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\notification_level.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.ppe_compliance_check_state',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\ppe_compliance_check_state.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.ppe_provision_status',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\ppe_provision_status.py',
    'PYMODULE-1'),
   ('osah.domain.entities.ppe_record',
    'E:\\Programming\\Python projects\\OSaH '
@@ -808,6 +936,18 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\settings_workspace.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.training_knowledge_check_result',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\training_knowledge_check_result.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.training_next_control_basis',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\training_next_control_basis.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.training_person_category',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\training_person_category.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.training_record',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\training_record.py',
@@ -823,6 +963,14 @@
   ('osah.domain.entities.training_type',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\training_type.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.training_work_admission_status',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\training_work_admission_status.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.training_work_risk_category',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\training_work_risk_category.py',
    'PYMODULE-1'),
   ('osah.domain.entities.training_workspace',
    'E:\\Programming\\Python projects\\OSaH '
@@ -844,6 +992,14 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\visual_alert_state.py',
    'PYMODULE-1'),
+  ('osah.domain.entities.work_permit_daily_check',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\work_permit_daily_check.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.work_permit_kind_option',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\work_permit_kind_option.py',
+   'PYMODULE-1'),
   ('osah.domain.entities.work_permit_participant',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\work_permit_participant.py',
@@ -859,6 +1015,10 @@
   ('osah.domain.entities.work_permit_status',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\work_permit_status.py',
+   'PYMODULE-1'),
+  ('osah.domain.entities.work_permit_target_training_status',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\entities\\work_permit_target_training_status.py',
    'PYMODULE-1'),
   ('osah.domain.entities.work_permit_workspace',
    'E:\\Programming\\Python projects\\OSaH '
@@ -876,13 +1036,30 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\entities\\work_permit_workspace_summary.py',
    'PYMODULE-1'),
+  ('osah.domain.errors', '-', 'PYMODULE-1'),
+  ('osah.domain.errors.access_denied_error',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\errors\\access_denied_error.py',
+   'PYMODULE-1'),
   ('osah.domain.services',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\__init__.py',
    'PYMODULE-1'),
+  ('osah.domain.services.add_months_to_date',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\add_months_to_date.py',
+   'PYMODULE-1'),
   ('osah.domain.services.assess_employee_registry_notifications',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\assess_employee_registry_notifications.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_contractor_readiness_snapshot',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_contractor_readiness_snapshot.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_contractor_workspace_rows',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_contractor_workspace_rows.py',
    'PYMODULE-1'),
   ('osah.domain.services.build_daily_report_body',
    'E:\\Programming\\Python projects\\OSaH '
@@ -892,9 +1069,25 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_daily_report_subject.py',
    'PYMODULE-1'),
+  ('osah.domain.services.build_default_ppe_names',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_default_ppe_names.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_default_primary_requirement_for_person_category',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_default_primary_requirement_for_person_category.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_default_smtp_settings',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_default_smtp_settings.py',
+   'PYMODULE-1'),
   ('osah.domain.services.build_employee_import_draft',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_employee_import_draft.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_employee_topbar_summary',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_employee_topbar_summary.py',
    'PYMODULE-1'),
   ('osah.domain.services.build_employee_workspace_row',
    'E:\\Programming\\Python projects\\OSaH '
@@ -903,6 +1096,14 @@
   ('osah.domain.services.build_focus_of_the_day',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_focus_of_the_day.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_manual_report_default_file_name',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_manual_report_default_file_name.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_manual_report_last_action_text',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_manual_report_last_action_text.py',
    'PYMODULE-1'),
   ('osah.domain.services.build_medical_notifications',
    'E:\\Programming\\Python projects\\OSaH '
@@ -923,6 +1124,14 @@
   ('osah.domain.services.build_news_item_fingerprint',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_news_item_fingerprint.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_news_source_display_name',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_news_source_display_name.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.build_news_source_name_from_url',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_news_source_name_from_url.py',
    'PYMODULE-1'),
   ('osah.domain.services.build_notification_source_summary',
    'E:\\Programming\\Python projects\\OSaH '
@@ -968,6 +1177,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_training_workspace_summary.py',
    'PYMODULE-1'),
+  ('osah.domain.services.build_work_permit_daily_check_summary',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\build_work_permit_daily_check_summary.py',
+   'PYMODULE-1'),
   ('osah.domain.services.build_work_permit_notifications',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_work_permit_notifications.py',
@@ -983,6 +1196,14 @@
   ('osah.domain.services.build_work_permit_workspace_summary',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\build_work_permit_workspace_summary.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.calculate_next_training_control_date',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\calculate_next_training_control_date.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.does_training_context_require_primary',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\does_training_context_require_primary.py',
    'PYMODULE-1'),
   ('osah.domain.services.evaluate_medical_status',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1000,6 +1221,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\evaluate_work_permit_status.py',
    'PYMODULE-1'),
+  ('osah.domain.services.find_training_chronology_conflict_reason',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\find_training_chronology_conflict_reason.py',
+   'PYMODULE-1'),
   ('osah.domain.services.format_employee_status_label',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\format_employee_status_label.py',
@@ -1016,6 +1241,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\format_ppe_status_label.py',
    'PYMODULE-1'),
+  ('osah.domain.services.format_training_person_category_label',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\format_training_person_category_label.py',
+   'PYMODULE-1'),
   ('osah.domain.services.format_training_status_label',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\format_training_status_label.py',
@@ -1023,6 +1252,10 @@
   ('osah.domain.services.format_training_type_label',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\format_training_type_label.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.format_training_work_risk_category_label',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\format_training_work_risk_category_label.py',
    'PYMODULE-1'),
   ('osah.domain.services.format_ui_date',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1040,17 +1273,33 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\format_work_permit_status_label.py',
    'PYMODULE-1'),
+  ('osah.domain.services.format_work_permit_target_training_status_label',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\format_work_permit_target_training_status_label.py',
+   'PYMODULE-1'),
   ('osah.domain.services.get_higher_notification_level',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\get_higher_notification_level.py',
    'PYMODULE-1'),
-  ('osah.domain.services.is_daily_report_time_due',
+  ('osah.domain.services.has_work_permit_participant_composition_changed',
    'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\domain\\services\\is_daily_report_time_due.py',
+   '2.0\\src\\osah\\domain\\services\\has_work_permit_participant_composition_changed.py',
    'PYMODULE-1'),
   ('osah.domain.services.is_mail_settings_ready',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\is_mail_settings_ready.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.is_occupational_safety_related_feed_entry',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\is_occupational_safety_related_feed_entry.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.list_default_news_source_presets',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\list_default_news_source_presets.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.list_work_permit_kind_options',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\list_work_permit_kind_options.py',
    'PYMODULE-1'),
   ('osah.domain.services.map_notification_to_app_section',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1059,6 +1308,34 @@
   ('osah.domain.services.normalize_import_employment_status',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\normalize_import_employment_status.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.normalize_mail_settings_for_delivery',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\normalize_mail_settings_for_delivery.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.normalize_ui_date_text',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\normalize_ui_date_text.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.normalize_ui_datetime_text',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\normalize_ui_datetime_text.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.normalize_work_permit_target_training_status',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\normalize_work_permit_target_training_status.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.parse_mail_recipient_emails',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\parse_mail_recipient_emails.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.parse_storage_date_text',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\parse_storage_date_text.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.parse_storage_datetime_text',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\parse_storage_datetime_text.py',
    'PYMODULE-1'),
   ('osah.domain.services.parse_ui_date_text',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1071,6 +1348,10 @@
   ('osah.domain.services.rank_employee_status_level',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\rank_employee_status_level.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.resolve_training_next_control_date',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\resolve_training_next_control_date.py',
    'PYMODULE-1'),
   ('osah.domain.services.security',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1124,6 +1405,22 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\domain\\services\\serialize_work_permit_record_for_audit.py',
    'PYMODULE-1'),
+  ('osah.domain.services.should_prompt_manual_report',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\should_prompt_manual_report.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.validate_work_permit_daily_check',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\validate_work_permit_daily_check.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.validate_work_permit_participant_change',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\validate_work_permit_participant_change.py',
+   'PYMODULE-1'),
+  ('osah.domain.services.validate_work_permit_timeline',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\domain\\services\\validate_work_permit_timeline.py',
+   'PYMODULE-1'),
   ('osah.infrastructure',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\__init__.py',
@@ -1172,6 +1469,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\commands\\__init__.py',
    'PYMODULE-1'),
+  ('osah.infrastructure.database.commands.archive_training_record_row',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\database\\commands\\archive_training_record_row.py',
+   'PYMODULE-1'),
   ('osah.infrastructure.database.commands.cancel_work_permit_record_row',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\commands\\cancel_work_permit_record_row.py',
@@ -1183,6 +1484,10 @@
   ('osah.infrastructure.database.commands.delete_news_source_row',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\commands\\delete_news_source_row.py',
+   'PYMODULE-1'),
+  ('osah.infrastructure.database.commands.delete_training_record_row',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\database\\commands\\delete_training_record_row.py',
    'PYMODULE-1'),
   ('osah.infrastructure.database.commands.delete_work_permit_participants',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1211,6 +1516,10 @@
   ('osah.infrastructure.database.commands.insert_training_record',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\commands\\insert_training_record.py',
+   'PYMODULE-1'),
+  ('osah.infrastructure.database.commands.insert_work_permit_daily_check',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\database\\commands\\insert_work_permit_daily_check.py',
    'PYMODULE-1'),
   ('osah.infrastructure.database.commands.insert_work_permit_participant',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1364,6 +1673,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\seed\\__init__.py',
    'PYMODULE-1'),
+  ('osah.infrastructure.database.seed.build_demo_contractor_records',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\database\\seed\\build_demo_contractor_records.py',
+   'PYMODULE-1'),
   ('osah.infrastructure.database.seed.build_demo_employee_rows',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\seed\\build_demo_employee_rows.py',
@@ -1383,6 +1696,10 @@
   ('osah.infrastructure.database.seed.build_demo_work_permit_rows',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\database\\seed\\build_demo_work_permit_rows.py',
+   'PYMODULE-1'),
+  ('osah.infrastructure.database.seed.seed_demo_contractors',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\database\\seed\\seed_demo_contractors.py',
    'PYMODULE-1'),
   ('osah.infrastructure.database.seed.seed_demo_employees',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1448,6 +1765,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\news\\__init__.py',
    'PYMODULE-1'),
+  ('osah.infrastructure.news.extract_feed_alternate_links_from_html',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\news\\extract_feed_alternate_links_from_html.py',
+   'PYMODULE-1'),
   ('osah.infrastructure.news.extract_xml_child_text',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\news\\extract_xml_child_text.py',
@@ -1455,6 +1776,10 @@
   ('osah.infrastructure.news.fetch_feed_entries_from_url',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\news\\fetch_feed_entries_from_url.py',
+   'PYMODULE-1'),
+  ('osah.infrastructure.news.is_feed_xml_content',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\news\\is_feed_xml_content.py',
    'PYMODULE-1'),
   ('osah.infrastructure.news.normalize_feed_publication_text',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1471,6 +1796,10 @@
   ('osah.infrastructure.news.parse_rss_feed_entries',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\infrastructure\\news\\parse_rss_feed_entries.py',
+   'PYMODULE-1'),
+  ('osah.infrastructure.news.read_web_document_from_url',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\infrastructure\\news\\read_web_document_from_url.py',
    'PYMODULE-1'),
   ('osah.infrastructure.security',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1497,6 +1826,9 @@
   ('osah.ui.qt',
    'E:\\Programming\\Python projects\\OSaH 2.0\\src\\osah\\ui\\qt\\__init__.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.branding',
+   'E:\\Programming\\Python projects\\OSaH 2.0\\src\\osah\\ui\\qt\\branding.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.components',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\__init__.py',
@@ -1521,6 +1853,22 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\app_window.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.components.basis_note_panel',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\basis_note_panel.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.checkable_options_menu_button',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\checkable_options_menu_button.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.configure_detail_splitter',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\configure_detail_splitter.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.date_line_edit',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\date_line_edit.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.components.ensure_table_column_width',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\ensure_table_column_width.py',
@@ -1528,6 +1876,10 @@
   ('osah.ui.qt.components.form_feedback_label',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\form_feedback_label.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.info_tooltip_icon',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\info_tooltip_icon.py',
    'PYMODULE-1'),
   ('osah.ui.qt.components.metric_card',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1557,6 +1909,14 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\section_header.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.components.show_manual_report_prompt_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\show_manual_report_prompt_dialog.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.show_styled_message_box',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\show_styled_message_box.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.components.side_nav',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\side_nav.py',
@@ -1564,6 +1924,10 @@
   ('osah.ui.qt.components.status_strip',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\components\\status_strip.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.components.summary_strip',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\components\\summary_strip.py',
    'PYMODULE-1'),
   ('osah.ui.qt.components.task_progress_widget',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1584,6 +1948,11 @@
   ('osah.ui.qt.design.tokens',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\design\\tokens.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.hints', '-', 'PYMODULE-1'),
+  ('osah.ui.qt.hints.normative_hints',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\hints\\normative_hints.py',
    'PYMODULE-1'),
   ('osah.ui.qt.routing',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1644,6 +2013,10 @@
   ('osah.ui.qt.screens.contractors',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\contractors\\__init__.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.contractors.confirm_delete_contractor_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\contractors\\confirm_delete_contractor_dialog.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.contractors.contractor_details_pane',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1761,6 +2134,10 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\news\\__init__.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.screens.news.news_item_detail_panel',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\news\\news_item_detail_panel.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.screens.news.news_items_table',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\news\\news_items_table.py',
@@ -1768,10 +2145,6 @@
   ('osah.ui.qt.screens.news.news_screen',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\news\\news_screen.py',
-   'PYMODULE-1'),
-  ('osah.ui.qt.screens.news.news_sources_panel',
-   'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\ui\\qt\\screens\\news\\news_sources_panel.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.ppe',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1784,10 +2157,6 @@
   ('osah.ui.qt.screens.ppe.ppe_filter_bar',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\ppe\\ppe_filter_bar.py',
-   'PYMODULE-1'),
-  ('osah.ui.qt.screens.ppe.ppe_problem_breakdown',
-   'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\ui\\qt\\screens\\ppe\\ppe_problem_breakdown.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.ppe.ppe_record_details_pane',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1817,13 +2186,13 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\reports\\__init__.py',
    'PYMODULE-1'),
-  ('osah.ui.qt.screens.reports.mail_settings_form',
-   'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\ui\\qt\\screens\\reports\\mail_settings_form.py',
-   'PYMODULE-1'),
   ('osah.ui.qt.screens.reports.report_delivery_panel',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\reports\\report_delivery_panel.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.reports.report_history_detail_panel',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\reports\\report_history_detail_panel.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.reports.report_history_table',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1841,9 +2210,9 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\settings\\backup_settings_panel.py',
    'PYMODULE-1'),
-  ('osah.ui.qt.screens.settings.mail_settings_panel',
+  ('osah.ui.qt.screens.settings.manual_report_settings_panel',
    'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\ui\\qt\\screens\\settings\\mail_settings_panel.py',
+   '2.0\\src\\osah\\ui\\qt\\screens\\settings\\manual_report_settings_panel.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.settings.news_sources_settings_panel',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1889,10 +2258,6 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\trainings\\training_status_badge.py',
    'PYMODULE-1'),
-  ('osah.ui.qt.screens.trainings.training_summary_panel',
-   'E:\\Programming\\Python projects\\OSaH '
-   '2.0\\src\\osah\\ui\\qt\\screens\\trainings\\training_summary_panel.py',
-   'PYMODULE-1'),
   ('osah.ui.qt.screens.trainings.trainings_filter_bar',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\trainings\\trainings_filter_bar.py',
@@ -1909,13 +2274,37 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\__init__.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.build_work_permit_extension_summary',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\build_work_permit_extension_summary.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.cancel_work_permit_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\cancel_work_permit_dialog.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.change_work_permit_participants_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\change_work_permit_participants_dialog.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.close_work_permit_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\close_work_permit_dialog.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.screens.work_permits.employee_work_permits_tab',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\employee_work_permits_tab.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.extend_work_permit_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\extend_work_permit_dialog.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.screens.work_permits.permit_participants_panel',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\permit_participants_panel.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.screens.work_permits.record_work_permit_daily_check_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\screens\\work_permits\\record_work_permit_daily_check_dialog.py',
    'PYMODULE-1'),
   ('osah.ui.qt.screens.work_permits.work_permit_details_pane',
    'E:\\Programming\\Python projects\\OSaH '
@@ -1965,9 +2354,18 @@
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\security\\screens\\recovery_access_screen.py',
    'PYMODULE-1'),
+  ('osah.ui.qt.security.screens.security_background_shell',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\security\\screens\\security_background_shell.py',
+   'PYMODULE-1'),
   ('osah.ui.qt.security.security_flow_controller',
    'E:\\Programming\\Python projects\\OSaH '
    '2.0\\src\\osah\\ui\\qt\\security\\security_flow_controller.py',
+   'PYMODULE-1'),
+  ('osah.ui.qt.services', '-', 'PYMODULE-1'),
+  ('osah.ui.qt.services.save_manual_report_via_dialog',
+   'E:\\Programming\\Python projects\\OSaH '
+   '2.0\\src\\osah\\ui\\qt\\services\\save_manual_report_via_dialog.py',
    'PYMODULE-1'),
   ('osah.ui.qt.workers',
    'E:\\Programming\\Python projects\\OSaH '
