@@ -8,6 +8,8 @@ venv/
 ENV/
 .idea/
 .vscode/
+*.exe
+*.msi
 *.db
 *.sqlite
 *.sqlite3
