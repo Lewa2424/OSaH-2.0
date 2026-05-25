@@ -87,6 +87,11 @@ class AppWindow(QMainWindow):
         self._install_navigation_shortcuts()
         self._navigate_to(AppSection.DASHBOARD, record_history=False)
         self._news_task_controller = WorkerTaskController()
+        self._news_task_controller.success.connect(self._on_news_refresh_completed)
+        self._news_task_controller.error.connect(self._on_news_refresh_failed)
+        self._news_timer = QTimer(self)
+        self._news_timer.setSingleShot(True)
+        self._news_timer.timeout.connect(self._run_scheduled_news_refresh)
         self._manual_report_prompt_open = False
         self._last_time_sync_marker = self._build_time_sync_marker()
         self._last_day_sync_marker = self._build_day_sync_marker()
@@ -160,6 +165,8 @@ class AppWindow(QMainWindow):
             screen.medical_attention_requested.connect(self._open_medical_attention)
         if hasattr(screen, "work_permits_attention_requested"):
             screen.work_permits_attention_requested.connect(self._open_work_permits_attention)
+        if hasattr(screen, "news_refresh_schedule_saved"):
+            screen.news_refresh_schedule_saved.connect(self._on_news_refresh_schedule_saved)
         if hasattr(screen, "module_navigation_requested"):
             screen.module_navigation_requested.connect(self._open_module_for_employee)
         if hasattr(screen, "module_record_navigation_requested"):
@@ -280,10 +287,7 @@ class AppWindow(QMainWindow):
             next_run += timedelta(days=1)
 
         delay_ms = int((next_run - now).total_seconds() * 1000)
-
-        self._news_timer = QTimer(self)
-        self._news_timer.setSingleShot(True)
-        self._news_timer.timeout.connect(self._run_scheduled_news_refresh)
+        self._news_timer.stop()
         self._news_timer.start(delay_ms)
 
     def _install_time_tracking(self) -> None:
@@ -355,6 +359,38 @@ class AppWindow(QMainWindow):
             return None
         item = layout.itemAt(0)
         return item.widget() if item is not None else None
+
+    def _refresh_news_related_views(self) -> None:
+        """Refreshes the current news-related screen without disrupting active input."""
+
+        if self._has_active_editor_focus():
+            return
+        if self._current_section == AppSection.NEWS_NPA:
+            current_screen = self._current_screen_widget()
+            if current_screen is not None and hasattr(current_screen, "_reload_workspace"):
+                current_screen._reload_workspace()
+            return
+        if self._current_section == AppSection.DASHBOARD:
+            self._navigate_to(
+                AppSection.DASHBOARD,
+                intent=self._current_navigation_intent,
+                record_history=False,
+            )
+
+    def _on_news_refresh_schedule_saved(self, _refresh_time: str) -> None:
+        """Applies the updated daily news schedule immediately for the running session."""
+
+        self._schedule_news_refresh()
+
+    def _on_news_refresh_completed(self, _payload: object) -> None:
+        """Refreshes visible news-related views after a scheduled or manual news update."""
+
+        self._refresh_news_related_views()
+
+    def _on_news_refresh_failed(self, _message_text: str) -> None:
+        """Keeps the next timer active after a failed background refresh."""
+
+        self._schedule_news_refresh()
 
     def _has_active_editor_focus(self) -> bool:
         return isinstance(self.focusWidget(), (QLineEdit, QTextEdit, QComboBox))
@@ -432,8 +468,10 @@ class AppWindow(QMainWindow):
     def _run_scheduled_news_refresh(self) -> None:
         """Runs the scheduled news refresh and re-schedules the next one."""
 
-        self._news_task_controller.start_worker(NewsRefreshWorker(self._app_context.database_path))
-        self._schedule_news_refresh()
+        if self._news_task_controller.start_worker(NewsRefreshWorker(self._app_context.database_path)):
+            self._schedule_news_refresh()
+            return
+        QTimer.singleShot(5 * 60 * 1000, self._schedule_news_refresh)
 
 
 def _notification_source_for_section(section: AppSection) -> str:

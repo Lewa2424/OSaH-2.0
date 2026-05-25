@@ -13,12 +13,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 
 from osah.application.services.create_news_source import create_news_source
 from osah.application.services.discover_news_feed_url import discover_news_feed_url
 from osah.application.services.delete_news_source import delete_news_source
-from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
+from osah.application.services.load_employee_import_review_by_batch import load_employee_import_review_by_batch
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.save_news_refresh_time import save_news_refresh_time
@@ -35,6 +35,7 @@ from osah.ui.qt.components.show_styled_message_box import show_styled_message_bo
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
+from osah.ui.qt.screens.settings.employee_import_review_dialog import EmployeeImportReviewDialog
 from osah.ui.qt.screens.settings.manual_report_settings_panel import ManualReportSettingsPanel
 from osah.ui.qt.screens.settings.news_sources_settings_panel import NewsSourcesSettingsPanel
 from osah.ui.qt.screens.settings.operations_settings_panel import OperationsSettingsPanel
@@ -50,6 +51,8 @@ from osah.ui.qt.workers.worker_task_controller import WorkerTaskController
 class SettingsScreen(QWidget):
     """Settings command center with non-blocking heavy service operations."""
 
+    news_refresh_schedule_saved = Signal(str)
+
     def __init__(self, database_path: Path, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
@@ -57,6 +60,7 @@ class SettingsScreen(QWidget):
         self._read_only = access_role != AccessRole.INSPECTOR
         self._workspace = load_system_settings_workspace(database_path)
         self._active_task_name: str | None = None
+        self._queued_import_apply_batch_id: int | None = None
 
         self._task_controller = WorkerTaskController()
         self._task_controller.started.connect(self._on_task_started)
@@ -141,8 +145,7 @@ class SettingsScreen(QWidget):
         self._operations_panel = OperationsSettingsPanel(read_only=self._read_only)
         self._operations_panel.create_backup_requested.connect(self._start_create_backup)
         self._operations_panel.restore_backup_requested.connect(self._start_restore_backup)
-        self._operations_panel.create_import_batch_requested.connect(self._start_create_import_batch)
-        self._operations_panel.apply_latest_import_requested.connect(self._start_apply_latest_import_batch)
+        self._operations_panel.import_requested.connect(self._start_employee_import_flow)
         self._content_layout.addWidget(self._operations_panel)
 
         self._content_layout.addWidget(self._build_behavior_panel())
@@ -374,6 +377,7 @@ class SettingsScreen(QWidget):
             self._feedback.show_error(f"Не вдалося зберегти розклад: {error}")
             return
         self._feedback.show_success(f"Розклад перевірки збережено: щодня о {refresh_time}.")
+        self.news_refresh_schedule_saved.emit(refresh_time)
         self._rebuild_sections()
 
     # ###### ЗБЕРЕЖЕННЯ НАЛАШТУВАНЬ БЕКАПУ / SAVE BACKUP PREFERENCES ######
@@ -449,8 +453,8 @@ class SettingsScreen(QWidget):
         )
 
     # ###### ЗАПУСК ІМПОРТУ ЧЕРНЕТОК / START IMPORT DRAFT CREATION ######
-    def _start_create_import_batch(self) -> None:
-        """Starts import draft creation from selected file in background."""
+    def _start_employee_import_flow(self) -> None:
+        """Starts the employee import flow from a selected source file."""
 
         selected_file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -471,26 +475,6 @@ class SettingsScreen(QWidget):
         )
 
     # ###### ЗАПУСК ЗАСТОСУВАННЯ ПАРТІЇ ІМПОРТУ / START IMPORT BATCH APPLY ######
-    def _start_apply_latest_import_batch(self) -> None:
-        """Starts apply operation for latest import batch in background."""
-
-        latest_batch_summary, _ = load_latest_employee_import_review(self._database_path)
-        if latest_batch_summary is None:
-            self._feedback.show_error("Немає доступної партії імпорту для застосування.")
-            return
-        if latest_batch_summary.applied_at:
-            self._feedback.show_error("Останню партію імпорту вже застосовано.")
-            return
-        self._start_task(
-            "import.apply_batch",
-            ImportWorker(
-                database_path=self._database_path,
-                operation_kind="apply_batch",
-                access_role=self._access_role,
-                batch_id=latest_batch_summary.batch_id,
-            ),
-        )
-
     # ###### СТАРТ ФОНОВОЇ ОПЕРАЦІЇ / START BACKGROUND TASK ######
     def _start_task(self, task_name: str, worker: QObject) -> None:
         """Starts background worker and protects from double-run."""
@@ -544,10 +528,11 @@ class SettingsScreen(QWidget):
             return
 
         if self._active_task_name == "import.create_batch":
-            if isinstance(payload, dict):
-                self._feedback.show_success(f"Партію імпорту #{payload.get('batch_id')} створено.")
-            else:
-                self._feedback.show_success("Партію імпорту створено.")
+            batch_id = payload.get("batch_id") if isinstance(payload, dict) else None
+            if batch_id is None:
+                self._feedback.show_error("Файл прочитано, але не вдалося відкрити перегляд імпорту.")
+                return
+            self._open_employee_import_review(batch_id)
             return
 
         if self._active_task_name == "import.apply_batch":
@@ -576,6 +561,7 @@ class SettingsScreen(QWidget):
     def _on_task_finished(self) -> None:
         """Resets busy-state after task completion."""
 
+        completed_task_name = self._active_task_name
         self._task_progress.hide_state()
         if self._operations_panel is not None:
             self._operations_panel.setEnabled(True)
@@ -584,3 +570,36 @@ class SettingsScreen(QWidget):
                 "Операції запускаються у фоновому режимі без блокування вікна."
             )
         self._active_task_name = None
+        if completed_task_name == "import.create_batch" and self._queued_import_apply_batch_id is not None:
+            batch_id = self._queued_import_apply_batch_id
+            self._queued_import_apply_batch_id = None
+            self._start_task(
+                "import.apply_batch",
+                ImportWorker(
+                    database_path=self._database_path,
+                    operation_kind="apply_batch",
+                    access_role=self._access_role,
+                    batch_id=batch_id,
+                ),
+            )
+
+    # ###### ПЕРЕГЛЯД ІМПОРТУ ПРАЦІВНИКІВ / EMPLOYEE IMPORT REVIEW ######
+    def _open_employee_import_review(self, batch_id: int) -> None:
+        """Shows the review dialog for the freshly created employee import batch."""
+
+        batch_summary, employee_import_drafts = load_employee_import_review_by_batch(self._database_path, batch_id)
+        if batch_summary is None:
+            self._feedback.show_error("Не вдалося завантажити перегляд створеної партії імпорту.")
+            return
+
+        dialog = EmployeeImportReviewDialog(batch_summary, employee_import_drafts, self)
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            self._queued_import_apply_batch_id = batch_id
+            self._feedback.show_success("Перевірку завершено. Імпорт буде застосовано.")
+            return
+
+        if batch_summary.valid_total <= 0:
+            self._feedback.show_error("Імпорт не застосовано: усі рядки містять помилки.")
+            return
+
+        self._feedback.show_error("Імпорт не застосовано. Ви закрили перегляд без підтвердження.")

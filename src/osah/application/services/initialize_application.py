@@ -4,6 +4,7 @@ from osah.application.services.load_dashboard_snapshot_from_path import load_das
 from osah.application.services.security.ensure_security_baseline import ensure_security_baseline
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.infrastructure.config.application_paths import ApplicationPaths
+from osah.infrastructure.config.is_demo_seed_enabled import is_demo_seed_enabled
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.schema.ensure_core_schema import ensure_core_schema
 from osah.infrastructure.database.seed.seed_demo_contractors import seed_demo_contractors
@@ -26,8 +27,9 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
     connection = create_database_connection(application_paths.database_file_path)
     try:
         ensure_core_schema(connection)
-        seed_demo_employees(connection)
-        seed_demo_contractors(connection)
+        if is_demo_seed_enabled():
+            seed_demo_employees(connection)
+            seed_demo_contractors(connection)
         sync_control_notifications(connection)
         connection.commit()
     finally:
@@ -35,6 +37,10 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
 
     ensure_security_baseline(application_paths.database_file_path)
     ensure_startup_auto_backup(application_paths.database_file_path)
+    if is_demo_seed_enabled():
+        log_system_event("bootstrap", "Demo seed enabled for this run.")
+    else:
+        log_system_event("bootstrap", "Demo seed disabled; production bootstrap uses a clean database.")
     log_system_event("bootstrap", "Application bootstrap completed successfully.")
 
     return ApplicationContext(

@@ -87,6 +87,7 @@ class InitialSetupScreen(QWidget):
 
         description = QLabel(
             "Задайте окремі локальні паролі для інспектора і керівника. "
+            "Кожен пароль має містити щонайменше 6 символів. "
             "Після збереження система створить recovery-файл і ввімкне локальний контур безпеки."
         )
         description.setFont(QFont("Segoe UI", 12))
@@ -98,14 +99,14 @@ class InitialSetupScreen(QWidget):
         input_row.setSpacing(SPACING["md"])
 
         self._inspector_input = QLineEdit()
-        self._inspector_input.setPlaceholderText("ПАРОЛЬ ІНСПЕКТОРА")
+        self._inspector_input.setPlaceholderText("ПАРОЛЬ ІНСПЕКТОРА (МІН. 6)")
         self._inspector_input.setEchoMode(QLineEdit.Password)
         self._inspector_input.setMinimumHeight(52)
         self._inspector_input.setStyleSheet(self._get_input_stylesheet())
         input_row.addWidget(self._inspector_input, 1)
 
         self._manager_input = QLineEdit()
-        self._manager_input.setPlaceholderText("ПАРОЛЬ КЕРІВНИКА")
+        self._manager_input.setPlaceholderText("ПАРОЛЬ КЕРІВНИКА (МІН. 6)")
         self._manager_input.setEchoMode(QLineEdit.Password)
         self._manager_input.setMinimumHeight(52)
         self._manager_input.setStyleSheet(self._get_input_stylesheet())

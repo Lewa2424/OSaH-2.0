@@ -1,19 +1,19 @@
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QAbstractItemView, QTableWidget
 
 from osah.domain.entities.contractor_workspace_row import ContractorWorkspaceRow
+from osah.ui.qt.components.sortable_table_widget_item import ROW_KEY_ROLE, SortableTableWidgetItem
 
 
 class ContractorsRegistryTable(QTableWidget):
-    """Таблиця реєстру підрядників із коротким статусом готовності.
-    Contractors registry table with compact readiness state.
-    """
+    """Contractors registry table with interactive column sorting."""
 
     row_selected = Signal(object)
 
     def __init__(self) -> None:
         super().__init__(0, 6)
-        self._rows: tuple[ContractorWorkspaceRow, ...] = ()
+        self._rows_by_key: dict[str, ContractorWorkspaceRow] = {}
+        self._default_sort_column = 0
         self.setHorizontalHeaderLabels(["Організація", "Контакт", "Працівн.", "Готові", "Проблемні", "Статус"])
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -21,41 +21,51 @@ class ContractorsRegistryTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
         self.horizontalHeader().setStretchLastSection(True)
+        self.setSortingEnabled(True)
+        self.horizontalHeader().setSortIndicatorShown(True)
+        self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.AscendingOrder)
         self.itemSelectionChanged.connect(self._emit_selected_row)
 
     def set_rows(self, rows: tuple[ContractorWorkspaceRow, ...]) -> None:
-        """Заповнює таблицю підготовленими рядками підрядників.
-        Populates the table with prepared contractor rows.
-        """
+        """Populates the table with prepared contractor rows."""
 
-        self._rows = rows
+        self._rows_by_key = {row.record.contractor_id: row for row in rows}
+        sort_column = self.horizontalHeader().sortIndicatorSection()
+        sort_order = self.horizontalHeader().sortIndicatorOrder()
+        self.setSortingEnabled(False)
         self.setRowCount(0)
+
         for row_index, row in enumerate(rows):
             self.insertRow(row_index)
-            self.setItem(row_index, 0, QTableWidgetItem(row.record.company_name))
-            self.setItem(row_index, 1, QTableWidgetItem(row.record.contact_person))
-            self.setItem(row_index, 2, QTableWidgetItem(str(row.readiness.total_workers)))
-            self.setItem(row_index, 3, QTableWidgetItem(str(row.readiness.ready_workers)))
-            self.setItem(row_index, 4, QTableWidgetItem(str(row.readiness.problem_workers)))
-            self.setItem(row_index, 5, QTableWidgetItem(row.readiness.status_label))
+            cell_specs = (
+                (row.record.company_name, row.record.company_name),
+                (row.record.contact_person, row.record.contact_person),
+                (str(row.readiness.total_workers), row.readiness.total_workers),
+                (str(row.readiness.ready_workers), row.readiness.ready_workers),
+                (str(row.readiness.problem_workers), row.readiness.problem_workers),
+                (row.readiness.status_label, row.readiness.status_label),
+            )
+            for column_index, (text, sort_value) in enumerate(cell_specs):
+                item = SortableTableWidgetItem(text, row_key=row.record.contractor_id, sort_value=sort_value)
+                self.setItem(row_index, column_index, item)
+
         self.resizeColumnsToContents()
+        self.setSortingEnabled(True)
+        self.sortItems(sort_column if sort_column >= 0 else self._default_sort_column, sort_order)
 
     def select_first(self) -> None:
-        """Вибирає перший рядок таблиці, якщо він існує.
-        Selects first table row when available.
-        """
+        """Selects first table row when available."""
 
         if self.rowCount():
             self.selectRow(0)
 
     def _emit_selected_row(self) -> None:
-        """Передає вибраний рядок підрядника назовні.
-        Emits selected contractor row.
-        """
+        """Emits selected contractor row."""
 
         selected = self.selectedItems()
         if not selected:
             return
-        row_index = selected[0].row()
-        if 0 <= row_index < len(self._rows):
-            self.row_selected.emit(self._rows[row_index])
+        row_key = str(selected[0].data(ROW_KEY_ROLE))
+        row = self._rows_by_key.get(row_key)
+        if row is not None:
+            self.row_selected.emit(row)

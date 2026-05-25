@@ -12,7 +12,9 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={localappdata}\Programs\ClearWork
 DefaultGroupName=ClearWork
+DisableDirPage=no
 DisableProgramGroupPage=yes
+LicenseFile=license_uk.txt
 PrivilegesRequired=lowest
 OutputDir=.
 OutputBaseFilename=ClearWork-Setup-0.1.0
@@ -22,12 +24,13 @@ WizardStyle=modern
 SetupIconFile={#MyAppIcon}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesInstallIn64BitMode=x64compatible
+UsePreviousAppDir=yes
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
+Name: "desktopicon"; Description: "Створити ярлик на стільниці"; GroupDescription: "Додаткові ярлики:"; Flags: unchecked
 
 [Files]
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "data\*,logs\*"
@@ -37,4 +40,19 @@ Name: "{group}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{ap
 Name: "{autodesktop}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch ClearWork"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Запустити ClearWork"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function InitializeUninstall: Boolean;
+begin
+  Result :=
+    MsgBox(
+      'Ви збираєтеся видалити ClearWork.' + #13#10#13#10 +
+      'Програма буде видалена, але робочі дані можуть залишатися у папці встановлення.' + #13#10 +
+      'Якщо після цього вручну видалити папку ClearWork, база даних, журнали та резервні копії можуть бути втрачені.' + #13#10#13#10 +
+      'Перед видаленням рекомендується створити резервну копію у програмі.' + #13#10#13#10 +
+      'Продовжити видалення?',
+      mbConfirmation,
+      MB_YESNO
+    ) = idYes;
+end;

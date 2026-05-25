@@ -145,3 +145,8 @@ class NewsScreen(QWidget):
 
         self.items_table.set_items(load_news_items(self._database_path, unread_only=self.unread_only.isChecked()))
         self._sync_detail_panel(-1)
+
+    def _reload_workspace(self) -> None:
+        """Reloads cached materials using the common screen refresh contract."""
+
+        self._reload_state()

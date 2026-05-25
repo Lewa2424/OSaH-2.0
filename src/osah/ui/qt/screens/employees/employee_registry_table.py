@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.ui.qt.components.ensure_table_column_width import ensure_table_column_width
+from osah.ui.qt.components.sortable_table_widget_item import MATCH_VALUE_ROLE, SortableTableWidgetItem
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowStateBadge
 
@@ -17,6 +18,7 @@ class EmployeeRegistryTable(QTableWidget):
     def __init__(self) -> None:
         super().__init__(0, 9)
         self._rows_by_personnel_number: dict[str, EmployeeWorkspaceRow] = {}
+        self._default_sort_column = 0
         self.setHorizontalHeaderLabels(
             ["ПІБ", "Таб. №", "Підрозділ", "Посада", "Статус", "Інструктажі", "ЗІЗ", "Медицина", "НД"]
         )
@@ -26,11 +28,17 @@ class EmployeeRegistryTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
         self.horizontalHeader().setStretchLastSection(True)
+        self.setSortingEnabled(True)
+        self.horizontalHeader().setSortIndicatorShown(True)
+        self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.AscendingOrder)
         self.itemSelectionChanged.connect(self._emit_selected_employee)
 
     def set_rows(self, rows: tuple[EmployeeWorkspaceRow, ...]) -> None:
         """###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######"""
 
+        sort_column = self.horizontalHeader().sortIndicatorSection()
+        sort_order = self.horizontalHeader().sortIndicatorOrder()
+        self.setSortingEnabled(False)
         self.setRowCount(0)
         self._rows_by_personnel_number = {row.employee.personnel_number: row for row in rows}
 
@@ -40,6 +48,7 @@ class EmployeeRegistryTable(QTableWidget):
             self._set_text_item(row_index, 1, row.employee.personnel_number, row)
             self._set_text_item(row_index, 2, row.department_name, row)
             self._set_text_item(row_index, 3, row.position_name, row)
+            self._set_text_item(row_index, 4, row.status_label, row)
             self.setCellWidget(row_index, 4, EmployeeRowStateBadge(row.status_level, row.status_label))
 
             for module_index, summary in enumerate(row.module_summaries):
@@ -49,13 +58,15 @@ class EmployeeRegistryTable(QTableWidget):
 
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 4)
+        self.setSortingEnabled(True)
+        self.sortItems(sort_column if sort_column >= 0 else self._default_sort_column, sort_order)
 
     def select_employee(self, personnel_number: str) -> None:
         """###### ВИБІР ПРАЦІВНИКА / SELECT EMPLOYEE ######"""
 
         for row_index in range(self.rowCount()):
             item = self.item(row_index, 1)
-            if item and item.text() == personnel_number:
+            if item and item.data(MATCH_VALUE_ROLE) == personnel_number:
                 self.selectRow(row_index)
                 self.scrollToItem(item)
                 return
@@ -72,8 +83,12 @@ class EmployeeRegistryTable(QTableWidget):
     def _set_text_item(self, row_index: int, column_index: int, text: str, row: EmployeeWorkspaceRow) -> None:
         """###### ТЕКСТОВА КОМІРКА / TEXT CELL ######"""
 
-        item = QTableWidgetItem(text)
-        item.setData(Qt.ItemDataRole.UserRole, row.employee.personnel_number)
+        item = SortableTableWidgetItem(
+            text,
+            row_key=row.employee.personnel_number,
+            sort_value=text,
+            match_value=row.employee.personnel_number,
+        )
         if row.status_level == EmployeeStatusLevel.CRITICAL:
             item.setForeground(QColor(COLOR["critical"]))
         elif row.status_level == EmployeeStatusLevel.WARNING:

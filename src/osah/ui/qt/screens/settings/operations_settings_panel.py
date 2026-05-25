@@ -5,12 +5,11 @@ from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCar
 
 
 class OperationsSettingsPanel(SettingsSectionCard):
-    """Service operations panel for backup/restore/import actions."""
+    """Service operations panel for backup, restore, and employee import flow."""
 
     create_backup_requested = Signal()
     restore_backup_requested = Signal()
-    create_import_batch_requested = Signal()
-    apply_latest_import_requested = Signal()
+    import_requested = Signal()
 
     def __init__(self, read_only: bool) -> None:
         super().__init__()
@@ -39,30 +38,28 @@ class OperationsSettingsPanel(SettingsSectionCard):
         self._restore_backup_button.clicked.connect(self.restore_backup_requested.emit)
         layout.addWidget(self._restore_backup_button)
 
-        self._create_import_button = QPushButton("Імпорт працівників з файла")
-        self._create_import_button.setProperty("variant", "secondary")
-        self._create_import_button.clicked.connect(self.create_import_batch_requested.emit)
-        layout.addWidget(self._create_import_button)
-
-        self._apply_import_button = QPushButton("Застосувати останню партію імпорту")
-        self._apply_import_button.setProperty("variant", "secondary")
-        self._apply_import_button.clicked.connect(self.apply_latest_import_requested.emit)
-        layout.addWidget(self._apply_import_button)
+        self._import_button = QPushButton("Імпорт працівників з файлу (ТЕСТОВИЙ РЕЖИМ)")
+        self._import_button.setProperty("variant", "secondary")
+        self._import_button.clicked.connect(self.import_requested.emit)
+        layout.addWidget(self._import_button)
 
         self._apply_read_only()
 
-    # ###### СТАТУС ОПЕРАЦІЙ / OPERATION STATUS ######
+    # ###### STATUS / OPERATION STATUS ######
     def set_status_text(self, status_text: str) -> None:
-        """Updates operation status text."""
+        """Updates operation status text.
+        Оновлює текст статусу операцій.
+        """
 
         self._status.setText(status_text)
 
-    # ###### РЕЖИМ READ-ONLY / READ-ONLY MODE ######
+    # ###### READ-ONLY MODE / READ-ONLY MODE ######
     def _apply_read_only(self) -> None:
-        """Disables modifying actions for read-only role."""
+        """Disables modifying actions for read-only role.
+        Вимикає змінювальні дії для режиму лише перегляду.
+        """
 
         editable = not self._read_only
         self._create_backup_button.setEnabled(editable)
         self._restore_backup_button.setEnabled(editable)
-        self._create_import_button.setEnabled(editable)
-        self._apply_import_button.setEnabled(editable)
+        self._import_button.setEnabled(editable)
