@@ -10,7 +10,11 @@ from osah.infrastructure.database.queries.list_user_table_names import list_user
 
 
 # ###### ЕКСПОРТ ПОВНОГО СТАНУ СИСТЕМИ / ЭКСПОРТ ПОЛНОГО СОСТОЯНИЯ СИСТЕМЫ ######
-def export_full_system_state(database_path: Path, *, access_role: AccessRole) -> Path:
+def export_full_system_state(
+    database_path: Path,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> Path:
     """Створює JSON-експорт повного стану локальної системи й повертає шлях до файлу.
     Создаёт JSON-экспорт полного состояния локальной системы и возвращает путь к файлу.
     """

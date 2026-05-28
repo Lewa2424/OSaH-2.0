@@ -15,7 +15,12 @@ from osah.infrastructure.importing.read_employee_rows_from_xlsx_file import read
 
 
 # ###### СТВОРЕННЯ ПАРТІЇ ЧЕРНЕТОК ІМПОРТУ / СОЗДАНИЕ ПАРТИИ ЧЕРНОВИКОВ ИМПОРТА ######
-def create_employee_import_batch_from_file(database_path: Path, source_path: Path, *, access_role: AccessRole) -> int:
+def create_employee_import_batch_from_file(
+    database_path: Path,
+    source_path: Path,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> int:
     """Створює партію чернеток імпорту працівників з підтриманого файлу.
     Создаёт партию черновиков импорта сотрудников из поддерживаемого файла.
     """

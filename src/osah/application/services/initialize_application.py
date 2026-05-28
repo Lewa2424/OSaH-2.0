@@ -9,6 +9,8 @@ from osah.infrastructure.database.create_database_connection import create_datab
 from osah.infrastructure.database.schema.ensure_core_schema import ensure_core_schema
 from osah.infrastructure.database.seed.seed_demo_contractors import seed_demo_contractors
 from osah.infrastructure.database.seed.seed_demo_employees import seed_demo_employees
+from osah.infrastructure.database.seed.seed_port_risk_registry import seed_port_risk_registry
+from osah.infrastructure.database.seed.seed_port_risk_registry_tags import seed_port_risk_registry_tags
 from osah.infrastructure.logging.configure_logging import configure_logging
 from osah.infrastructure.logging.log_system_event import log_system_event
 
@@ -27,6 +29,11 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
     connection = create_database_connection(application_paths.database_file_path)
     try:
         ensure_core_schema(connection)
+        seed_port_risk_registry(
+            connection,
+            application_paths.project_root / "for_data" / "Ризики в порту.xlsx",
+        )
+        seed_port_risk_registry_tags(connection)
         if is_demo_seed_enabled():
             seed_demo_employees(connection)
             seed_demo_contractors(connection)

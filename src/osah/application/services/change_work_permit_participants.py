@@ -21,7 +21,7 @@ def change_work_permit_participants(
     record_id: int,
     participants: tuple[WorkPermitParticipant, ...],
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Изменяет состав бригады наряда отдельной контролируемой операцией.
     Changes the permit brigade through a dedicated controlled operation.

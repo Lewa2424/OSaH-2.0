@@ -4,7 +4,7 @@ from osah.application.services.security.ensure_write_access import ensure_write_
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.work_permit_daily_check import WorkPermitDailyCheck
-from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
+from osah.domain.services.parse_service_datetime_text import parse_service_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_daily_check import validate_work_permit_daily_check
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -20,14 +20,14 @@ def record_work_permit_daily_check(
     checked_by: str,
     note_text: str = "",
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Фіксує щоденну перевірку місця виконання робіт за нарядом.
     Records a daily check for the work area under a permit.
     """
 
     ensure_write_access(access_role, "record_work_permit_daily_check")
-    checked_at = parse_ui_datetime_text(checked_at_text)
+    checked_at = parse_service_datetime_text(checked_at_text)
     normalized_checked_by = checked_by.strip()
     normalized_note_text = note_text.strip()
     connection = create_database_connection(database_path)

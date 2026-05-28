@@ -15,7 +15,12 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### ЗАСТОСУВАННЯ ПАРТІЇ ІМПОРТУ ПРАЦІВНИКІВ / ПРИМЕНЕНИЕ ПАРТИИ ИМПОРТА СОТРУДНИКОВ ######
-def apply_employee_import_batch(database_path: Path, batch_id: int, *, access_role: AccessRole) -> None:
+def apply_employee_import_batch(
+    database_path: Path,
+    batch_id: int,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Застосовує валідні чернетки партії імпорту працівників до бойових сутностей.
     Применяет валидные черновики партии импорта сотрудников к боевым сущностям.
     """

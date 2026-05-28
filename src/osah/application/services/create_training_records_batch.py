@@ -7,7 +7,7 @@ from osah.domain.entities.training_status import TrainingStatus
 from osah.domain.entities.training_type import TrainingType
 from osah.domain.entities.training_work_risk_category import TrainingWorkRiskCategory
 from osah.domain.services.find_training_chronology_conflict_reason import find_training_chronology_conflict_reason
-from osah.domain.services.parse_ui_date_text import parse_ui_date_text
+from osah.domain.services.parse_service_date_text import parse_service_date_text
 from osah.domain.services.resolve_training_next_control_date import resolve_training_next_control_date
 from osah.infrastructure.database.commands.insert_training_record import insert_training_record
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -50,8 +50,8 @@ def create_training_records_batch(
     if not normalized_conducted_by:
         raise ValueError("Потрібно вказати, хто проводив інструктаж.")
 
-    event_date = parse_ui_date_text(event_date_text)
-    manual_next_control_date = parse_ui_date_text(next_control_date_text) if next_control_date_text.strip() else None
+    event_date = parse_service_date_text(event_date_text)
+    manual_next_control_date = parse_service_date_text(next_control_date_text) if next_control_date_text.strip() else None
     training_type_value = TrainingType(normalized_training_type)
     resolved_next_control_date, next_control_basis, resolved_work_risk_category = resolve_training_next_control_date(
         training_type_value,

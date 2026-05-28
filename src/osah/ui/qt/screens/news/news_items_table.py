@@ -1,7 +1,6 @@
 from html import escape
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QLabel, QTableWidget
 
 from osah.domain.entities.news_item import NewsItem
@@ -21,7 +20,6 @@ class NewsItemsTable(QTableWidget):
         self._rows_by_key: dict[str, NewsItem] = {}
         self._default_sort_column = 0
         self.setHorizontalHeaderLabels(("Дата", "Матеріал"))
-        self.setStyleSheet("QTableWidget { font-size: 16px; }")
         self.verticalHeader().setVisible(False)
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -32,9 +30,6 @@ class NewsItemsTable(QTableWidget):
         self.setShowGrid(False)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         header = self.horizontalHeader()
-        header_font = QFont(header.font())
-        header_font.setPointSize(max(18, header_font.pointSize() * 2))
-        header.setFont(header_font)
         header.setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -71,7 +66,7 @@ class NewsItemsTable(QTableWidget):
             self.setItem(row_index, 0, published_item)
 
             preview_item = SortableTableWidgetItem(
-                _build_news_preview_text(news_item),
+                "",
                 row_key=str(news_item.item_id),
                 sort_value=_build_news_preview_text(news_item),
             )

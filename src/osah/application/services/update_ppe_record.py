@@ -8,7 +8,7 @@ from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckSt
 from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
-from osah.domain.services.parse_ui_date_text import parse_ui_date_text
+from osah.domain.services.parse_service_date_text import parse_service_date_text
 from osah.domain.services.serialize_ppe_record_for_audit import serialize_ppe_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.update_ppe_record_row import update_ppe_record_row
@@ -33,7 +33,7 @@ def update_ppe_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Обновляет запись СИЗ, синхронизирует уведомления и пишет audit.
     Updates a PPE record, synchronizes notifications and writes audit.
@@ -48,8 +48,8 @@ def update_ppe_record(
     if not normalized_ppe_name:
         raise ValueError("Потрібно вказати назву ЗІЗ.")
     quantity = _parse_quantity(quantity_text.strip())
-    issue_date = parse_ui_date_text(issue_date_text)
-    replacement_date = parse_ui_date_text(replacement_date_text)
+    issue_date = parse_service_date_text(issue_date_text)
+    replacement_date = parse_service_date_text(replacement_date_text)
     if replacement_date < issue_date:
         raise ValueError("Дата заміни не може бути раніше дати видачі.")
 

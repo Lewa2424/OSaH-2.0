@@ -14,6 +14,7 @@ class AppSection(StrEnum):
     WORK_PERMITS = "Наряди-допуски"
     CONTRACTORS = "Підрядники"
     ARCHIVE = "Архів"
+    PORT_R = "ПОРТ-Р"
     REPORTS = "Звіти"
     NEWS_NPA = "Новини / НПА"
     SETTINGS = "Налаштування"

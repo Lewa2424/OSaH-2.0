@@ -15,7 +15,7 @@ def save_system_behavior_settings(
     backup_auto_enabled: bool,
     backup_max_copies: int,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Persists behavior and backup preferences in app settings."""
 

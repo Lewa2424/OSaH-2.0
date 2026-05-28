@@ -20,7 +20,7 @@ def update_employee(
     source_photo_path: str | None = None,
     remove_photo: bool = False,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Оновлює існуючого працівника з базовою валідацією та audit-логом.
     Updates an existing employee with basic validation and audit log.

@@ -11,7 +11,7 @@ def archive_employee(
     database_path: Path,
     personnel_number: str,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Переводить працівника в архівний статус та додає audit-лог.
     Sets employee status to archived and adds audit log.

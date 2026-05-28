@@ -7,7 +7,7 @@ from osah.domain.entities.ppe_compliance_check_state import PpeComplianceCheckSt
 from osah.domain.entities.ppe_provision_status import PpeProvisionStatus
 from osah.domain.entities.ppe_record import PpeRecord
 from osah.domain.entities.ppe_status import PpeStatus
-from osah.domain.services.parse_ui_date_text import parse_ui_date_text
+from osah.domain.services.parse_service_date_text import parse_service_date_text
 from osah.domain.services.serialize_ppe_record_for_audit import serialize_ppe_record_for_audit
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_ppe_record import insert_ppe_record
@@ -30,7 +30,7 @@ def create_ppe_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Создаёт новую запись СИЗ и синхронизирует контрольные уведомления.
     Creates a new PPE record and synchronizes control notifications.
@@ -49,8 +49,8 @@ def create_ppe_record(
         raise ValueError("Потрібно вказати кількість.")
 
     quantity = _parse_quantity(normalized_quantity_text)
-    issue_date = parse_ui_date_text(issue_date_text)
-    replacement_date = parse_ui_date_text(replacement_date_text)
+    issue_date = parse_service_date_text(issue_date_text)
+    replacement_date = parse_service_date_text(replacement_date_text)
     if replacement_date < issue_date:
         raise ValueError("Дата заміни не може бути раніше дати видачі.")
 

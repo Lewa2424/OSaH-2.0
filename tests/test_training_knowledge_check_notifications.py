@@ -64,6 +64,25 @@ class TrainingKnowledgeCheckNotificationTests(unittest.TestCase):
                 create_training_record(
                     context.database_path,
                     "0001",
+                    "introductory",
+                    "2026-03-01",
+                    "",
+                    "Інженер з ОП",
+                    "Вступний перед незачетом",
+                )
+                create_training_record(
+                    context.database_path,
+                    "0001",
+                    "primary",
+                    "2026-04-01",
+                    "",
+                    "Інженер з ОП",
+                    "Первинний перед незачетом",
+                    work_risk_category="regular",
+                )
+                create_training_record(
+                    context.database_path,
+                    "0001",
                     "repeated",
                     "2026-05-01",
                     "",

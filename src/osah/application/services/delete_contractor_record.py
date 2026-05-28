@@ -11,7 +11,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 _CONTRACTOR_REGISTRY_SETTING_KEY = "contractors.registry_v1"
 
 
-def delete_contractor_record(database_path: Path, contractor_id: str, *, access_role: AccessRole) -> None:
+def delete_contractor_record(
+    database_path: Path,
+    contractor_id: str,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Видаляє запис підрядника зі staged-реєстру.
     Deletes contractor record from staged registry.
     """

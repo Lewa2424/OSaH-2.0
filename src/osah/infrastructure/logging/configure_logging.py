@@ -17,6 +17,9 @@ def configure_logging(
     Configures file logging with rotation and retention policy.
     """
 
+    for handler in logging.root.handlers[:]:
+        handler.close()
+        logging.root.removeHandler(handler)
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
     purge_old_log_files(log_file_path.parent, retention_days=retention_days)
     file_handler = RotatingFileHandler(

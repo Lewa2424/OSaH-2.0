@@ -8,7 +8,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### ПОЗНАЧЕННЯ НОВИННОГО МАТЕРІАЛУ ЯК ПРОЧИТАНОГО / ПОМЕТКА НОВОСТНОГО МАТЕРИАЛА КАК ПРОЧИТАННОГО ######
-def mark_news_item_as_read(database_path: Path, item_id: int, *, access_role: AccessRole) -> None:
+def mark_news_item_as_read(
+    database_path: Path,
+    item_id: int,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Позначає кешований матеріал як прочитаний у локальному контурі.
     Помечает кэшированный материал как прочитанный в локальном контуре.
     """

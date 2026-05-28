@@ -5,7 +5,7 @@ from pathlib import Path
 from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.access_role import AccessRole
-from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
+from osah.domain.services.parse_service_datetime_text import parse_service_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_timeline import validate_work_permit_extension
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -20,7 +20,7 @@ def extend_work_permit_record(
     extended_until_text: str,
     extension_reason_text: str,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Продовжує наряд-допуск один раз у межах ще 15 календарних днів.
     Extends a work permit once within another 15 calendar days.
@@ -31,7 +31,7 @@ def extend_work_permit_record(
     if not normalized_reason:
         raise ValueError("Потрібно вказати причину продовження наряду-допуску.")
 
-    extended_until = parse_ui_datetime_text(extended_until_text)
+    extended_until = parse_service_datetime_text(extended_until_text)
     connection = create_database_connection(database_path)
     try:
         previous_record = next((item for item in list_work_permit_records(connection) if item.record_id == record_id), None)

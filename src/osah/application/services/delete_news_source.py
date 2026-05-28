@@ -8,7 +8,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### ВИДАЛЕННЯ ДЖЕРЕЛА НОВИН / УДАЛЕНИЕ ИСТОЧНИКА НОВОСТЕЙ ######
-def delete_news_source(database_path: Path, source_id: int, *, access_role: AccessRole) -> None:
+def delete_news_source(
+    database_path: Path,
+    source_id: int,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Видаляє довірене джерело новин або НПА з локальної бази.
     Удаляет доверенный источник новостей или НПА из локальной базы.
     """

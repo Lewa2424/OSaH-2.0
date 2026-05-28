@@ -13,7 +13,7 @@ def toggle_news_source_activity(
     source_id: int,
     is_active: bool,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Updates source active flag while preserving source identity fields."""
 

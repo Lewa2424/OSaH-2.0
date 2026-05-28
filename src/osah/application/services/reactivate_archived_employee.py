@@ -9,7 +9,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### РЕАКТИВАЦІЯ АРХІВНОГО ПРАЦІВНИКА / REACTIVATE ARCHIVED EMPLOYEE ######
-def reactivate_archived_employee(database_path: Path, personnel_number: str, *, access_role: AccessRole) -> None:
+def reactivate_archived_employee(
+    database_path: Path,
+    personnel_number: str,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Reactivates archived employee by setting employment status to active."""
 
     ensure_write_access(access_role, "reactivate_archived_employee")

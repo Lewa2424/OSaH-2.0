@@ -14,7 +14,12 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### ВІДНОВЛЕННЯ З РЕЗЕРВНОЇ КОПІЇ / ВОССТАНОВЛЕНИЕ ИЗ РЕЗЕРВНОЙ КОПИИ ######
-def restore_backup_snapshot(database_path: Path, backup_file_path: Path, *, access_role: AccessRole) -> Path:
+def restore_backup_snapshot(
+    database_path: Path,
+    backup_file_path: Path,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> Path:
     """Відновлює локальну БД з обраної резервної копії та повертає шлях до страховочної копії.
     Восстанавливает локальную БД из выбранной резервной копии и возвращает путь к страховочной копии.
     """

@@ -21,6 +21,7 @@ from osah.ui.qt.screens.dashboard.dashboard_screen import DashboardScreen
 from osah.ui.qt.screens.employees.employees_screen import EmployeesScreen
 from osah.ui.qt.screens.medical.medical_screen import MedicalScreen
 from osah.ui.qt.screens.news.news_screen import NewsScreen
+from osah.ui.qt.screens.port_r.port_r_screen import PortRScreen
 from osah.ui.qt.screens.ppe.ppe_screen import PpeScreen
 from osah.ui.qt.screens.reports.reports_screen import ReportsScreen
 from osah.ui.qt.screens.settings.settings_screen import SettingsScreen
@@ -103,6 +104,9 @@ def build_screen_for_section(context: QtContext) -> QWidget:
 
     if context.selected_section == AppSection.ARCHIVE:
         return ArchiveScreen(context.application_context.database_path, context.access_role)
+
+    if context.selected_section == AppSection.PORT_R:
+        return PortRScreen(context.application_context.database_path, context.access_role)
 
     if context.selected_section == AppSection.CONTRACTORS:
         return ContractorsScreen(context.application_context.database_path, context.access_role)

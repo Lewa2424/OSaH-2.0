@@ -11,7 +11,12 @@ from osah.infrastructure.database.queries.get_training_record_by_id import get_t
 
 
 # ###### ВИДАЛЕННЯ ЗАПИСУ ІНСТРУКТАЖУ / УДАЛЕНИЕ ЗАПИСИ ИНСТРУКТАЖА ######
-def delete_training_record(database_path: Path, record_id: int, *, access_role: AccessRole) -> None:
+def delete_training_record(
+    database_path: Path,
+    record_id: int,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Видаляє запис інструктажу, синхронізує сповіщення і пише audit.
     Удаляет запись инструктажа, синхронизирует уведомления и пишет audit.
     """

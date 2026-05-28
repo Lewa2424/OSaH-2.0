@@ -12,8 +12,8 @@ from osah.domain.entities.work_permit_target_training_status import WorkPermitTa
 from osah.domain.services.has_work_permit_participant_composition_changed import (
     has_work_permit_participant_composition_changed,
 )
-from osah.domain.services.parse_ui_date_text import parse_ui_date_text
-from osah.domain.services.parse_ui_datetime_text import parse_ui_datetime_text
+from osah.domain.services.parse_service_date_text import parse_service_date_text
+from osah.domain.services.parse_service_datetime_text import parse_service_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_timeline import validate_work_permit_base_timeline
 from osah.infrastructure.database.commands.delete_work_permit_participants import delete_work_permit_participants
@@ -45,7 +45,7 @@ def update_work_permit_record(
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Оновлює наряд-допуск.
     Updates a work permit.
@@ -152,8 +152,8 @@ def _validate_work_permit_input(
     basis_note: str,
     participants: tuple[WorkPermitParticipant, ...] | None = None,
 ) -> dict[str, object]:
-    starts_at = parse_ui_datetime_text(starts_at_text)
-    ends_at = parse_ui_datetime_text(ends_at_text)
+    starts_at = parse_service_datetime_text(starts_at_text)
+    ends_at = parse_service_datetime_text(ends_at_text)
     validate_work_permit_base_timeline(starts_at, ends_at)
 
     normalized_permit_number = permit_number.strip()
@@ -170,7 +170,7 @@ def _validate_work_permit_input(
 
     target_training_date = ""
     if target_training_date_text.strip():
-        target_training_date = parse_ui_date_text(target_training_date_text.strip()).isoformat()
+        target_training_date = parse_service_date_text(target_training_date_text.strip()).isoformat()
     normalized_target_training_status = WorkPermitTargetTrainingStatus(target_training_status.strip() or "legacy_not_tracked")
     normalized_target_training_conducted_by = target_training_conducted_by.strip()
     if normalized_target_training_status in {

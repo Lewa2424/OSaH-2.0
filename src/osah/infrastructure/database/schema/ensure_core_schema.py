@@ -164,6 +164,152 @@ def ensure_core_schema(connection: Connection) -> None:
                 ON UPDATE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS port_site_passports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passport_code TEXT NOT NULL UNIQUE,
+            site_name TEXT NOT NULL,
+            site_type TEXT NOT NULL DEFAULT '',
+            site_location TEXT NOT NULL DEFAULT '',
+            site_description TEXT NOT NULL DEFAULT '',
+            work_kind TEXT NOT NULL DEFAULT '',
+            typical_operations TEXT NOT NULL DEFAULT '',
+            work_mode TEXT NOT NULL DEFAULT '',
+            typical_cargo TEXT NOT NULL DEFAULT '',
+            cargo_features TEXT NOT NULL DEFAULT '',
+            main_equipment TEXT NOT NULL DEFAULT '',
+            lifting_devices TEXT NOT NULL DEFAULT '',
+            has_railway_zone INTEGER NOT NULL DEFAULT 0,
+            has_auto_zone INTEGER NOT NULL DEFAULT 0,
+            has_crane_zone INTEGER NOT NULL DEFAULT 0,
+            crew_composition TEXT NOT NULL DEFAULT '',
+            responsible_person TEXT NOT NULL DEFAULT '',
+            has_contractors INTEGER NOT NULL DEFAULT 0,
+            contractors_note TEXT NOT NULL DEFAULT '',
+            zone_kind TEXT NOT NULL DEFAULT '',
+            has_night_works INTEGER NOT NULL DEFAULT 0,
+            weather_features TEXT NOT NULL DEFAULT '',
+            has_limited_visibility INTEGER NOT NULL DEFAULT 0,
+            has_height_work INTEGER NOT NULL DEFAULT 0,
+            has_water_edge_work INTEGER NOT NULL DEFAULT 0,
+            has_stack_edge_work INTEGER NOT NULL DEFAULT 0,
+            communication_barrier TEXT NOT NULL DEFAULT '',
+            has_communication_barrier INTEGER NOT NULL DEFAULT 0,
+            fencing_barrier TEXT NOT NULL DEFAULT '',
+            has_fencing_barrier INTEGER NOT NULL DEFAULT 0,
+            has_signalman INTEGER NOT NULL DEFAULT 0,
+            lighting_barrier TEXT NOT NULL DEFAULT '',
+            has_lighting_barrier INTEGER NOT NULL DEFAULT 0,
+            ppe_text TEXT NOT NULL DEFAULT '',
+            additional_barriers TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            calculated_profile TEXT NOT NULL DEFAULT 'not_calculated',
+            final_profile TEXT NOT NULL DEFAULT 'not_calculated',
+            profile_override_reason TEXT NOT NULL DEFAULT '',
+            calculated_by TEXT NOT NULL DEFAULT '',
+            calculated_at TEXT NULL,
+            approved_by TEXT NOT NULL DEFAULT '',
+            approved_at TEXT NULL,
+            archived_at TEXT NULL,
+            archive_reason TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS port_risk_registry (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            risk_code TEXT NOT NULL UNIQUE,
+            level_1 TEXT NOT NULL DEFAULT '',
+            level_2 TEXT NOT NULL DEFAULT '',
+            level_3 TEXT NOT NULL DEFAULT '',
+            risk_situation TEXT NOT NULL,
+            hazard_source TEXT NOT NULL DEFAULT '',
+            occurrence_conditions TEXT NOT NULL DEFAULT '',
+            consequences TEXT NOT NULL DEFAULT '',
+            notes TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS port_site_risks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passport_id INTEGER NOT NULL,
+            registry_risk_id INTEGER NULL,
+            risk_situation TEXT NOT NULL,
+            hazard_source TEXT NOT NULL DEFAULT '',
+            occurrence_conditions TEXT NOT NULL DEFAULT '',
+            consequences TEXT NOT NULL DEFAULT '',
+            assessment_reason TEXT NOT NULL DEFAULT '',
+            risk_level TEXT NOT NULL DEFAULT '',
+            method_note TEXT NOT NULL DEFAULT '',
+            inspector_comment TEXT NOT NULL DEFAULT '',
+            suggestion_reason TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'manual',
+            addition_source TEXT NOT NULL DEFAULT 'manual',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (passport_id)
+                REFERENCES port_site_passports(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (registry_risk_id)
+                REFERENCES port_risk_registry(id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS port_risk_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag_code TEXT NOT NULL UNIQUE,
+            label_uk TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS port_risk_registry_tags (
+            registry_risk_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (registry_risk_id, tag_id),
+            FOREIGN KEY (registry_risk_id)
+                REFERENCES port_risk_registry(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (tag_id)
+                REFERENCES port_risk_tags(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS port_passport_tags (
+            passport_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (passport_id, tag_id),
+            FOREIGN KEY (passport_id)
+                REFERENCES port_site_passports(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (tag_id)
+                REFERENCES port_risk_tags(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_port_site_passports_status
+        ON port_site_passports(status);
+
+        CREATE INDEX IF NOT EXISTS idx_port_site_passports_updated
+        ON port_site_passports(updated_at);
+
+        CREATE INDEX IF NOT EXISTS idx_port_site_risks_passport
+        ON port_site_risks(passport_id);
+
+        CREATE INDEX IF NOT EXISTS idx_port_site_risks_status
+        ON port_site_risks(status);
+
+        CREATE INDEX IF NOT EXISTS idx_port_risk_registry_levels
+        ON port_risk_registry(level_1, level_2);
+
         CREATE TABLE IF NOT EXISTS import_batches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             source_name TEXT NOT NULL,

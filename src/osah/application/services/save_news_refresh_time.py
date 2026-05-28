@@ -11,7 +11,12 @@ _TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 
 
 # ###### ЗБЕРЕЖЕННЯ ЧАСУ ПЕРЕВІРКИ НОВИН / SAVE NEWS REFRESH TIME ######
-def save_news_refresh_time(database_path: Path, refresh_time: str, *, access_role: AccessRole) -> None:
+def save_news_refresh_time(
+    database_path: Path,
+    refresh_time: str,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Зберігає щоденний час перевірки новин у налаштуваннях застосунку.
     Сохраняет ежедневное время проверки новостей в настройках приложения.
     """

@@ -10,7 +10,12 @@ from osah.infrastructure.database.create_database_connection import create_datab
 
 
 # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / СОХРАНЕНИЕ ПОЧТОВЫХ НАСТРОЕК ######
-def save_mail_settings(database_path: Path, mail_settings: MailSettings, *, access_role: AccessRole) -> None:
+def save_mail_settings(
+    database_path: Path,
+    mail_settings: MailSettings,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> None:
     """Зберігає налаштування SMTP та параметри щоденного звіту.
     Сохраняет настройки SMTP и параметры ежедневного отчёта.
     """

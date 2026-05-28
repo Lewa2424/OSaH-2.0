@@ -13,7 +13,12 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 
 
 # ###### СТВОРЕННЯ РЕЗЕРВНОЇ КОПІЇ / СОЗДАНИЕ РЕЗЕРВНОЙ КОПИИ ######
-def create_backup_snapshot(database_path: Path, backup_kind: BackupKind, *, access_role: AccessRole) -> Path:
+def create_backup_snapshot(
+    database_path: Path,
+    backup_kind: BackupKind,
+    *,
+    access_role: AccessRole = AccessRole.INSPECTOR,
+) -> Path:
     """Створює резервну копію локальної БД вказаного типу й повертає шлях до файлу.
     Создаёт резервную копию локальной БД указанного типа и возвращает путь к файлу.
     """

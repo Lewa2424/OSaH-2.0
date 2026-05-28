@@ -90,6 +90,7 @@ class TopCommandBar(QWidget):
             AppSection.WORK_PERMITS: "активні, прострочені та проблемні допуски до робіт",
             AppSection.CONTRACTORS: "облік підрядників і контроль їхнього допуску",
             AppSection.ARCHIVE: "архів подій, записів і службових підстав",
+            AppSection.PORT_R: "облік і контроль записів ПОРТ-Р",
             AppSection.REPORTS: "щоденний звіт, доставка та службові помилки",
             AppSection.NEWS_NPA: "довірені джерела НПА та новин",
             AppSection.SETTINGS: "резервні копії, імпорт, журнал і параметри системи",

@@ -214,7 +214,7 @@ class Step10LoggingAndStabilityTests(unittest.TestCase):
                 context.database_path,
                 lambda _: (
                     RssFeedEntry(
-                        title_text="Нове роз'яснення",
+                        title_text="Нове роз'яснення з питань охорони праці",
                         link_url="https://example.com/npa-1",
                         published_at_text="2026-04-10T10:00:00",
                     ),

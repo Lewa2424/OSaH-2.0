@@ -17,7 +17,7 @@ def cancel_work_permit_record(
     record_id: int,
     cancel_reason_text: str,
     *,
-    access_role: AccessRole,
+    access_role: AccessRole = AccessRole.INSPECTOR,
 ) -> None:
     """Скасовує наряд-допуск із фіксацією причини та audit-подією.
     Cancels a work permit with a reason and audit event.
