@@ -63,7 +63,12 @@ def render_settings_content(
         )
         return
 
-    render_import_export_actions(left_frame, database_path, refresh_handler or on_refresh)
+    render_import_export_actions(
+        left_frame,
+        database_path,
+        refresh_handler or on_refresh,
+        access_role=access_role,
+    )
     render_backup_actions(left_frame, database_path, backup_snapshots, refresh_handler or on_refresh)
     render_news_source_settings_card(left_frame, database_path, refresh_handler or on_refresh)
     render_import_batch_summary_card(left_frame, import_batch_summary)

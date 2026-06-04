@@ -28,7 +28,7 @@ def update_medical_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Обновляет медицинскую запись, синхронизирует уведомления и пишет audit.
     Updates a medical record, synchronizes notifications and writes audit.

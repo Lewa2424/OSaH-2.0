@@ -1,4 +1,4 @@
-from PySide6.QtCore import QTime, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFormLayout,
@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSpinBox,
-    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -28,14 +27,6 @@ class MailSettingsForm(QFrame):
     def __init__(self, mail_settings: MailSettings) -> None:
         super().__init__()
         self.setProperty("card", "true")
-
-        self.enabled_box = QCheckBox("Автощоденний звіт увімкнено")
-        self.enabled_box.setChecked(mail_settings.daily_report_enabled)
-
-        self.report_time = QTimeEdit()
-        self.report_time.setDisplayFormat("HH:mm")
-        parsed_time = QTime.fromString(mail_settings.daily_report_time or "08:00", "HH:mm")
-        self.report_time.setTime(parsed_time if parsed_time.isValid() else QTime(8, 0))
 
         self.recipient = QLineEdit(mail_settings.recipient_email)
         self.recipient.setPlaceholderText("Пошта керівника / отримувача")
@@ -65,7 +56,7 @@ class MailSettingsForm(QFrame):
         layout.addWidget(title)
 
         hint = QLabel(
-            "Заповніть прості поля нижче. Для типового сценарію система підставить базові SMTP-параметри автоматично."
+            "Налаштування лише для ручної відправки звіту поштою. Нагадування про формування файла — у Налаштуваннях → Щоденний звіт."
         )
         hint.setWordWrap(True)
         hint.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
@@ -75,24 +66,15 @@ class MailSettingsForm(QFrame):
         schedule_layout = QVBoxLayout(schedule_frame)
         schedule_layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])
         schedule_layout.setSpacing(SPACING["md"])
-        schedule_title = QLabel("Розклад і адреси")
+        schedule_title = QLabel("Адреси")
         schedule_title.setProperty("role", "section_title")
         schedule_layout.addWidget(schedule_title)
-        schedule_layout.addWidget(self.enabled_box)
 
-        schedule_row = QHBoxLayout()
-        schedule_row.setSpacing(SPACING["md"])
-        time_box = QVBoxLayout()
-        time_label = QLabel("Час відправки")
-        time_box.addWidget(time_label)
-        time_box.addWidget(self.report_time)
-        schedule_row.addLayout(time_box, stretch=1)
         sender_box = QVBoxLayout()
         sender_label = QLabel("Пошта відправника")
         sender_box.addWidget(sender_label)
         sender_box.addWidget(self.sender)
-        schedule_row.addLayout(sender_box, stretch=2)
-        schedule_layout.addLayout(schedule_row)
+        schedule_layout.addLayout(sender_box)
 
         recipient_box = QVBoxLayout()
         recipient_label = QLabel("Пошта керівника / отримувача")
@@ -160,7 +142,7 @@ class MailSettingsForm(QFrame):
 
         self._apply_sender_defaults()
         return MailSettings(
-            daily_report_enabled=self.enabled_box.isChecked(),
+            daily_report_enabled=False,
             smtp_host=self.smtp_host.text(),
             smtp_port=int(self.smtp_port.value()),
             smtp_username=self.smtp_username.text(),
@@ -169,7 +151,7 @@ class MailSettingsForm(QFrame):
             recipient_email=self.recipient.text(),
             use_tls=self.use_tls.isChecked(),
             last_sent_date=last_sent_date,
-            daily_report_time=self.report_time.time().toString("HH:mm"),
+            daily_report_time="08:00",
         )
 
     # ###### ЗАПИТ ЗБЕРЕЖЕННЯ / SAVE REQUEST ######

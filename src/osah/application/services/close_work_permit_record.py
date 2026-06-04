@@ -16,7 +16,7 @@ def close_work_permit_record(
     database_path: Path,
     record_id: int,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Закриває наряд-допуск вручну та синхронізує контрольні сповіщення.
     Закрывает наряд-допуск вручную и синхронизирует контрольные уведомления.

@@ -45,7 +45,7 @@ def update_work_permit_record(
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Оновлює наряд-допуск.
     Updates a work permit.

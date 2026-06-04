@@ -1,7 +1,6 @@
 import tempfile
 import unittest
 from pathlib import Path
-
 from osah.application.services.create_news_source import create_news_source
 from osah.application.services.initialize_application import initialize_application
 from osah.application.services.load_news_items import load_news_items
@@ -10,46 +9,26 @@ from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.domain.entities.rss_feed_entry import RssFeedEntry
 from osah.infrastructure.config.application_paths import build_application_paths
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
-
+from osah.domain.entities.access_role import AccessRole
 
 class RefreshNewsSourcesTests(unittest.TestCase):
     """Тести refresh зовнішніх джерел новин.
     Тесты refresh внешних источников новостей.
     """
 
-    # ###### ПЕРЕВІРКА КЕШУВАННЯ І ДЕДУПЛІКАЦІЇ МАТЕРІАЛІВ / ПРОВЕРКА КЭШИРОВАНИЯ И ДЕДУПЛИКАЦИИ МАТЕРИАЛОВ ######
     def test_refresh_news_sources_caches_materials_without_duplicates(self) -> None:
         """Перевіряє кешування матеріалів і захист від дублювання при повторному refresh.
         Проверяет кэширование материалов и защиту от дублирования при повторном refresh.
         """
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            create_news_source(
-                context.database_path,
-                "Новини ОП",
-                "https://example.com/news.xml",
-                NewsSourceKind.NEWS,
-            )
+            create_news_source(context.database_path, 'Новини ОП', 'https://example.com/news.xml', NewsSourceKind.NEWS, access_role=AccessRole.INSPECTOR)
 
             def fake_feed_fetcher(_: str) -> tuple[RssFeedEntry, ...]:
-                return (
-                    RssFeedEntry(
-                        title_text="Оновлення правил охорони праці",
-                        link_url="https://example.com/item-1",
-                        published_at_text="2026-04-10T10:00:00",
-                    ),
-                    RssFeedEntry(
-                        title_text="Нове роз'яснення Держпраці",
-                        link_url="https://example.com/item-2",
-                        published_at_text="2026-04-10T12:00:00",
-                    ),
-                )
-
-            refresh_news_sources(context.database_path, fake_feed_fetcher)
-            refresh_news_sources(context.database_path, fake_feed_fetcher)
-
+                return (RssFeedEntry(title_text='Оновлення правил охорони праці', link_url='https://example.com/item-1', published_at_text='2026-04-10T10:00:00'), RssFeedEntry(title_text="Нове роз'яснення Держпраці", link_url='https://example.com/item-2', published_at_text='2026-04-10T12:00:00'))
+            refresh_news_sources(context.database_path, fake_feed_fetcher, access_role=AccessRole.INSPECTOR)
+            refresh_news_sources(context.database_path, fake_feed_fetcher, access_role=AccessRole.INSPECTOR)
             news_items = load_news_items(context.database_path)
             self.assertEqual(len(news_items), 2)
             self.assertEqual(news_items[0].title_text, "Нове роз'яснення Держпраці")
@@ -59,112 +38,57 @@ class RefreshNewsSourcesTests(unittest.TestCase):
         """Перевіряє, що збій одного зовнішнього джерела не ламає весь кеш.
         Checks that one external source failure does not break the whole cache.
         """
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            create_news_source(
-                context.database_path,
-                "Новини ОП",
-                "https://example.com/news.xml",
-                NewsSourceKind.NEWS,
-            )
-            create_news_source(
-                context.database_path,
-                "Бите джерело",
-                "https://example.com/broken.xml",
-                NewsSourceKind.NPA,
-            )
+            create_news_source(context.database_path, 'Новини ОП', 'https://example.com/news.xml', NewsSourceKind.NEWS, access_role=AccessRole.INSPECTOR)
+            create_news_source(context.database_path, 'Бите джерело', 'https://example.com/broken.xml', NewsSourceKind.NPA, access_role=AccessRole.INSPECTOR)
 
             def mixed_feed_fetcher(source_url: str) -> tuple[RssFeedEntry, ...]:
-                if "broken" in source_url:
-                    raise RuntimeError("source unavailable")
-                return (
-                    RssFeedEntry(
-                        title_text="Оновлення правил охорони праці",
-                        link_url="https://example.com/item-1",
-                        published_at_text="2026-04-10T10:00:00",
-                    ),
-                )
-
-            cached_total = refresh_news_sources(context.database_path, mixed_feed_fetcher)
-
+                if 'broken' in source_url:
+                    raise RuntimeError('source unavailable')
+                return (RssFeedEntry(title_text='Оновлення правил охорони праці', link_url='https://example.com/item-1', published_at_text='2026-04-10T10:00:00'),)
+            cached_total = refresh_news_sources(context.database_path, mixed_feed_fetcher, access_role=AccessRole.INSPECTOR)
             news_items = load_news_items(context.database_path)
             self.assertEqual(cached_total, 1)
             self.assertEqual(len(news_items), 1)
-            self.assertEqual(news_items[0].title_text, "Оновлення правил охорони праці")
+            self.assertEqual(news_items[0].title_text, 'Оновлення правил охорони праці')
             shut_down_logging()
 
     def test_refresh_news_sources_skips_irrelevant_materials(self) -> None:
         """Перевіряє, що загальні новини без теми ОП не потрапляють у кеш.
         Checks that general news without OHS topic do not enter the cache.
         """
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            create_news_source(
-                context.database_path,
-                "Широка стрічка",
-                "https://example.com/mixed.xml",
-                NewsSourceKind.NEWS,
-            )
+            create_news_source(context.database_path, 'Широка стрічка', 'https://example.com/mixed.xml', NewsSourceKind.NEWS, access_role=AccessRole.INSPECTOR)
 
             def fake_feed_fetcher(_: str) -> tuple[RssFeedEntry, ...]:
-                return (
-                    RssFeedEntry(
-                        title_text="Курс валют на сьогодні",
-                        link_url="https://example.com/item-1",
-                        published_at_text="2026-04-10T09:00:00",
-                    ),
-                    RssFeedEntry(
-                        title_text="Оновлення правил охорони праці",
-                        link_url="https://example.com/item-2",
-                        published_at_text="2026-04-10T10:00:00",
-                    ),
-                )
-
-            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher)
-
+                return (RssFeedEntry(title_text='Курс валют на сьогодні', link_url='https://example.com/item-1', published_at_text='2026-04-10T09:00:00'), RssFeedEntry(title_text='Оновлення правил охорони праці', link_url='https://example.com/item-2', published_at_text='2026-04-10T10:00:00'))
+            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher, access_role=AccessRole.INSPECTOR)
             news_items = load_news_items(context.database_path)
             self.assertEqual(cached_total, 1)
             self.assertEqual(len(news_items), 1)
-            self.assertEqual(news_items[0].title_text, "Оновлення правил охорони праці")
+            self.assertEqual(news_items[0].title_text, 'Оновлення правил охорони праці')
             shut_down_logging()
 
     def test_refresh_news_sources_uses_summary_text_for_relevance(self) -> None:
         """Перевіряє тематичний відбір за summary, навіть якщо title загальний.
         Checks thematic selection by summary even when the title is generic.
         """
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            create_news_source(
-                context.database_path,
-                "Широка стрічка",
-                "https://example.com/mixed.xml",
-                NewsSourceKind.NEWS,
-            )
+            create_news_source(context.database_path, 'Широка стрічка', 'https://example.com/mixed.xml', NewsSourceKind.NEWS, access_role=AccessRole.INSPECTOR)
 
             def fake_feed_fetcher(_: str) -> tuple[RssFeedEntry, ...]:
-                return (
-                    RssFeedEntry(
-                        title_text="Оновлення",
-                        link_url="https://example.com/item-3",
-                        published_at_text="2026-04-10T11:00:00",
-                        summary_text="Нове роз'яснення Держпраці з питань охорони праці.",
-                    ),
-                )
-
-            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher)
-
+                return (RssFeedEntry(title_text='Оновлення', link_url='https://example.com/item-3', published_at_text='2026-04-10T11:00:00', summary_text="Нове роз'яснення Держпраці з питань охорони праці."),)
+            cached_total = refresh_news_sources(context.database_path, fake_feed_fetcher, access_role=AccessRole.INSPECTOR)
             news_items = load_news_items(context.database_path)
             self.assertEqual(cached_total, 1)
             self.assertEqual(len(news_items), 1)
-            self.assertEqual(news_items[0].title_text, "Оновлення")
+            self.assertEqual(news_items[0].title_text, 'Оновлення')
             shut_down_logging()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

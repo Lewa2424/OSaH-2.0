@@ -1,6 +1,8 @@
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.sync_control_notifications import sync_control_notifications
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.training_person_category import TrainingPersonCategory
 from osah.domain.entities.training_record import TrainingRecord
 from osah.domain.entities.training_status import TrainingStatus
@@ -28,11 +30,14 @@ def create_training_records_batch(
     work_risk_category: str = "not_applicable",
     should_update_repeated_control: bool = False,
     use_manual_next_control_date: bool = False,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Создаёт записи инструктажей для нескольких работников по одному сценарию.
     Creates training records for multiple employees in one scenario.
     """
 
+    ensure_write_access(access_role, "create_training_records_batch")
     normalized_personnel_numbers = tuple(
         personnel_number.strip()
         for personnel_number in employee_personnel_numbers

@@ -19,7 +19,7 @@ def create_employee(
     employment_status: str = "active",
     source_photo_path: str | None = None,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Створює нового працівника з базовою валідацією та audit-логом.
     Creates a new employee with basic validation and audit log.

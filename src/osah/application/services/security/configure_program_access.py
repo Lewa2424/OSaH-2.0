@@ -4,6 +4,7 @@ from pathlib import Path
 from osah.domain.entities.program_access_reset_result import ProgramAccessResetResult
 from osah.domain.services.security.build_secret_hash_pair import build_secret_hash_pair
 from osah.domain.services.security.generate_installation_id import generate_installation_id
+from osah.domain.services.security.generate_service_reset_secret import generate_service_reset_secret
 from osah.domain.services.security.generate_recovery_code import generate_recovery_code
 from osah.domain.services.security.validate_program_access_passwords import validate_program_access_passwords
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -28,6 +29,7 @@ from osah.application.services.security.security_setting_keys import (
     RECOVERY_CREATED_AT,
     RECOVERY_FILE_PATH,
     SERVICE_REQUEST_COUNTER,
+    SERVICE_RESET_SECRET,
 )
 
 
@@ -50,6 +52,7 @@ def configure_program_access(
 
         installation_id = app_settings.get(INSTALLATION_ID) or generate_installation_id()
         service_request_counter = app_settings.get(SERVICE_REQUEST_COUNTER, "1") or "1"
+        service_reset_secret = app_settings.get(SERVICE_RESET_SECRET) or generate_service_reset_secret()
         recovery_code = generate_recovery_code()
         recovery_file_path = build_recovery_file_path(database_path, installation_id)
         recovery_created_at_text = datetime.now().isoformat(timespec="seconds")
@@ -76,6 +79,7 @@ def configure_program_access(
                 FAILED_ATTEMPT_COUNT: "0",
                 LOCKED_UNTIL: "",
                 SERVICE_REQUEST_COUNTER: service_request_counter,
+                SERVICE_RESET_SECRET: service_reset_secret,
                 RECOVERY_FILE_PATH: str(recovery_file_path),
                 RECOVERY_CREATED_AT: recovery_created_at_text,
             },

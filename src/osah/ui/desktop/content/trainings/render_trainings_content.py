@@ -60,6 +60,12 @@ def render_trainings_content(
     employee_options = build_training_employee_options(employees)
     refresh_handler = build_trainings_screen_refresh_handler(parent, database_path, selected_filter, access_role)
     render_training_form(left_frame, database_path, employee_options, refresh_handler)
-    render_training_batch_form(left_frame, database_path, employee_options, refresh_handler)
+    render_training_batch_form(
+        left_frame,
+        database_path,
+        employee_options,
+        refresh_handler,
+        access_role=access_role,
+    )
     render_training_edit_form(left_frame, database_path, employee_options, training_records, refresh_handler)
     render_training_registry_table(right_frame, registry_rows)

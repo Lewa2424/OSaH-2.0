@@ -1,6 +1,7 @@
 from pathlib import Path
 import customtkinter as ctk
 
+from osah.domain.entities.access_role import AccessRole
 from osah.ui.desktop.content.settings.build_apply_latest_import_batch_handler import (
     build_apply_latest_import_batch_handler,
 )
@@ -10,7 +11,13 @@ from osah.ui.desktop.content.ctk_styles import CARD, BTN, BTN_SEC, label_title, 
 
 
 # ###### ВІДОБРАЖЕННЯ ДІЙ ІМПОРТУ ТА ЕКСПОРТУ / ОТРИСОВКА ДЕЙСТВИЙ ИМПОРТА И ЭКСПОРТА ######
-def render_import_export_actions(parent: ctk.CTkFrame, database_path: Path, on_refresh) -> None:
+def render_import_export_actions(
+    parent: ctk.CTkFrame,
+    database_path: Path,
+    on_refresh,
+    *,
+    access_role: AccessRole,
+) -> None:
     """Відображає кнопки сервісних операцій імпорту та експорту.
     Отрисовывает кнопки сервисных операций импорта и экспорта.
     """
@@ -31,20 +38,20 @@ def render_import_export_actions(parent: ctk.CTkFrame, database_path: Path, on_r
     ctk.CTkButton(
         button_row,
         text="Створити чернетки імпорту",
-        command=build_create_import_batch_handler(database_path, on_refresh),
+        command=build_create_import_batch_handler(database_path, on_refresh, access_role=access_role),
         **BTN,
     ).pack(fill="x")
 
     ctk.CTkButton(
         button_row,
         text="Застосувати останню партію",
-        command=build_apply_latest_import_batch_handler(database_path, on_refresh),
+        command=build_apply_latest_import_batch_handler(database_path, on_refresh, access_role=access_role),
         **BTN_SEC,
     ).pack(fill="x", pady=(10, 0))
 
     ctk.CTkButton(
         button_row,
         text="Повний експорт JSON",
-        command=build_export_full_state_handler(database_path, on_refresh),
+        command=build_export_full_state_handler(database_path, on_refresh, access_role=access_role),
         **BTN_SEC,
     ).pack(fill="x", pady=(10, 0))

@@ -12,7 +12,7 @@ def delete_news_source(
     database_path: Path,
     source_id: int,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Видаляє довірене джерело новин або НПА з локальної бази.
     Удаляет доверенный источник новостей или НПА из локальной базы.

@@ -1,15 +1,10 @@
 """
-Точка входу для нового Qt-інтерфейсу.
-Entry point for the new Qt UI layer.
+Точка входу для нового Qt-інтерфейсу (лише розробка).
+Entry point for the new Qt UI layer (development only).
 """
 import sys
 
-from PySide6.QtWidgets import QApplication
-
 from osah.application.services.application_context import ApplicationContext
-from osah.domain.entities.access_role import AccessRole
-from osah.ui.qt.components.app_window import AppWindow
-from osah.ui.qt.design.stylesheet import build_global_stylesheet
 
 
 # ###### ЗАПУСК QT-ЗАСТОСУНКУ / ЗАПУСК QT-ПРИЛОЖЕНИЯ ######
@@ -17,7 +12,18 @@ def run_qt_application(application_context: ApplicationContext) -> None:
     """Ініціалізує QApplication, застосовує стилі і відкриває головне вікно.
     Initializes QApplication, applies stylesheet and opens the main window.
     """
-    
+
+    if getattr(sys, "frozen", False):
+        raise RuntimeError(
+            "Небезпечний режим розробки недоступний у зібраній версії. Запускайте ClearWork.exe."
+        )
+
+    from PySide6.QtWidgets import QApplication
+
+    from osah.domain.entities.access_role import AccessRole
+    from osah.ui.qt.components.app_window import AppWindow
+    from osah.ui.qt.design.stylesheet import build_global_stylesheet
+
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)

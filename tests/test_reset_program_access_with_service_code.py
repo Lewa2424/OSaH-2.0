@@ -12,6 +12,7 @@ from osah.application.services.security.reset_program_access_with_service_code i
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.security.build_service_reset_code import build_service_reset_code
 from osah.infrastructure.config.application_paths import build_application_paths
+from tests.test_load_service_reset_secret import load_service_reset_secret
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
 
 
@@ -29,23 +30,25 @@ class ResetProgramAccessWithServiceCodeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            configure_program_access(context.database_path, "inspector-123", "manager-456")
+            configure_program_access(context.database_path, "inspector-123456", "manager-654321")
             service_reset_request = build_service_reset_request(context.database_path)
+            service_reset_secret = load_service_reset_secret(context.database_path)
             service_code = build_service_reset_code(
                 service_reset_request.installation_id,
                 service_reset_request.request_counter,
+                service_reset_secret,
             )
 
             reset_program_access_with_service_code(
                 context.database_path,
                 service_code,
-                "inspector-789",
-                "manager-999",
+                "inspector-789012",
+                "manager-999888",
             )
             authentication_result = authenticate_program_access(
                 context.database_path,
                 AccessRole.MANAGER,
-                "manager-999",
+                "manager-999888",
             )
 
             self.assertTrue(authentication_result.is_authenticated)

@@ -28,7 +28,7 @@ def apply_work_permit_participant_change(
     participants: tuple,
     reissue_reason_text: str = "Змінено більше 50% складу бригади.",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> WorkPermitParticipantChangeOutcome:
     """Застосовує зміну складу бригади або перевипускає наряд при великій заміні.
     Applies a brigade change or reissues the permit when the replacement is too large.

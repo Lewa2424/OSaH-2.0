@@ -2,12 +2,19 @@ from pathlib import Path
 import customtkinter as ctk
 
 from osah.ui.desktop.content.reports.build_save_daily_report_copy_handler import build_save_daily_report_copy_handler
+from osah.domain.entities.access_role import AccessRole
 from osah.ui.desktop.content.reports.build_send_daily_report_handler import build_send_daily_report_handler
 from osah.ui.desktop.content.ctk_styles import CARD, BTN, BTN_SEC, label_title, label_body
 
 
 # ###### ВІДОБРАЖЕННЯ ДІЙ ЩОДЕННОГО ЗВІТУ / ОТРИСОВКА ДЕЙСТВИЙ ЕЖЕДНЕВНОГО ОТЧЁТА ######
-def render_report_actions(parent: ctk.CTkFrame, database_path: Path, on_success) -> None:
+def render_report_actions(
+    parent: ctk.CTkFrame,
+    database_path: Path,
+    on_success,
+    *,
+    access_role: AccessRole,
+) -> None:
     """Відображає кнопки збереження копії та ручного надсилання щоденного звіту.
     Отрисовывает кнопки сохранения копии и ручной отправки ежедневного отчёта.
     """
@@ -35,6 +42,6 @@ def render_report_actions(parent: ctk.CTkFrame, database_path: Path, on_success)
     ctk.CTkButton(
         button_row,
         text="Надіслати зараз",
-        command=build_send_daily_report_handler(database_path, on_success),
+        command=build_send_daily_report_handler(database_path, on_success, access_role=access_role),
         **BTN_SEC,
     ).pack(side="left", padx=(12, 0))

@@ -8,6 +8,7 @@ from osah.application.services.load_backup_registry import load_backup_registry
 from osah.domain.entities.backup_kind import BackupKind
 from osah.infrastructure.config.application_paths import build_application_paths
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
+from osah.domain.entities.access_role import AccessRole
 
 
 class CreateBackupSnapshotTests(unittest.TestCase):
@@ -25,7 +26,7 @@ class CreateBackupSnapshotTests(unittest.TestCase):
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
 
-            backup_file_path = create_backup_snapshot(context.database_path, BackupKind.MANUAL)
+            backup_file_path = create_backup_snapshot(context.database_path, BackupKind.MANUAL, access_role=AccessRole.INSPECTOR)
             backup_snapshots = load_backup_registry(context.database_path)
 
             self.assertTrue(backup_file_path.exists())

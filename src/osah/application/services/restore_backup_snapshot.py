@@ -5,6 +5,7 @@ from osah.application.services.security.ensure_write_access import ensure_write_
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.backup_kind import BackupKind
+from osah.infrastructure.backups.assert_backup_contains_employees_table import assert_backup_contains_employees_table
 from osah.infrastructure.backups.restore_sqlite_backup_file import restore_sqlite_backup_file
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -18,7 +19,7 @@ def restore_backup_snapshot(
     database_path: Path,
     backup_file_path: Path,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> Path:
     """Відновлює локальну БД з обраної резервної копії та повертає шлях до страховочної копії.
     Восстанавливает локальную БД из выбранной резервной копии и возвращает путь к страховочной копии.
@@ -29,6 +30,7 @@ def restore_backup_snapshot(
         log_alert_event("backup_restore", f"Restore failed because backup file was not found: {backup_file_path}")
         raise ValueError("Обрану резервну копію не знайдено.")
 
+    assert_backup_contains_employees_table(backup_file_path)
     safety_backup_path = create_backup_snapshot(database_path, BackupKind.SAFETY, access_role=access_role)
     restore_sqlite_backup_file(backup_file_path, database_path)
 

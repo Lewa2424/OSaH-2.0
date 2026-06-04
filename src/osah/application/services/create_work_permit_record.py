@@ -40,7 +40,7 @@ def create_work_permit_record(
     basis_note: str = "",
     participants: tuple[WorkPermitParticipant, ...] | None = None,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Створює новий наряд-допуск.
     Creates a new work permit.

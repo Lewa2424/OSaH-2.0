@@ -26,7 +26,7 @@ def create_medical_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Создаёт новую медицинскую запись и синхронизирует контрольные уведомления.
     Creates a new medical record and synchronizes control notifications.

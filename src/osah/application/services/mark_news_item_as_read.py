@@ -12,7 +12,7 @@ def mark_news_item_as_read(
     database_path: Path,
     item_id: int,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Позначає кешований матеріал як прочитаний у локальному контурі.
     Помечает кэшированный материал как прочитанный в локальном контуре.

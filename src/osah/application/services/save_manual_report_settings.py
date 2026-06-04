@@ -13,7 +13,7 @@ def save_manual_report_settings(
     database_path: Path,
     manual_report_settings: ManualReportSettings,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Зберігає налаштування нагадування та ручного формування щоденного звіту.
     Saves reminder settings and manual daily report workflow state.

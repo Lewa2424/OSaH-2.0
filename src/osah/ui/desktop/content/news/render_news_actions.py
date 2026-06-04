@@ -2,6 +2,7 @@ from pathlib import Path
 from tkinter import StringVar, ttk
 import customtkinter as ctk
 
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.news_item import NewsItem
 from osah.ui.desktop.content.news.build_mark_news_item_as_read_handler import build_mark_news_item_as_read_handler
 from osah.ui.desktop.content.news.build_news_item_options import build_news_item_options
@@ -15,6 +16,8 @@ def render_news_actions(
     database_path: Path,
     unread_news_items: tuple[NewsItem, ...],
     on_success,
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Відображає ручний refresh і позначення матеріалу як прочитаного.
     Отрисовывает ручной refresh и пометку материала как прочитанного.
@@ -36,7 +39,7 @@ def render_news_actions(
     ctk.CTkButton(
         button_row,
         text="Оновити джерела",
-        command=build_refresh_news_sources_handler(database_path, on_success),
+        command=build_refresh_news_sources_handler(database_path, on_success, access_role=access_role),
         **BTN,
     ).pack(side="left")
 

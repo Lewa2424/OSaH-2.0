@@ -468,7 +468,9 @@ class AppWindow(QMainWindow):
     def _run_scheduled_news_refresh(self) -> None:
         """Runs the scheduled news refresh and re-schedules the next one."""
 
-        if self._news_task_controller.start_worker(NewsRefreshWorker(self._app_context.database_path)):
+        if self._news_task_controller.start_worker(
+            NewsRefreshWorker(self._app_context.database_path, self._access_role)
+        ):
             self._schedule_news_refresh()
             return
         QTimer.singleShot(5 * 60 * 1000, self._schedule_news_refresh)

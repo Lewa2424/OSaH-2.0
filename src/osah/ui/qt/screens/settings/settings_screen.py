@@ -20,6 +20,7 @@ from osah.application.services.discover_news_feed_url import discover_news_feed_
 from osah.application.services.delete_news_source import delete_news_source
 from osah.application.services.load_employee_import_review_by_batch import load_employee_import_review_by_batch
 from osah.application.services.load_system_settings_workspace import load_system_settings_workspace
+from osah.application.services.security.change_program_access_password import change_program_access_password
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.save_news_refresh_time import save_news_refresh_time
 from osah.application.services.save_system_behavior_settings import save_system_behavior_settings
@@ -111,7 +112,9 @@ class SettingsScreen(QWidget):
                 widget.deleteLater()
 
         self._workspace = load_system_settings_workspace(self._database_path)
-        self._content_layout.addWidget(SecuritySettingsPanel(self._workspace.security_profile, self._access_role))
+        security_panel = SecuritySettingsPanel(self._workspace.security_profile, self._access_role)
+        security_panel.password_change_requested.connect(self._change_program_access_password)
+        self._content_layout.addWidget(security_panel)
 
         manual_report_panel = ManualReportSettingsPanel(self._workspace.manual_report_settings, self._read_only)
         manual_report_panel.save_requested.connect(self._save_manual_report_settings)
@@ -216,6 +219,30 @@ class SettingsScreen(QWidget):
         init_text = "готово" if self._workspace.is_initialized else "не готово"
         layout.addWidget(QLabel(f"Стан ініціалізації: {init_text}"))
         return card
+
+    # ###### ЗМІНА ПАРОЛЯ ДОСТУПУ / CHANGE PROGRAM ACCESS PASSWORD ######
+    def _change_program_access_password(
+        self,
+        current_password: str,
+        new_password: str,
+        confirm_password: str,
+    ) -> None:
+        """Changes password for the active access role."""
+
+        if new_password != confirm_password:
+            self._feedback.show_error("Новий пароль і підтвердження не збігаються.")
+            return
+        try:
+            change_program_access_password(
+                self._database_path,
+                self._access_role,
+                current_password,
+                new_password,
+            )
+            self._feedback.show_success("Пароль успішно змінено.")
+            self._rebuild_sections()
+        except ValueError as error:
+            self._feedback.show_error(str(error))
 
     # ###### ЗБЕРЕЖЕННЯ ПОШТОВИХ НАЛАШТУВАНЬ / SAVE MAIL SETTINGS ######
     def _save_manual_report_settings(self, manual_report_settings: ManualReportSettings) -> None:
@@ -362,7 +389,7 @@ class SettingsScreen(QWidget):
     def _start_news_refresh(self) -> None:
         """Starts immediate news refresh in background."""
 
-        self._start_task("news.refresh", NewsRefreshWorker(self._database_path))
+        self._start_task("news.refresh", NewsRefreshWorker(self._database_path, self._access_role))
 
     # ###### ЗБЕРЕЖЕННЯ РОЗКЛАДУ ПЕРЕВІРКИ / SAVE NEWS REFRESH SCHEDULE ######
     def _save_news_refresh_schedule(self, refresh_time: str) -> None:

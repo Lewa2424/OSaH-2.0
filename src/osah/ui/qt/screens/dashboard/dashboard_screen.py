@@ -37,38 +37,36 @@ class DashboardScreen(QWidget):
 
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(SPACING["lg"])
-        metrics_layout.addWidget(
+
+        metric_cards = [
             MetricCard(
                 title="Працівники",
                 value=str(snapshot.employee_total),
                 subtitle="Контур персоналу",
                 accent_color=COLOR["accent"],
-            )
-        )
-        metrics_layout.addWidget(
+            ),
             MetricCard(
                 title="Критичні проблеми",
                 value=str(snapshot.critical_items),
                 subtitle="Недопуски і прострочки",
                 accent_color=COLOR["critical"],
-            )
-        )
-        metrics_layout.addWidget(
+            ),
             MetricCard(
                 title="Потребують уваги",
                 value=str(snapshot.warning_items),
                 subtitle="Порогові сигнали",
                 accent_color=COLOR["warning"],
-            )
-        )
-        metrics_layout.addWidget(
+            ),
             MetricCard(
                 title="Нові матеріали",
                 value=str(snapshot.unread_news_total),
                 subtitle="НПА/новини",
                 accent_color=COLOR["news_accent"],
-            )
-        )
+            ),
+        ]
+        for card in metric_cards:
+            metrics_layout.addWidget(card)
+
         layout.addLayout(metrics_layout)
 
         sections_layout = QHBoxLayout()
@@ -76,6 +74,9 @@ class DashboardScreen(QWidget):
         sections_layout.addWidget(self._build_alerts_panel(snapshot), stretch=6)
         sections_layout.addWidget(self._build_focus_panel(snapshot, service_audit_entries), stretch=4)
         layout.addLayout(sections_layout)
+
+        from osah.ui.qt.components.animations.stagger import apply_stagger
+        apply_stagger(metric_cards, step_ms=70, duration=260)
 
     # ###### ПАНЕЛЬ СПОВІЩЕНЬ / ALERTS PANEL ######
     def _build_alerts_panel(self, snapshot: DashboardSnapshot) -> QWidget:
@@ -92,10 +93,15 @@ class DashboardScreen(QWidget):
         layout.addWidget(title)
 
         if snapshot.active_notifications:
+            alert_cards = []
             for notification in snapshot.active_notifications[:6]:
                 card = AlertCard(notification)
                 card.clicked.connect(lambda item=notification: self._emit_employee_attention(item))
                 layout.addWidget(card)
+                alert_cards.append(card)
+
+            from osah.ui.qt.components.animations.stagger import apply_stagger
+            apply_stagger(alert_cards, step_ms=80, duration=220)
         else:
             empty_state = EmptyStateWidget()
             empty_state.show_state("Активних сповіщень немає.", "Система не бачить відкритих проблемних сигналів.")

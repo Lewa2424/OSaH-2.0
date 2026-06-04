@@ -6,6 +6,7 @@ from osah.application.services.security.ensure_write_access import ensure_write_
 from osah.domain.entities.access_role import AccessRole
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
+from osah.domain.services.is_exportable_table_name import is_exportable_table_name
 from osah.infrastructure.database.queries.list_user_table_names import list_user_table_names
 
 
@@ -13,7 +14,7 @@ from osah.infrastructure.database.queries.list_user_table_names import list_user
 def export_full_system_state(
     database_path: Path,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> Path:
     """Створює JSON-експорт повного стану локальної системи й повертає шлях до файлу.
     Создаёт JSON-экспорт полного состояния локальной системы и возвращает путь к файлу.
@@ -30,6 +31,7 @@ def export_full_system_state(
         exported_tables = {
             table_name: _read_full_table(connection, table_name)
             for table_name in list_user_table_names(connection)
+            if is_exportable_table_name(table_name)
         }
         insert_audit_log(
             connection,
@@ -39,7 +41,9 @@ def export_full_system_state(
             actor_name="system",
             entity_name=str(export_file_path.name),
             result_status="success",
-            description_text=f"tables={len(exported_tables)};exported_at={exported_at.isoformat()}",
+            description_text=(
+                f"tables={len(exported_tables)};exported_at={exported_at.isoformat()};secrets_redacted=true"
+            ),
         )
         connection.commit()
     finally:
@@ -49,6 +53,7 @@ def export_full_system_state(
         "format_version": 1,
         "exported_at": exported_at.isoformat(),
         "database_file_name": database_path.name,
+        "secrets_redacted": True,
         "tables": exported_tables,
     }
     export_file_path.write_text(
@@ -64,5 +69,7 @@ def _read_full_table(connection, table_name: str) -> list[dict[str, object]]:
     Возвращает все строки таблицы в виде JSON-совместимых словарей.
     """
 
+    if not is_exportable_table_name(table_name):
+        raise ValueError(f"Таблицю '{table_name}' не можна експортувати.")
     rows = connection.execute(f"SELECT * FROM {table_name};").fetchall()
     return [dict(row) for row in rows]

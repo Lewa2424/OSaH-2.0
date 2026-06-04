@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from osah.domain.services.security.generate_installation_id import generate_installation_id
+from osah.domain.services.security.generate_service_reset_secret import generate_service_reset_secret
 from osah.infrastructure.database.commands.upsert_app_settings_batch import upsert_app_settings_batch
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.list_app_settings import list_app_settings
@@ -13,6 +14,7 @@ from osah.application.services.security.security_setting_keys import (
     RECOVERY_CREATED_AT,
     RECOVERY_FILE_PATH,
     SERVICE_REQUEST_COUNTER,
+    SERVICE_RESET_SECRET,
 )
 
 
@@ -40,6 +42,8 @@ def ensure_security_baseline(database_path: Path) -> None:
             default_setting_pairs[RECOVERY_FILE_PATH] = ""
         if RECOVERY_CREATED_AT not in app_settings:
             default_setting_pairs[RECOVERY_CREATED_AT] = ""
+        if not app_settings.get(SERVICE_RESET_SECRET):
+            default_setting_pairs[SERVICE_RESET_SECRET] = generate_service_reset_secret()
 
         if default_setting_pairs:
             upsert_app_settings_batch(connection, default_setting_pairs)

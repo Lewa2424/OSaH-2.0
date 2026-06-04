@@ -28,12 +28,10 @@ foreach ($artifactPath in $runtimeArtifacts) {
     }
 }
 
-# ISCC.exe location depends on how Inno Setup was installed on the current PC.
-# If none of these paths exist, update the candidate list below for the local machine.
 $isccCandidates = @(
     "C:\Users\User\AppData\Local\Programs\Inno Setup 6\ISCC.exe",
     "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-    "C:\Program Files\Inno Setup 6\ISCC.exe"
+    "C:\Program Files (Inno Setup 6)\ISCC.exe"
 )
 $isccPath = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 

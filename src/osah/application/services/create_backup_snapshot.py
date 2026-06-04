@@ -17,7 +17,7 @@ def create_backup_snapshot(
     database_path: Path,
     backup_kind: BackupKind,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> Path:
     """Створює резервну копію локальної БД вказаного типу й повертає шлях до файлу.
     Создаёт резервную копию локальной БД указанного типа и возвращает путь к файлу.

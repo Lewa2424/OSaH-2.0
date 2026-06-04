@@ -18,7 +18,7 @@ def build_and_save_manual_daily_report(
     database_path: Path,
     target_path: Path,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> ManualReportSaveResult:
     """Формує щоденний звіт, зберігає його у вибраний шлях та внутрішню історію.
     Builds the daily report, saves it to the chosen path and to the internal history.

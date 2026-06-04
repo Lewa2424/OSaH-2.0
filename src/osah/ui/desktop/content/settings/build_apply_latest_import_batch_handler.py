@@ -3,11 +3,17 @@ from pathlib import Path
 from tkinter import messagebox
 
 from osah.application.services.apply_employee_import_batch import apply_employee_import_batch
+from osah.domain.entities.access_role import AccessRole
 from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 
 
 # ###### ПОБУДОВА ОБРОБНИКА ЗАСТОСУВАННЯ ОСТАННЬОЇ ПАРТІЇ ІМПОРТУ / ПОСТРОЕНИЕ ОБРАБОТЧИКА ПРИМЕНЕНИЯ ПОСЛЕДНЕЙ ПАРТИИ ИМПОРТА ######
-def build_apply_latest_import_batch_handler(database_path: Path, on_success: Callable[[], None]) -> Callable[[], None]:
+def build_apply_latest_import_batch_handler(
+    database_path: Path,
+    on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
+) -> Callable[[], None]:
     """Повертає обробник застосування останньої партії імпорту працівників.
     Возвращает обработчик применения последней партии импорта сотрудников.
     """
@@ -27,7 +33,11 @@ def build_apply_latest_import_batch_handler(database_path: Path, on_success: Cal
             return
 
         try:
-            apply_employee_import_batch(database_path, latest_batch_summary.batch_id)
+            apply_employee_import_batch(
+                database_path,
+                latest_batch_summary.batch_id,
+                access_role=access_role,
+            )
         except ValueError as error:
             messagebox.showerror("Помилка застосування", str(error))
             return

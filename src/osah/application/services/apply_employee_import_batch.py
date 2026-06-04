@@ -19,7 +19,7 @@ def apply_employee_import_batch(
     database_path: Path,
     batch_id: int,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Застосовує валідні чернетки партії імпорту працівників до бойових сутностей.
     Применяет валидные черновики партии импорта сотрудников к боевым сущностям.

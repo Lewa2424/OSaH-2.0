@@ -13,7 +13,7 @@ def reactivate_archived_employee(
     database_path: Path,
     personnel_number: str,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Reactivates archived employee by setting employment status to active."""
 

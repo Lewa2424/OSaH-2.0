@@ -19,7 +19,7 @@ def save_contractor_record(
     database_path: Path,
     record: ContractorRecord,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> ContractorRecord:
     """Creates or updates contractor record in staged contractors registry."""
 

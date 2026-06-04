@@ -3,10 +3,16 @@ from pathlib import Path
 from tkinter import messagebox
 
 from osah.application.services.send_daily_report_email import send_daily_report_email
+from osah.domain.entities.access_role import AccessRole
 
 
 # ###### ПОБУДОВА ОБРОБНИКА НАДСИЛАННЯ ЩОДЕННОГО ЗВІТУ / ПОСТРОЕНИЕ ОБРАБОТЧИКА ОТПРАВКИ ЕЖЕДНЕВНОГО ОТЧЁТА ######
-def build_send_daily_report_handler(database_path: Path, on_success: Callable[[], None]) -> Callable[[], None]:
+def build_send_daily_report_handler(
+    database_path: Path,
+    on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
+) -> Callable[[], None]:
     """Повертає обробник ручного надсилання щоденного звіту.
     Возвращает обработчик ручной отправки ежедневного отчёта.
     """
@@ -18,7 +24,10 @@ def build_send_daily_report_handler(database_path: Path, on_success: Callable[[]
         """
 
         try:
-            report_copy_path, failed_email_copy_path = send_daily_report_email(database_path)
+            report_copy_path, failed_email_copy_path = send_daily_report_email(
+                database_path,
+                access_role=access_role,
+            )
         except ValueError as error:
             messagebox.showerror("Помилка надсилання", str(error))
             return

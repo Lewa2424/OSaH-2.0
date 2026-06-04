@@ -20,7 +20,7 @@ def record_work_permit_daily_check(
     checked_by: str,
     note_text: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Фіксує щоденну перевірку місця виконання робіт за нарядом.
     Records a daily check for the work area under a permit.

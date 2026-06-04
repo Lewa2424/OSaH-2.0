@@ -3,6 +3,7 @@ from pathlib import Path
 from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.employee_import_draft import EmployeeImportDraft
+from osah.domain.services.http_fetch_limits import MAX_EMPLOYEE_IMPORT_FILE_BYTES, MAX_EMPLOYEE_IMPORT_ROWS
 from osah.domain.entities.employee_import_draft_status import EmployeeImportDraftStatus
 from osah.domain.services.build_employee_import_draft import build_employee_import_draft
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
@@ -19,15 +20,24 @@ def create_employee_import_batch_from_file(
     database_path: Path,
     source_path: Path,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> int:
     """Створює партію чернеток імпорту працівників з підтриманого файлу.
     Создаёт партию черновиков импорта сотрудников из поддерживаемого файла.
     """
 
     ensure_write_access(access_role, "create_employee_import_batch_from_file")
+    if not source_path.exists():
+        raise ValueError("Файл імпорту не знайдено.")
+    file_size_bytes = source_path.stat().st_size
+    if file_size_bytes > MAX_EMPLOYEE_IMPORT_FILE_BYTES:
+        raise ValueError(
+            f"Файл імпорту перевищує ліміт {MAX_EMPLOYEE_IMPORT_FILE_BYTES // (1024 * 1024)} МБ."
+        )
     source_format = source_path.suffix.strip().lower()
     row_data = _read_employee_import_rows(source_path, source_format)
+    if len(row_data) > MAX_EMPLOYEE_IMPORT_ROWS:
+        raise ValueError(f"Файл імпорту містить понад {MAX_EMPLOYEE_IMPORT_ROWS} рядків.")
 
     connection = create_database_connection(database_path)
     try:

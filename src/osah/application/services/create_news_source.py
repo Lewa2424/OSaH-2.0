@@ -15,7 +15,7 @@ def create_news_source(
     source_url: str,
     source_kind: NewsSourceKind,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> int:
     """Зберігає довірене джерело новин або НПА для подальшого refresh.
     Сохраняет доверенный источник новостей или НПА для дальнейшего refresh.

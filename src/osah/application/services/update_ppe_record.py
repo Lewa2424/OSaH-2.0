@@ -33,7 +33,7 @@ def update_ppe_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Обновляет запись СИЗ, синхронизирует уведомления и пишет audit.
     Updates a PPE record, synchronizes notifications and writes audit.

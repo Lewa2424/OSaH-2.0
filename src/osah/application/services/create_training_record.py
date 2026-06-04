@@ -40,7 +40,7 @@ def create_training_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> int:
     """Создаёт новую запись инструктажа и синхронизирует уведомления.
     Creates a new training record and synchronizes control notifications.

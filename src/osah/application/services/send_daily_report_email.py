@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.application.services.build_daily_report_document import build_daily_report_document
 from osah.application.services.build_daily_report_email_message import build_daily_report_email_message
 from osah.application.services.load_mail_settings import load_mail_settings
@@ -22,6 +23,8 @@ from osah.infrastructure.logging.log_system_event import log_system_event
 # ###### НАДСИЛАННЯ ЩОДЕННОГО ЗВІТУ ПОШТОЮ / ОТПРАВКА ЕЖЕДНЕВНОГО ОТЧЁТА ПО ПОЧТЕ ######
 def send_daily_report_email(
     database_path: Path,
+    *,
+    access_role: AccessRole,
     attempt_limit: int = 3,
     retry_pause_seconds: int = 0,
 ) -> tuple[Path, Path | None]:
@@ -29,6 +32,7 @@ def send_daily_report_email(
     Отправляет ежедневный отчёт по почте, возвращает путь к копии отчёта и fallback-письму при неудаче.
     """
 
+    ensure_write_access(access_role, "send_daily_report_email")
     mail_settings = normalize_mail_settings_for_delivery(load_mail_settings(database_path))
     if not is_mail_settings_ready(mail_settings):
         log_alert_event("reports_mail", "Daily report send aborted because mail settings are incomplete.")
@@ -54,7 +58,7 @@ def send_daily_report_email(
                 last_sent_date=datetime.now().strftime("%Y-%m-%d"),
                 daily_report_time=mail_settings.daily_report_time,
             )
-            save_mail_settings(database_path, updated_mail_settings, access_role=AccessRole.INSPECTOR)
+            save_mail_settings(database_path, updated_mail_settings, access_role=access_role)
             _write_report_delivery_audit_log(
                 database_path,
                 event_type="report.sent",

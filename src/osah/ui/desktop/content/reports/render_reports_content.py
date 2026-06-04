@@ -47,6 +47,11 @@ def render_reports_content(
         render_daily_report_preview(parent, daily_report_document)
         return
 
-    render_report_actions(parent, database_path, refresh_handler or on_refresh)
+    render_report_actions(
+        parent,
+        database_path,
+        refresh_handler or on_refresh,
+        access_role=access_role,
+    )
     render_mail_settings_form(parent, database_path, mail_settings, refresh_handler or on_refresh)
     render_daily_report_preview(parent, daily_report_document)

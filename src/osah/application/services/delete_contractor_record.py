@@ -15,7 +15,7 @@ def delete_contractor_record(
     database_path: Path,
     contractor_id: str,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Видаляє запис підрядника зі staged-реєстру.
     Deletes contractor record from staged registry.

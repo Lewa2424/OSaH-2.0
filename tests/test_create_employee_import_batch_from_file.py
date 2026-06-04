@@ -8,6 +8,7 @@ from osah.application.services.initialize_application import initialize_applicat
 from osah.application.services.load_latest_employee_import_review import load_latest_employee_import_review
 from osah.infrastructure.config.application_paths import build_application_paths
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
+from osah.domain.entities.access_role import AccessRole
 
 
 class CreateEmployeeImportBatchFromFileTests(unittest.TestCase):
@@ -41,7 +42,7 @@ class CreateEmployeeImportBatchFromFileTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            batch_id = create_employee_import_batch_from_file(context.database_path, source_path)
+            batch_id = create_employee_import_batch_from_file(context.database_path, source_path, access_role=AccessRole.INSPECTOR)
             latest_batch_summary, employee_import_drafts = load_latest_employee_import_review(context.database_path)
 
             self.assertEqual(batch_id, latest_batch_summary.batch_id)

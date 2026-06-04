@@ -26,15 +26,11 @@ class MailSettingsPanel(SettingsSectionCard):
         layout.addWidget(title)
 
         help_label = QLabel(
-            "Простий режим: отримувач, відправник, пароль пошти і час. SMTP-параметри доступні нижче лише за потреби."
+            "SMTP лише для ручної відправки звіту. Розклад нагадувань — у секції «Щоденний звіт»."
         )
         help_label.setWordWrap(True)
         help_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
         layout.addWidget(help_label)
-
-        self._enabled = QCheckBox("Автозвіт увімкнено")
-        self._enabled.setChecked(mail_settings.daily_report_enabled)
-        layout.addWidget(self._enabled)
 
         self._recipient = QLineEdit(mail_settings.recipient_email)
         self._recipient.setPlaceholderText("Одержувачі через ;")
@@ -45,16 +41,10 @@ class MailSettingsPanel(SettingsSectionCard):
         recipient_hint.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
         layout.addWidget(recipient_hint)
 
-        row = QHBoxLayout()
-        row.setSpacing(SPACING["md"])
-        self._time = QLineEdit(mail_settings.daily_report_time)
-        self._time.setPlaceholderText("Час (HH:MM)")
-        row.addWidget(self._time, stretch=1)
         self._sender = QLineEdit(mail_settings.sender_email)
         self._sender.setPlaceholderText("Пошта відправника")
         self._sender.editingFinished.connect(self._apply_sender_defaults)
-        row.addWidget(self._sender, stretch=2)
-        layout.addLayout(row)
+        layout.addWidget(self._sender)
 
         self._password = QLineEdit(mail_settings.smtp_password)
         self._password.setPlaceholderText("Пароль пошти / окремий пароль для зовнішнього застосунку")
@@ -116,9 +106,7 @@ class MailSettingsPanel(SettingsSectionCard):
         """
 
         for field in (
-            self._enabled,
             self._recipient,
-            self._time,
             self._sender,
             self._password,
             self._advanced_toggle,
@@ -138,7 +126,7 @@ class MailSettingsPanel(SettingsSectionCard):
         self._apply_sender_defaults()
         self.save_requested.emit(
             MailSettings(
-                daily_report_enabled=self._enabled.isChecked(),
+                daily_report_enabled=False,
                 smtp_host=self._smtp_host.text().strip(),
                 smtp_port=int(self._smtp_port.value()),
                 smtp_username=self._smtp_username.text().strip(),
@@ -147,7 +135,7 @@ class MailSettingsPanel(SettingsSectionCard):
                 recipient_email=self._recipient.text().strip(),
                 use_tls=self._tls.isChecked(),
                 last_sent_date=self._base_mail_settings.last_sent_date,
-                daily_report_time=self._time.text().strip() or "08:00",
+                daily_report_time=self._base_mail_settings.daily_report_time,
             )
         )
 

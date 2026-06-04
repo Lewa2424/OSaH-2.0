@@ -2,7 +2,6 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
-
 from osah.application.services.create_current_training_record import create_current_training_record
 from osah.application.services.create_training_record import create_training_record
 from osah.application.services.create_work_permit_record import create_work_permit_record
@@ -12,7 +11,7 @@ from osah.infrastructure.config.application_paths import build_application_paths
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.list_training_records import list_training_records
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
-
+from osah.domain.entities.access_role import AccessRole
 
 class CurrentTrainingRecordsTests(unittest.TestCase):
     """Тести моделі current/archive для інструктажів.
@@ -20,72 +19,28 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
     """
 
     def _seed_training_cycle(self, database_path: Path, personnel_number: str) -> None:
-        create_training_record(
-            database_path=database_path,
-            employee_personnel_number=personnel_number,
-            training_type="introductory",
-            event_date_text="09.04.2026",
-            next_control_date_text="",
-            conducted_by="Інспектор",
-            note_text="Вступний",
-        )
-        create_training_record(
-            database_path=database_path,
-            employee_personnel_number=personnel_number,
-            training_type="primary",
-            event_date_text="10.04.2026",
-            next_control_date_text="",
-            work_risk_category="regular",
-            conducted_by="Інспектор",
-            note_text="Первинний",
-        )
+        create_training_record(database_path=database_path, employee_personnel_number=personnel_number, training_type='introductory', event_date_text='09.04.2026', next_control_date_text='', conducted_by='Інспектор', note_text='Вступний', access_role=AccessRole.INSPECTOR)
+        create_training_record(database_path=database_path, employee_personnel_number=personnel_number, training_type='primary', event_date_text='10.04.2026', next_control_date_text='', work_risk_category='regular', conducted_by='Інспектор', note_text='Первинний', access_role=AccessRole.INSPECTOR)
 
     def test_create_new_same_type_archives_old_training(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                self._seed_training_cycle(context.database_path, "0001")
-                first_record_id = create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.04.2026",
-                    "",
-                    "Інспектор 1",
-                    "Перший повторний",
-                    work_risk_category="regular",
-                )
-                second_record_id = create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.05.2026",
-                    "",
-                    "Інспектор 2",
-                    "Другий повторний",
-                    work_risk_category="regular",
-                )
-
+                self._seed_training_cycle(context.database_path, '0001')
+                first_record_id = create_current_training_record(context.database_path, '0001', 'repeated', '10.04.2026', '', 'Інспектор 1', 'Перший повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
+                second_record_id = create_current_training_record(context.database_path, '0001', 'repeated', '10.05.2026', '', 'Інспектор 2', 'Другий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
                 connection = create_database_connection(context.database_path)
                 try:
-                    rows = connection.execute(
-                        """
-                        SELECT id, is_current, archive_reason, replaced_by_record_id
-                        FROM trainings
-                        WHERE employee_personnel_number = '0001' AND training_type = 'repeated'
-                        ORDER BY id ASC;
-                        """
-                    ).fetchall()
+                    rows = connection.execute("\n                        SELECT id, is_current, archive_reason, replaced_by_record_id\n                        FROM trainings\n                        WHERE employee_personnel_number = '0001' AND training_type = 'repeated'\n                        ORDER BY id ASC;\n                        ").fetchall()
                 finally:
                     connection.close()
-
                 self.assertEqual(len(rows), 2)
-                self.assertEqual(int(rows[0]["id"]), first_record_id)
-                self.assertEqual(int(rows[0]["is_current"]), 0)
-                self.assertEqual(rows[0]["archive_reason"], "replaced_by_new_training")
-                self.assertEqual(int(rows[0]["replaced_by_record_id"]), second_record_id)
-                self.assertEqual(int(rows[1]["id"]), second_record_id)
-                self.assertEqual(int(rows[1]["is_current"]), 1)
+                self.assertEqual(int(rows[0]['id']), first_record_id)
+                self.assertEqual(int(rows[0]['is_current']), 0)
+                self.assertEqual(rows[0]['archive_reason'], 'replaced_by_new_training')
+                self.assertEqual(int(rows[0]['replaced_by_record_id']), second_record_id)
+                self.assertEqual(int(rows[1]['id']), second_record_id)
+                self.assertEqual(int(rows[1]['is_current']), 1)
             finally:
                 shut_down_logging()
 
@@ -93,32 +48,13 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                self._seed_training_cycle(context.database_path, "0001")
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.04.2026",
-                    "",
-                    "Інспектор 1",
-                    "Перший повторний",
-                    work_risk_category="regular",
-                )
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.05.2026",
-                    "",
-                    "Інспектор 2",
-                    "Другий повторний",
-                    work_risk_category="regular",
-                )
-
+                self._seed_training_cycle(context.database_path, '0001')
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.04.2026', '', 'Інспектор 1', 'Перший повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.05.2026', '', 'Інспектор 2', 'Другий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
                 records = load_training_registry(context.database_path)
-                repeated_records = [record for record in records if record.employee_personnel_number == "0001" and record.training_type.value == "repeated"]
+                repeated_records = [record for record in records if record.employee_personnel_number == '0001' and record.training_type.value == 'repeated']
                 self.assertEqual(len(repeated_records), 1)
-                self.assertEqual(repeated_records[0].note_text, "Другий повторний")
+                self.assertEqual(repeated_records[0].note_text, 'Другий повторний')
                 self.assertTrue(repeated_records[0].is_current)
             finally:
                 shut_down_logging()
@@ -127,37 +63,17 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                self._seed_training_cycle(context.database_path, "0001")
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.04.2026",
-                    "",
-                    "Інспектор 1",
-                    "Перший повторний",
-                    work_risk_category="regular",
-                )
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.05.2026",
-                    "",
-                    "Інспектор 2",
-                    "Другий повторний",
-                    work_risk_category="regular",
-                )
-
+                self._seed_training_cycle(context.database_path, '0001')
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.04.2026', '', 'Інспектор 1', 'Перший повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.05.2026', '', 'Інспектор 2', 'Другий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
                 connection = create_database_connection(context.database_path)
                 try:
                     records = list_training_records(connection, include_archived=True)
                 finally:
                     connection.close()
-
-                repeated_records = [record for record in records if record.employee_personnel_number == "0001" and record.training_type.value == "repeated"]
+                repeated_records = [record for record in records if record.employee_personnel_number == '0001' and record.training_type.value == 'repeated']
                 self.assertEqual(len(repeated_records), 2)
-                self.assertEqual(sum(1 for record in repeated_records if record.is_current), 1)
+                self.assertEqual(sum((1 for record in repeated_records if record.is_current)), 1)
             finally:
                 shut_down_logging()
 
@@ -165,61 +81,15 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                create_training_record(
-                    database_path=context.database_path,
-                    employee_personnel_number="0001",
-                    training_type="introductory",
-                    event_date_text="09.01.2026",
-                    next_control_date_text="",
-                    conducted_by="Інспектор",
-                    note_text="Вступний",
-                )
-                create_training_record(
-                    database_path=context.database_path,
-                    employee_personnel_number="0001",
-                    training_type="primary",
-                    event_date_text="10.01.2026",
-                    next_control_date_text="",
-                    work_risk_category="regular",
-                    conducted_by="Інспектор",
-                    note_text="Первинний",
-                )
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.01.2026",
-                    "",
-                    "Інспектор 1",
-                    "Старий повторний",
-                    work_risk_category="regular",
-                )
-                create_current_training_record(
-                    context.database_path,
-                    "0001",
-                    "repeated",
-                    "10.05.2099",
-                    "",
-                    "Інспектор 2",
-                    "Новий повторний",
-                    work_risk_category="regular",
-                )
-
+                create_training_record(database_path=context.database_path, employee_personnel_number='0001', training_type='introductory', event_date_text='09.01.2026', next_control_date_text='', conducted_by='Інспектор', note_text='Вступний', access_role=AccessRole.INSPECTOR)
+                create_training_record(database_path=context.database_path, employee_personnel_number='0001', training_type='primary', event_date_text='10.01.2026', next_control_date_text='', work_risk_category='regular', conducted_by='Інспектор', note_text='Первинний', access_role=AccessRole.INSPECTOR)
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.01.2026', '', 'Інспектор 1', 'Старий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
+                create_current_training_record(context.database_path, '0001', 'repeated', '10.05.2099', '', 'Інспектор 2', 'Новий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
                 connection = sqlite3.connect(context.database_path)
                 try:
-                    rows = connection.execute(
-                        """
-                        SELECT COUNT(*)
-                        FROM notifications
-                        WHERE source_module = 'trainings.registry'
-                          AND employee_personnel_number = '0001'
-                          AND notification_level = 'critical'
-                          AND title_text = 'Прострочено повторний інструктаж'
-                        """
-                    ).fetchone()
+                    rows = connection.execute("\n                        SELECT COUNT(*)\n                        FROM notifications\n                        WHERE source_module = 'trainings.registry'\n                          AND employee_personnel_number = '0001'\n                          AND notification_level = 'critical'\n                          AND title_text = 'Прострочено повторний інструктаж'\n                        ").fetchone()
                 finally:
                     connection.close()
-
                 self.assertEqual(rows[0], 0)
             finally:
                 shut_down_logging()
@@ -228,17 +98,8 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                with self.assertRaisesRegex(ValueError, "послідовність інструктажів"):
-                    create_current_training_record(
-                        context.database_path,
-                        "0001",
-                        "repeated",
-                        "10.04.2026",
-                        "",
-                        "Інспектор 1",
-                        "Помилковий повторний",
-                        work_risk_category="regular",
-                    )
+                with self.assertRaisesRegex(ValueError, 'послідовність інструктажів'):
+                    create_current_training_record(context.database_path, '0001', 'repeated', '10.04.2026', '', 'Інспектор 1', 'Помилковий повторний', work_risk_category='regular', access_role=AccessRole.INSPECTOR)
             finally:
                 shut_down_logging()
 
@@ -246,52 +107,13 @@ class CurrentTrainingRecordsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             context = initialize_application(build_application_paths(Path(temporary_directory)))
             try:
-                create_work_permit_record(
-                    context.database_path,
-                    "AUTO-WP-CARD-001",
-                    "Висотні роботи",
-                    "Дільниця К",
-                    "10.05.2026 08:00",
-                    "10.05.2026 12:00",
-                    "Майстер",
-                    "Інженер з ОП",
-                    "0001",
-                    "executor",
-                    "Перший НД",
-                    target_training_status="done_passed",
-                    target_training_date_text="09.05.2026",
-                    target_training_conducted_by="Коваль О.В.",
-                )
-                create_work_permit_record(
-                    context.database_path,
-                    "AUTO-WP-CARD-002",
-                    "Вогневі роботи",
-                    "Дільниця Л",
-                    "11.05.2026 08:00",
-                    "11.05.2026 12:00",
-                    "Майстер",
-                    "Інженер з ОП",
-                    "0001",
-                    "executor",
-                    "Другий НД",
-                    target_training_status="done_passed",
-                    target_training_date_text="10.05.2026",
-                    target_training_conducted_by="Коваль О.В.",
-                )
-
+                create_work_permit_record(context.database_path, 'AUTO-WP-CARD-001', 'Висотні роботи', 'Дільниця К', '10.05.2026 08:00', '10.05.2026 12:00', 'Майстер', 'Інженер з ОП', '0001', 'executor', 'Перший НД', target_training_status='done_passed', target_training_date_text='09.05.2026', target_training_conducted_by='Коваль О.В.', access_role=AccessRole.INSPECTOR)
+                create_work_permit_record(context.database_path, 'AUTO-WP-CARD-002', 'Вогневі роботи', 'Дільниця Л', '11.05.2026 08:00', '11.05.2026 12:00', 'Майстер', 'Інженер з ОП', '0001', 'executor', 'Другий НД', target_training_status='done_passed', target_training_date_text='10.05.2026', target_training_conducted_by='Коваль О.В.', access_role=AccessRole.INSPECTOR)
                 records = load_training_registry(context.database_path)
-                targeted_records = [
-                    record
-                    for record in records
-                    if record.employee_personnel_number == "0001"
-                    and record.training_type.value == "targeted"
-                    and record.source_module == "work_permits"
-                ]
+                targeted_records = [record for record in records if record.employee_personnel_number == '0001' and record.training_type.value == 'targeted' and (record.source_module == 'work_permits')]
                 self.assertEqual(len(targeted_records), 2)
-                self.assertTrue(all(record.is_current for record in targeted_records))
+                self.assertTrue(all((record.is_current for record in targeted_records)))
             finally:
                 shut_down_logging()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

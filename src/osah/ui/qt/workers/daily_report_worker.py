@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject, Signal
 
 from osah.application.services.save_daily_report_document_copy import save_daily_report_document_copy
 from osah.application.services.send_daily_report_email import send_daily_report_email
+from osah.domain.entities.access_role import AccessRole
 
 
 class DailyReportWorker(QObject):
@@ -14,10 +15,11 @@ class DailyReportWorker(QObject):
     error = Signal(str)
     finished = Signal()
 
-    def __init__(self, database_path: Path, operation_kind: str) -> None:
+    def __init__(self, database_path: Path, operation_kind: str, access_role: AccessRole) -> None:
         super().__init__()
         self._database_path = database_path
         self._operation_kind = operation_kind
+        self._access_role = access_role
 
     # ###### ФОНОВА ОБРОБКА ЩОДЕННОГО ЗВІТУ / BACKGROUND DAILY REPORT PROCESS ######
     def run(self) -> None:
@@ -33,7 +35,10 @@ class DailyReportWorker(QObject):
 
             if self._operation_kind == "send":
                 self.progress.emit(20, "Формування та відправка щоденного звіту.")
-                report_path, fallback_path = send_daily_report_email(self._database_path)
+                report_path, fallback_path = send_daily_report_email(
+                    self._database_path,
+                    access_role=self._access_role,
+                )
                 self.progress.emit(100, "Сценарій доставки звіту завершено.")
                 self.success.emit(
                     {

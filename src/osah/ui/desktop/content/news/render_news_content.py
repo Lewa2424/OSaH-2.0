@@ -46,7 +46,13 @@ def render_news_content(
         )
     else:
         refresh_handler = build_news_screen_refresh_handler(parent, database_path, access_role)
-        render_news_actions(parent, database_path, unread_news_items, refresh_handler or on_refresh)
+        render_news_actions(
+            parent,
+            database_path,
+            unread_news_items,
+            refresh_handler or on_refresh,
+            access_role=access_role,
+        )
 
     render_news_source_table(parent, news_sources)
     render_news_item_table(parent, news_items)

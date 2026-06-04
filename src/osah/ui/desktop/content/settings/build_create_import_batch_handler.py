@@ -3,10 +3,16 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 
 from osah.application.services.create_employee_import_batch_from_file import create_employee_import_batch_from_file
+from osah.domain.entities.access_role import AccessRole
 
 
 # ###### ПОБУДОВА ОБРОБНИКА СТВОРЕННЯ ЧЕРНЕТОК ІМПОРТУ / ПОСТРОЕНИЕ ОБРАБОТЧИКА СОЗДАНИЯ ЧЕРНОВИКОВ ИМПОРТА ######
-def build_create_import_batch_handler(database_path: Path, on_success: Callable[[], None]) -> Callable[[], None]:
+def build_create_import_batch_handler(
+    database_path: Path,
+    on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
+) -> Callable[[], None]:
     """Повертає обробник вибору файлу й створення чернеток імпорту працівників.
     Возвращает обработчик выбора файла и создания черновиков импорта сотрудников.
     """
@@ -29,7 +35,11 @@ def build_create_import_batch_handler(database_path: Path, on_success: Callable[
             return
 
         try:
-            batch_id = create_employee_import_batch_from_file(database_path, Path(selected_file_path))
+            batch_id = create_employee_import_batch_from_file(
+                database_path,
+                Path(selected_file_path),
+                access_role=access_role,
+            )
         except (ValueError, OSError) as error:
             messagebox.showerror("Помилка імпорту", str(error))
             return

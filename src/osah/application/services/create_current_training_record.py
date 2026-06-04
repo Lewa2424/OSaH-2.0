@@ -44,7 +44,7 @@ def create_current_training_record(
     source_record_id: int | None = None,
     source_key: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> int:
     """Створює новий актуальний інструктаж і архівує попередній current того ж слота.
     Creates a new current training record and archives the previous current record in the same slot.

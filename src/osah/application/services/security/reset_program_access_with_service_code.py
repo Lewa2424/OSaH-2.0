@@ -28,6 +28,7 @@ from osah.application.services.security.security_setting_keys import (
     RECOVERY_CREATED_AT,
     RECOVERY_FILE_PATH,
     SERVICE_REQUEST_COUNTER,
+    SERVICE_RESET_SECRET,
 )
 
 
@@ -51,7 +52,12 @@ def reset_program_access_with_service_code(
             raise ValueError("Контур безпеки ще не налаштований.")
 
         service_request_counter = int(app_settings.get(SERVICE_REQUEST_COUNTER, "1") or "1")
-        expected_service_code = build_service_reset_code(installation_id, service_request_counter)
+        service_reset_secret = app_settings.get(SERVICE_RESET_SECRET, "")
+        expected_service_code = build_service_reset_code(
+            installation_id,
+            service_request_counter,
+            service_reset_secret,
+        )
         if service_code.strip().upper() != expected_service_code:
             insert_audit_log(
                 connection,

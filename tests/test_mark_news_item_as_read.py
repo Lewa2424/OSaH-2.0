@@ -1,7 +1,6 @@
 import tempfile
 import unittest
 from pathlib import Path
-
 from osah.application.services.create_news_source import create_news_source
 from osah.application.services.initialize_application import initialize_application
 from osah.application.services.load_news_items import load_news_items
@@ -12,47 +11,26 @@ from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.domain.entities.rss_feed_entry import RssFeedEntry
 from osah.infrastructure.config.application_paths import build_application_paths
 from osah.infrastructure.logging.shutdown_logging import shut_down_logging
-
+from osah.domain.entities.access_role import AccessRole
 
 class MarkNewsItemAsReadTests(unittest.TestCase):
     """Тести позначення новинних матеріалів як прочитаних.
     Тесты пометки новостных материалов как прочитанных.
     """
 
-    # ###### ПЕРЕВІРКА READ-STATE НОВИННОГО МАТЕРІАЛУ / ПРОВЕРКА READ-STATE НОВОСТНОГО МАТЕРИАЛА ######
     def test_mark_news_item_as_read_updates_item_state(self) -> None:
         """Перевіряє оновлення стану прочитання кешованого матеріалу.
         Проверяет обновление состояния прочтения кэшированного материала.
         """
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
-            create_news_source(
-                context.database_path,
-                "НПА",
-                "https://example.com/npa.xml",
-                NewsSourceKind.NPA,
-            )
-
-            refresh_news_sources(
-                context.database_path,
-                lambda _: (
-                    RssFeedEntry(
-                        title_text="Зміни до нормативного акту з охорони праці",
-                        link_url="https://example.com/npa-1",
-                        published_at_text="2026-04-10T13:00:00",
-                    ),
-                ),
-            )
+            create_news_source(context.database_path, 'НПА', 'https://example.com/npa.xml', NewsSourceKind.NPA, access_role=AccessRole.INSPECTOR)
+            refresh_news_sources(context.database_path, lambda _: (RssFeedEntry(title_text='Зміни до нормативного акту з охорони праці', link_url='https://example.com/npa-1', published_at_text='2026-04-10T13:00:00'),), access_role=AccessRole.INSPECTOR)
             news_item = load_news_items(context.database_path)[0]
-
-            mark_news_item_as_read(context.database_path, news_item.item_id)
-
+            mark_news_item_as_read(context.database_path, news_item.item_id, access_role=AccessRole.INSPECTOR)
             updated_news_item = load_news_items(context.database_path)[0]
             self.assertEqual(updated_news_item.read_state, NewsItemReadState.READ)
             shut_down_logging()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

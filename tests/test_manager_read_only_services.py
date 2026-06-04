@@ -13,6 +13,9 @@ from osah.application.services.create_employee_import_batch_from_file import cre
 from osah.application.services.create_medical_record import create_medical_record
 from osah.application.services.create_ppe_record import create_ppe_record
 from osah.application.services.create_training_record import create_training_record
+from osah.application.services.create_training_records_batch import create_training_records_batch
+from osah.application.services.refresh_news_sources import refresh_news_sources
+from osah.application.services.send_daily_report_email import send_daily_report_email
 from osah.application.services.create_work_permit_record import create_work_permit_record
 from osah.application.services.initialize_application import initialize_application
 from osah.application.services.load_medical_registry import load_medical_registry
@@ -244,6 +247,31 @@ class ManagerReadOnlyServicesTests(unittest.TestCase):
                 create_employee_import_batch_from_file(
                     context.database_path,
                     source_path,
+                    access_role=AccessRole.MANAGER,
+                )
+
+    def test_manager_cannot_send_daily_report_email(self) -> None:
+        with self._application_context() as context:
+            with self.assertRaises(AccessDeniedError):
+                send_daily_report_email(context.database_path, access_role=AccessRole.MANAGER)
+
+    def test_manager_cannot_refresh_news_sources(self) -> None:
+        with self._application_context() as context:
+            with self.assertRaises(AccessDeniedError):
+                refresh_news_sources(context.database_path, lambda _url: (), access_role=AccessRole.MANAGER)
+
+    def test_manager_cannot_create_training_records_batch(self) -> None:
+        with self._application_context() as context:
+            with self.assertRaises(AccessDeniedError):
+                create_training_records_batch(
+                    database_path=context.database_path,
+                    employee_personnel_numbers=("0001",),
+                    training_type="introductory",
+                    event_date_text="2026-05-01",
+                    next_control_date_text="",
+                    work_risk_category="high_risk",
+                    conducted_by="Інспектор",
+                    note_text="",
                     access_role=AccessRole.MANAGER,
                 )
 

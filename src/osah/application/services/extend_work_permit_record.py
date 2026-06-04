@@ -20,7 +20,7 @@ def extend_work_permit_record(
     extended_until_text: str,
     extension_reason_text: str,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Продовжує наряд-допуск один раз у межах ще 15 календарних днів.
     Extends a work permit once within another 15 calendar days.

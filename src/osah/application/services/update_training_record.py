@@ -42,7 +42,7 @@ def update_training_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Обновляет запись инструктажа, синхронизирует уведомления и пишет audit.
     Updates a training record, synchronizes notifications, and writes audit.

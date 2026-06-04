@@ -2,6 +2,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.rss_feed_entry import RssFeedEntry
 from osah.domain.services.build_news_item_fingerprint import build_news_item_fingerprint
 from osah.domain.services.is_occupational_safety_related_feed_entry import (
@@ -21,11 +23,14 @@ from osah.infrastructure.news.fetch_feed_entries_from_url import fetch_feed_entr
 def refresh_news_sources(
     database_path: Path,
     feed_fetcher: Callable[[str], tuple[RssFeedEntry, ...]] = fetch_feed_entries_from_url,
+    *,
+    access_role: AccessRole,
 ) -> int:
     """Оновлює активні зовнішні джерела і кешує нові матеріали локально.
     Обновляет активные внешние источники и кэширует новые материалы локально.
     """
 
+    ensure_write_access(access_role, "refresh_news_sources")
     connection = create_database_connection(database_path)
     try:
         news_sources = tuple(news_source for news_source in list_news_sources(connection) if news_source.is_active)

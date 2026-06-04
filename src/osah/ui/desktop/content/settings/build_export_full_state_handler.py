@@ -3,10 +3,16 @@ from pathlib import Path
 from tkinter import messagebox
 
 from osah.application.services.export_full_system_state import export_full_system_state
+from osah.domain.entities.access_role import AccessRole
 
 
 # ###### ПОБУДОВА ОБРОБНИКА ПОВНОГО ЕКСПОРТУ / ПОСТРОЕНИЕ ОБРАБОТЧИКА ПОЛНОГО ЭКСПОРТА ######
-def build_export_full_state_handler(database_path: Path, on_success: Callable[[], None]) -> Callable[[], None]:
+def build_export_full_state_handler(
+    database_path: Path,
+    on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
+) -> Callable[[], None]:
     """Повертає обробник повного експорту стану системи у JSON.
     Возвращает обработчик полного экспорта состояния системы в JSON.
     """
@@ -18,7 +24,7 @@ def build_export_full_state_handler(database_path: Path, on_success: Callable[[]
         """
 
         try:
-            export_file_path = export_full_system_state(database_path)
+            export_file_path = export_full_system_state(database_path, access_role=access_role)
         except OSError as error:
             messagebox.showerror("Помилка експорту", str(error))
             return

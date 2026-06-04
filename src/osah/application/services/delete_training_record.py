@@ -15,7 +15,7 @@ def delete_training_record(
     database_path: Path,
     record_id: int,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Видаляє запис інструктажу, синхронізує сповіщення і пише audit.
     Удаляет запись инструктажа, синхронизирует уведомления и пишет audit.

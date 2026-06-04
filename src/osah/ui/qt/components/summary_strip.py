@@ -45,12 +45,20 @@ class SummaryStrip(QFrame):
 
     # ###### ЗНАЧЕННЯ СМУГИ / STRIP VALUES ######
     def set_values(self, values: tuple[int, ...]) -> None:
-        """Оновлює тільки числові значення існуючих сегментів.
-        Updates only numeric values of existing segments.
+        """Оновлює числові значення існуючих сегментів з анімацією count-up.
+        Updates numeric values of existing segments with count-up animation.
         """
+        from osah.ui.qt.components.animations.count_up import apply_count_up
 
-        for label, value in zip(self._metric_labels, values):
-            label.setText(str(value))
+        for label, new_value in zip(self._metric_labels, values):
+            try:
+                current_value = int(label.text())
+            except (ValueError, AttributeError):
+                current_value = 0
+            if current_value != new_value:
+                apply_count_up(label, current_value, new_value)
+            else:
+                label.setText(str(new_value))
 
 
 def _build_metric_segment(title: str, value: int, color: str) -> tuple[QWidget, QLabel]:

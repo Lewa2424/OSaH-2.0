@@ -15,7 +15,7 @@ def save_news_refresh_time(
     database_path: Path,
     refresh_time: str,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Зберігає щоденний час перевірки новин у налаштуваннях застосунку.
     Сохраняет ежедневное время проверки новостей в настройках приложения.

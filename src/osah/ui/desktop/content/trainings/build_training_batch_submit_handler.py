@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import StringVar, messagebox
 
 from osah.application.services.create_training_records_batch import create_training_records_batch
+from osah.domain.entities.access_role import AccessRole
 from osah.ui.desktop.content.trainings.extract_selected_personnel_numbers import extract_selected_personnel_numbers
 from osah.ui.desktop.content.trainings.extract_training_type_value import extract_training_type_value
 
@@ -17,6 +18,8 @@ def build_training_batch_submit_handler(
     conducted_by_var: StringVar,
     note_var: StringVar,
     on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
 ) -> Callable[[], None]:
     """Повертає обробник масового створення записів інструктажу.
     Возвращает обработчик массового создания записей инструктажа.
@@ -37,6 +40,7 @@ def build_training_batch_submit_handler(
                 next_control_date_text=next_control_date_var.get(),
                 conducted_by=conducted_by_var.get(),
                 note_text=note_var.get(),
+                access_role=access_role,
             )
         except ValueError as error:
             messagebox.showerror("Помилка валідації", str(error))

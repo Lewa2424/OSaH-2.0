@@ -30,7 +30,7 @@ def create_ppe_record(
     basis_text: str = "",
     basis_note: str = "",
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> None:
     """Создаёт новую запись СИЗ и синхронизирует контрольные уведомления.
     Creates a new PPE record and synchronizes control notifications.

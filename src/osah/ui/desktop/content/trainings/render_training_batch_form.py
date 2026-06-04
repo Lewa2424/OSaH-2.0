@@ -4,6 +4,7 @@ from pathlib import Path
 from tkinter import StringVar, ttk
 import customtkinter as ctk
 
+from osah.domain.entities.access_role import AccessRole
 from osah.ui.desktop.content.trainings.build_training_batch_submit_handler import build_training_batch_submit_handler
 from osah.ui.desktop.content.trainings.build_training_type_options import build_training_type_options
 from osah.ui.desktop.content.ctk_styles import CARD, BTN, ENTRY, label_title, label_body, label_muted
@@ -15,6 +16,8 @@ def render_training_batch_form(
     database_path: Path,
     employee_options: tuple[str, ...],
     on_success: Callable[[], None],
+    *,
+    access_role: AccessRole,
 ) -> None:
     """Відображає форму масового створення записів інструктажів.
     Отрисовывает форму массового создания записей инструктажей.
@@ -89,6 +92,7 @@ def render_training_batch_form(
             conducted_by_var=conducted_by_var,
             note_var=note_var,
             on_success=on_success,
+            access_role=access_role,
         ),
         **BTN,
     ).grid(row=8, column=0, columnspan=2, sticky="w", padx=20, pady=(24, 20))

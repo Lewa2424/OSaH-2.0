@@ -22,7 +22,7 @@ def reissue_work_permit_record(
     reissued_record: WorkPermitRecord,
     reissue_reason_text: str,
     *,
-    access_role: AccessRole = AccessRole.INSPECTOR,
+    access_role: AccessRole,
 ) -> int:
     """Перевипускає наряд-допуск як новий запис.
     Reissues a work permit as a new record.
