@@ -20,6 +20,8 @@ from osah.application.services.approve_port_passport import approve_port_passpor
 from osah.application.services.calculate_port_passport_profile import calculate_port_passport_profile
 from osah.application.services.export_port_shift_briefing_to_docx import export_port_shift_briefing_to_docx
 from osah.application.services.load_port_risk_suggestions_for_passport import load_port_risk_suggestions_for_passport
+from osah.application.services.load_port_shift_checklist_detail import load_port_shift_checklist_detail
+from osah.application.services.load_port_shift_checklists import load_port_shift_checklists
 from osah.application.services.load_port_site_passport_for_edit import load_port_site_passport_for_edit
 from osah.application.services.load_port_site_passport_rows import load_port_site_passport_rows
 from osah.application.services.load_port_site_risks_for_passport import load_port_site_risks_for_passport
@@ -32,6 +34,7 @@ from osah.domain.entities.port_risk_profile import format_port_risk_profile
 from osah.domain.entities.port_risk_suggestion import PortRiskSuggestion
 from osah.domain.entities.port_site_passport_row import PortSitePassportRow
 from osah.domain.entities.port_site_risk import PortSiteRisk
+from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
@@ -43,10 +46,14 @@ from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.port_r.accept_risk_dialog import AcceptRiskDialog
 from osah.ui.qt.screens.port_r.add_manual_risk_dialog import AddManualRiskDialog
 from osah.ui.qt.screens.port_r.create_port_site_passport_dialog import CreatePortSitePassportDialog
+from osah.ui.qt.screens.port_r.port_deviation_log_table import PortDeviationLogTable
+from osah.ui.qt.screens.port_r.port_r_analytics_panel import PortRAnalyticsPanel
 from osah.ui.qt.screens.port_r.port_risk_suggestions_table import PortRiskSuggestionsTable
+from osah.ui.qt.screens.port_r.port_shift_record_dialog import PortShiftRecordDialog
 from osah.ui.qt.screens.port_r.port_site_passports_table import PortSitePassportsTable
 from osah.ui.qt.screens.port_r.port_site_risks_table import PortSiteRisksTable
 from osah.ui.qt.screens.port_r.shift_briefing_preview_dialog import ShiftBriefingPreviewDialog
+from osah.ui.qt.screens.port_r.shift_checklist_dialog import ShiftChecklistDialog
 
 
 class PortRScreen(QWidget):
@@ -126,11 +133,45 @@ class PortRScreen(QWidget):
         suggestions_tab_layout.addWidget(ScrollableTableFrame(self._suggestions_table, snap_to_columns=True))
         self._tabs.addTab(suggestions_tab, "Рекомендовані")
 
+        # Вкладка «Журнал відхилень»
+        journal_tab = QWidget()
+        journal_tab_layout = QVBoxLayout(journal_tab)
+        journal_tab_layout.setContentsMargins(0, SPACING["sm"], 0, 0)
+        journal_tab_layout.setSpacing(SPACING["sm"])
+
+        journal_controls = QWidget()
+        journal_controls_layout = QHBoxLayout(journal_controls)
+        journal_controls_layout.setContentsMargins(0, 0, 0, 0)
+        journal_controls_layout.setSpacing(SPACING["sm"])
+        self._assess_shift_btn = QPushButton("Занести оцінку зміни")
+        self._assess_shift_btn.setProperty("variant", "accent")
+        self._assess_shift_btn.setEnabled(False)
+        self._assess_shift_btn.clicked.connect(self._on_assess_shift)
+        journal_controls_layout.addWidget(self._assess_shift_btn)
+        journal_controls_layout.addStretch()
+        journal_tab_layout.addWidget(journal_controls)
+
+        self._deviation_log_table = PortDeviationLogTable()
+        self._deviation_log_table.record_activated.connect(self._on_open_shift_record)
+        journal_tab_layout.addWidget(ScrollableTableFrame(self._deviation_log_table, snap_to_columns=True))
+        self._tabs.addTab(journal_tab, "Журнал відхилень")
+
+        # Вкладка «Аналітика»
+        self._analytics_panel = PortRAnalyticsPanel(self._database_path, self._access_role)
+        self._analytics_panel.edit_thresholds_requested.connect(self._on_edit_thresholds_requested)
+        self._tabs.addTab(self._analytics_panel, "Аналітика")
+
         right_layout.addWidget(self._tabs)
         splitter.addWidget(right_widget)
-        splitter.setStretchFactor(0, 2)
-        splitter.setStretchFactor(1, 3)
-        splitter.setSizes([520, 780])
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 0)
+        configure_detail_splitter(
+            splitter,
+            right_widget,
+            detail_fraction=0.38,
+            detail_min_width=460,
+            detail_max_width=820,
+        )
 
         layout.addWidget(splitter, stretch=1)
         self._render_passport_list()
@@ -259,6 +300,7 @@ class PortRScreen(QWidget):
         self._selected_passport_row = None
         self._risks_table.set_rows(())
         self._suggestions_table.set_rows(())
+        self._analytics_panel.set_current_passport(None)
         self._update_button_states(passport_selected=False, risk_selected=False)
 
     def _on_passport_selected(self, row: PortSitePassportRow) -> None:
@@ -328,7 +370,16 @@ class PortRScreen(QWidget):
         self._risks_table.set_rows(risks)
         suggestions = load_port_risk_suggestions_for_passport(self._database_path, passport_id)
         self._suggestions_table.set_rows(suggestions)
+        self._reload_deviation_log(passport_id)
+        self._analytics_panel.set_current_passport(passport_id)
         self._update_button_states(passport_selected=True, risk_selected=False)
+
+    def _reload_deviation_log(self, passport_id: int) -> None:
+        try:
+            log_rows = load_port_shift_checklists(self._database_path, passport_id=passport_id)
+            self._deviation_log_table.set_rows(log_rows)
+        except Exception:
+            self._deviation_log_table.set_rows(())
 
     # ──────────────────────────────────────────────────────────────────────
     # Ризики / Risks
@@ -349,6 +400,11 @@ class PortRScreen(QWidget):
         self._calculate_btn.setEnabled(can and passport_selected)
         self._approve_btn.setEnabled(can and passport_selected)
         self._export_briefing_btn.setEnabled(can and passport_selected)
+        is_active_passport = (
+            self._selected_passport_row is not None
+            and self._selected_passport_row.status == PortPassportStatus.ACTIVE
+        )
+        self._assess_shift_btn.setEnabled(is_active_passport and passport_selected)
 
     def _on_accept_risk(self) -> None:
         risk = self._risks_table.current_risk()
@@ -528,6 +584,108 @@ class PortRScreen(QWidget):
             self._feedback.show_error(f"Не вдалося зафіксувати копіювання: {error}")
             return
         self._feedback.show_success(f"Копію збережено: {destination_path}")
+
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Оцінка зміни / Shift assessment
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _on_assess_shift(self) -> None:
+        if self._selected_passport_row is None:
+            return
+        if self._selected_passport_row.status != PortPassportStatus.ACTIVE:
+            self._feedback.show_error("Оцінку зміни можна проводити лише для діючого паспорта.")
+            return
+        dialog = ShiftChecklistDialog(
+            self._database_path,
+            self._selected_passport_row,
+            actor_name="inspector",
+            parent=self,
+        )
+        dialog.checklist_saved.connect(lambda _: self._after_shift_saved())
+        dialog.exec()
+
+    def _after_shift_saved(self) -> None:
+        if self._selected_passport_row is None:
+            return
+        self._reload_deviation_log(self._selected_passport_row.passport_id)
+        self._analytics_panel.reload()
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Міст до калібрування порогів / Bridge to threshold calibration
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _on_edit_thresholds_requested(self, passport_id: int) -> None:
+        if not self._can_edit():
+            self._feedback.show_error("Режим read-only: калібрування недоступне.")
+            return
+        try:
+            initial_input = load_port_site_passport_for_edit(self._database_path, passport_id)
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося завантажити паспорт: {error}")
+            return
+        dialog = CreatePortSitePassportDialog(
+            self._database_path,
+            self._access_role,
+            self,
+            passport_id=passport_id,
+            initial_input=initial_input,
+            initial_tab_index=1,
+        )
+        dialog.passport_saved.connect(lambda _: self._after_thresholds_edited())
+        dialog.exec()
+
+    def _after_thresholds_edited(self) -> None:
+        self._reload_passports()
+        self._analytics_panel.reload()
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Деталі запису журналу / Journal record detail
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _on_open_shift_record(self, checklist_id: int) -> None:
+        try:
+            detail = load_port_shift_checklist_detail(self._database_path, checklist_id)
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося завантажити запис: {error}")
+            return
+        if detail is None:
+            self._feedback.show_error("Запис не знайдено.")
+            return
+        dialog = PortShiftRecordDialog(detail, can_export=self._can_edit(), parent=self)
+        dialog.export_record_requested.connect(
+            lambda cid, pid=detail.row.passport_id: self._on_export_shift_record(pid, cid)
+        )
+        dialog.exec()
+
+    def _on_export_shift_record(self, passport_id: int, checklist_id: int) -> None:
+        if not self._can_edit():
+            self._feedback.show_error("Режим read-only: формування листа недоступне.")
+            return
+        project_root = build_application_paths().project_root
+        try:
+            export_result = export_port_shift_briefing_to_docx(
+                self._database_path,
+                project_root,
+                passport_id,
+                actor_name="inspector",
+                access_role=self._access_role,
+                checklist_id=checklist_id,
+            )
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Помилка експорту: {error}")
+            return
+        self._feedback.show_success("Лист зі запису зміни сформовано.")
+        dialog = ShiftBriefingPreviewDialog(
+            export_result.file_path,
+            self._selected_passport_row.passport_code if self._selected_passport_row else "",
+            export_result.key_risks_count,
+            self,
+        )
+        dialog.copy_requested.connect(
+            lambda source, destination, pid=passport_id: self._on_briefing_copied(pid, source, destination)
+        )
+        dialog.exec()
 
 
 def _clear_layout(layout: QVBoxLayout) -> None:

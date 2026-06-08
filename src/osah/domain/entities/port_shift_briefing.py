@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field
 
+from osah.domain.entities.port_compensating_barrier_item import PortCompensatingBarrierItem
+from osah.domain.entities.port_macrovariable_threshold import PortMacrovariableThreshold
 from osah.domain.entities.port_passport_status import PortPassportStatus
 from osah.domain.entities.port_risk_level import PortRiskLevel
 from osah.domain.entities.port_risk_profile import PortRiskProfile
+from osah.domain.entities.port_shift_decision import PortShiftDecision
+from osah.domain.entities.port_shift_zone import PortShiftZone
 
 
 @dataclass(slots=True)
@@ -46,3 +50,13 @@ class PortShiftBriefing:
     passport_updated_at: str
     key_risks: tuple[PortShiftBriefingRisk, ...] = field(default_factory=tuple)
     barriers: tuple[PortShiftBriefingBarrier, ...] = field(default_factory=tuple)
+    r_dyn: float | None = None
+    zone: PortShiftZone | None = None
+    r_base: float = 1.0
+    thresholds: tuple[PortMacrovariableThreshold, ...] = field(default_factory=tuple)
+    compensating_barriers: tuple[PortCompensatingBarrierItem, ...] = field(default_factory=tuple)
+    decision: PortShiftDecision | None = None
+    active_barrier_name: str = ""
+    triggered_threshold_ids: frozenset[int] = field(default_factory=frozenset)
+    is_record_export: bool = False
+    record_shift_date: str = ""

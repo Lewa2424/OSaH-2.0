@@ -1,10 +1,16 @@
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.about_snapshot import AboutSnapshot
+from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.screens.instructions.instruction_registry import (
+    get_instruction_entry,
+    list_instruction_sections_for_role,
+)
+from osah.ui.qt.screens.instructions.open_section_instruction import open_section_instruction
 
 
 class AboutScreen(QWidget):
@@ -12,13 +18,14 @@ class AboutScreen(QWidget):
     About screen presented as a detailed overview of the product.
     """
 
-    def __init__(self, snapshot: AboutSnapshot) -> None:
+    def __init__(self, snapshot: AboutSnapshot, access_role: AccessRole) -> None:
         """Строит экран «О программе» в нейтральном и презентационном формате.
         Builds the About screen in a neutral and presentation-oriented format.
         """
 
         super().__init__()
         _ = snapshot
+        self._access_role = access_role
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -39,6 +46,7 @@ class AboutScreen(QWidget):
         content_layout.addWidget(self._build_intro_card())
         content_layout.addWidget(self._build_audience_card())
         content_layout.addWidget(self._build_capabilities_card())
+        content_layout.addWidget(self._build_instructions_hub_card())
         content_layout.addWidget(self._build_benefits_card())
         content_layout.addWidget(self._build_positioning_card())
         content_layout.addStretch()
@@ -117,6 +125,8 @@ class AboutScreen(QWidget):
                 "<li><b>Контроль медичних допусків</b> і стану записів, пов'язаних з допуском до роботи.</li>"
                 "<li><b>Контроль нарядів-допусків</b> і суміжних критичних подій у виробничому контурі.</li>"
                 "<li><b>Робота з підрядниками</b> у межах загального контуру охорони праці.</li>"
+                "<li><b>ПОРТ-Р</b> — паспортизація ділянок, динамічна оцінка зміни, журнал відхилень "
+                "та аналітика професійних ризиків.</li>"
                 "<li><b>Новини та нормативно-правові матеріали</b>, відібрані за тематикою охорони праці, "
                 "а не змішані з загальною новинною стрічкою.</li>"
                 "<li><b>Формування щоденного звіту</b> у зрозумілому файловому сценарії без складних "
@@ -125,6 +135,38 @@ class AboutScreen(QWidget):
                 "</ul>"
             )
         )
+        return card
+
+    def _build_instructions_hub_card(self) -> QFrame:
+        """Створює блок з кнопками інструкцій по розділах ClearWork.
+        Creates the hub card with buttons for per-section instruction guides.
+        """
+
+        card = self._build_card()
+        layout = card.layout()
+
+        layout.addWidget(self._build_title_label("Інструкції по розділах"))
+        layout.addWidget(
+            self._build_body_label(
+                "Детальні робочі та методичні матеріали по кожному модулю ClearWork. "
+                "Оберіть розділ, щоб відкрити повну інструкцію з прикладами та схемами."
+            )
+        )
+
+        grid = QGridLayout()
+        grid.setSpacing(SPACING["sm"])
+        columns = 3
+        for index, section in enumerate(list_instruction_sections_for_role(self._access_role)):
+            button = QPushButton(section.value)
+            button.setProperty("variant", "secondary")
+            entry = get_instruction_entry(section)
+            if entry is not None:
+                button.setToolTip(
+                    f"{entry.subtitle}. Натисніть, щоб відкрити повну інструкцію з кнопками та сценаріями."
+                )
+            button.clicked.connect(lambda _checked=False, s=section: open_section_instruction(s, self))
+            grid.addWidget(button, index // columns, index % columns)
+        layout.addLayout(grid)
         return card
 
     def _build_benefits_card(self) -> QFrame:

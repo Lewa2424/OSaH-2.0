@@ -116,7 +116,8 @@ def build_screen_for_section(context: QtContext) -> QWidget:
             load_about_snapshot(
                 context.application_context.database_path,
                 context.application_context.log_path,
-            )
+            ),
+            context.access_role,
         )
 
     placeholder = QLabel(f"Екран '{context.selected_section.value}' ще не мігрований на PySide6.")

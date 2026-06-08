@@ -38,9 +38,10 @@ def configure_program_access(
     database_path: Path,
     inspector_password: str,
     manager_password: str,
+    enterprise_display_name: str = "",
 ) -> ProgramAccessResetResult:
-    """Налаштовує паролі ролей і генерує recovery-файл для нової установки.
-    Настраивает пароли ролей и генерирует recovery-файл для новой установки.
+    """Налаштовує паролі ролей, назву підприємства і генерує recovery-файл для нової установки.
+    Configures role passwords, enterprise name and generates a recovery file for a new installation.
     """
 
     validate_program_access_passwords(inspector_password, manager_password)
@@ -65,25 +66,26 @@ def configure_program_access(
             recovery_file_path,
             build_recovery_file_content(installation_id, recovery_code, recovery_created_at_text),
         )
-        upsert_app_settings_batch(
-            connection,
-            {
-                INSTALLATION_ID: installation_id,
-                AUTH_CONFIGURED: "1",
-                INSPECTOR_PASSWORD_HASH: inspector_password_hash,
-                INSPECTOR_PASSWORD_SALT: inspector_password_salt,
-                MANAGER_PASSWORD_HASH: manager_password_hash,
-                MANAGER_PASSWORD_SALT: manager_password_salt,
-                RECOVERY_CODE_HASH: recovery_code_hash,
-                RECOVERY_CODE_SALT: recovery_code_salt,
-                FAILED_ATTEMPT_COUNT: "0",
-                LOCKED_UNTIL: "",
-                SERVICE_REQUEST_COUNTER: service_request_counter,
-                SERVICE_RESET_SECRET: service_reset_secret,
-                RECOVERY_FILE_PATH: str(recovery_file_path),
-                RECOVERY_CREATED_AT: recovery_created_at_text,
-            },
-        )
+        setting_pairs: dict[str, str] = {
+            INSTALLATION_ID: installation_id,
+            AUTH_CONFIGURED: "1",
+            INSPECTOR_PASSWORD_HASH: inspector_password_hash,
+            INSPECTOR_PASSWORD_SALT: inspector_password_salt,
+            MANAGER_PASSWORD_HASH: manager_password_hash,
+            MANAGER_PASSWORD_SALT: manager_password_salt,
+            RECOVERY_CODE_HASH: recovery_code_hash,
+            RECOVERY_CODE_SALT: recovery_code_salt,
+            FAILED_ATTEMPT_COUNT: "0",
+            LOCKED_UNTIL: "",
+            SERVICE_REQUEST_COUNTER: service_request_counter,
+            SERVICE_RESET_SECRET: service_reset_secret,
+            RECOVERY_FILE_PATH: str(recovery_file_path),
+            RECOVERY_CREATED_AT: recovery_created_at_text,
+        }
+        normalized_enterprise_name = enterprise_display_name.strip()
+        if normalized_enterprise_name:
+            setting_pairs["enterprise.display_name"] = normalized_enterprise_name
+        upsert_app_settings_batch(connection, setting_pairs)
         insert_audit_log(
             connection,
             event_type="security.initial_setup",

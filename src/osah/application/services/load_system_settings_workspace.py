@@ -1,4 +1,3 @@
-import tomllib
 from pathlib import Path
 
 from osah.application.services.load_backup_registry import load_backup_registry
@@ -8,6 +7,7 @@ from osah.application.services.security.load_security_profile import load_securi
 from osah.domain.entities.settings_workspace import SettingsWorkspace
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.list_app_settings import list_app_settings
+from osah.version import __version__
 
 
 # ###### ЗАВАНТАЖЕННЯ РОБОЧОГО ПРОСТОРУ НАЛАШТУВАНЬ / LOAD SETTINGS WORKSPACE ######
@@ -47,17 +47,6 @@ def load_system_settings_workspace(database_path: Path) -> SettingsWorkspace:
 
 # ###### ЧИТАННЯ ВЕРСІЇ ПРОЄКТУ / READ PROJECT VERSION ######
 def _read_app_version() -> str:
-    """Reads application version from pyproject.toml with safe fallback."""
+    """Returns the ClearWork version from osah.version."""
 
-    project_root = Path(__file__).resolve().parents[4]
-    pyproject_path = project_root / "pyproject.toml"
-    if not pyproject_path.exists():
-        return "0.1.0"
-
-    content = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    project_data = content.get("project")
-    if isinstance(project_data, dict):
-        value = project_data.get("version")
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return "0.1.0"
+    return __version__

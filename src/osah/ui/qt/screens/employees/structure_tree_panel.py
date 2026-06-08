@@ -21,7 +21,7 @@ class StructureTreePanel(QWidget):
         layout.setContentsMargins(0, 0, SPACING["md"], 0)
         layout.setSpacing(SPACING["sm"])
 
-        title = QLabel("Структура")
+        title = QLabel("Організаційна структура")
         title.setStyleSheet("font-size: 14px; font-weight: 900;")
         layout.addWidget(title)
 

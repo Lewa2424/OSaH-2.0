@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 200">
+  <rect width="820" height="200" fill="#F7F8FA" rx="8"/>
+  <text x="410" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="#111827">Робочий цикл PORT-R у ClearWork</text>
+  <defs>
+    <marker id="wf-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3A5F8A"/>
+    </marker>
+  </defs>
+  <rect x="20" y="55" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#3A5F8A" stroke-width="2"/>
+  <text x="80" y="88" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#111827">Паспорт</text>
+  <text x="80" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#4B5563">ризики</text>
+  <path d="M 145 90 L 175 90" stroke="#3A5F8A" stroke-width="2" marker-end="url(#wf-arrow)"/>
+  <rect x="180" y="55" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#3A5F8A" stroke-width="2"/>
+  <text x="240" y="88" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#111827">Калібрування</text>
+  <text x="240" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#4B5563">К, тригери</text>
+  <path d="M 305 90 L 335 90" stroke="#3A5F8A" stroke-width="2" marker-end="url(#wf-arrow)"/>
+  <rect x="340" y="55" width="120" height="70" rx="8" fill="#DDF7E8" stroke="#07B551" stroke-width="2"/>
+  <text x="400" y="88" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#057A39">Оцінка зміни</text>
+  <text x="400" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#4B5563">чек-лист</text>
+  <path d="M 465 90 L 495 90" stroke="#3A5F8A" stroke-width="2" marker-end="url(#wf-arrow)"/>
+  <rect x="500" y="55" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#3A5F8A" stroke-width="2"/>
+  <text x="560" y="88" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#111827">Журнал</text>
+  <text x="560" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#4B5563">відхилень</text>
+  <path d="M 625 90 L 655 90" stroke="#3A5F8A" stroke-width="2" marker-end="url(#wf-arrow)"/>
+  <rect x="660" y="55" width="120" height="70" rx="8" fill="#DCEBFA" stroke="#0669C4" stroke-width="2"/>
+  <text x="720" y="88" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#05539B">Аналітика</text>
+  <text x="720" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#4B5563">статистика</text>
+  <text x="410" y="165" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#6B7280">Симулятор і DOCX - допоміжні інструменти</text>
+</svg>

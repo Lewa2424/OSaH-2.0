@@ -159,24 +159,16 @@ QPushButton[nav="true"]:checked {{
     border-color: {c["nav_item_active_bg"]};
 }}
 
-/* NavButton — Warning (рівень уваги) */
+/* NavButton — alert markers (фон малює NavFillPushButton) */
 QPushButton[nav="true"][alert="warning"] {{
-    background: {c["status_warning_bg"]};
+    background: transparent;
     border: 1px solid {c["status_warning"]};
     color: {c["text_primary"]};
 }}
-QPushButton[nav="true"][alert="warning"]:hover {{
-    background: {c["warning_bg"]};
-}}
-
-/* NavButton — Critical (критичний рівень) */
 QPushButton[nav="true"][alert="critical"] {{
-    background: {c["status_critical_bg"]};
+    background: transparent;
     border: 2px solid {c["nav_item_problem_border"]};
     color: {c["text_primary"]};
-}}
-QPushButton[nav="true"][alert="critical"]:hover {{
-    background: {c["error_bg"]};
 }}
 
 /* ── QSplitter ── */

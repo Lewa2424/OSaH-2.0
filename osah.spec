@@ -17,6 +17,7 @@ a = Analysis(
         (str(src_root / "osah" / "ui" / "qt" / "design"), "osah/ui/qt/design"),
         # Включаємо іконки та інші статичні UI-ресурси
         (str(src_root / "osah" / "ui" / "qt" / "assets"), "osah/ui/qt/assets"),
+        (str(src_root / "osah" / "infrastructure" / "config" / "setup_key_public_key.pem"), "osah/infrastructure/config"),
     ],
     hiddenimports=[
         "osah",
@@ -31,6 +32,7 @@ a = Analysis(
         "PySide6.QtGui",
         "PySide6.QtWidgets",
         "PySide6.QtSvg",
+        "PySide6.QtSvgWidgets",
         "sqlite3",
         "tomllib",
         "urllib.request",
@@ -38,6 +40,9 @@ a = Analysis(
         "email.mime.text",
         "email.mime.multipart",
         "smtplib",
+        "cryptography",
+        "docx",
+        "osah.version",
     ],
     hookspath=[],
     hooksconfig={},

@@ -12,6 +12,9 @@ from osah.application.services.security.security_setting_keys import (
     RECOVERY_CREATED_AT,
     RECOVERY_FILE_PATH,
     SERVICE_REQUEST_COUNTER,
+    SETUP_KEY_ACTIVATED,
+    SETUP_KEY_ACTIVATED_AT,
+    SETUP_KEY_CUSTOMER,
 )
 
 
@@ -35,4 +38,7 @@ def load_security_profile(database_path: Path) -> SecurityProfile:
         service_request_counter=int(app_settings.get(SERVICE_REQUEST_COUNTER, "1") or "1"),
         recovery_file_path=app_settings.get(RECOVERY_FILE_PATH, ""),
         recovery_created_at_text=app_settings.get(RECOVERY_CREATED_AT, ""),
+        is_setup_key_activated=app_settings.get(SETUP_KEY_ACTIVATED, "0") == "1",
+        setup_key_customer=app_settings.get(SETUP_KEY_CUSTOMER, ""),
+        setup_key_activated_at_text=app_settings.get(SETUP_KEY_ACTIVATED_AT, ""),
     )

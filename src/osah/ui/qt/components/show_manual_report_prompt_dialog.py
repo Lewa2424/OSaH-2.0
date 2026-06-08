@@ -1,6 +1,112 @@
-from PySide6.QtWidgets import QMessageBox, QPushButton, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
 
-from osah.ui.qt.design.tokens import COLOR
+from osah.ui.qt.design.tokens import COLOR, SPACING
+
+
+class _ManualReportPromptDialog(QDialog):
+    """Компактний діалог нагадування про щоденний звіт.
+    Compact daily report reminder dialog.
+    """
+
+    _RESULT_BUILD = "build"
+    _RESULT_SKIP = "skip"
+    _RESULT_LATER = "later"
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._result = self._RESULT_LATER
+
+        self.setWindowTitle("Щоденний звіт")
+        self.setModal(True)
+        self.setFixedWidth(380)
+        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])
+        root.setSpacing(SPACING["md"])
+
+        root.addWidget(self._build_message_row())
+
+        self._build_button = QPushButton("Так, сформувати")
+        self._build_button.setProperty("variant", "accent")
+        self._build_button.setDefault(True)
+        self._build_button.clicked.connect(self._accept_build)
+        root.addWidget(self._build_button)
+
+        secondary_row = QHBoxLayout()
+        secondary_row.setSpacing(SPACING["sm"])
+
+        self._skip_button = QPushButton("Пропустити сьогодні")
+        self._skip_button.setProperty("variant", "secondary")
+        self._skip_button.clicked.connect(self._accept_skip)
+        secondary_row.addWidget(self._skip_button)
+
+        self._later_button = QPushButton("Нагадати пізніше")
+        self._later_button.setProperty("variant", "secondary")
+        self._later_button.clicked.connect(self._accept_later)
+        secondary_row.addWidget(self._later_button)
+
+        root.addLayout(secondary_row)
+
+    def _build_message_row(self) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SPACING["sm"])
+
+        icon_label = QLabel()
+        icon_label.setPixmap(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion).pixmap(32, 32)
+        )
+        icon_label.setFixedSize(32, 32)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(icon_label)
+
+        text_column = QVBoxLayout()
+        text_column.setContentsMargins(0, 0, 0, 0)
+        text_column.setSpacing(SPACING["xs"])
+
+        title = QLabel("Настав час сформувати щоденний звіт.")
+        title.setWordWrap(True)
+        title_font = QFont(title.font())
+        title_font.setBold(True)
+        title_font.setPixelSize(14)
+        title.setFont(title_font)
+        title.setStyleSheet(f"color: {COLOR['text_primary']};")
+        text_column.addWidget(title)
+
+        question = QLabel("Сформувати файл звіту зараз?")
+        question.setWordWrap(True)
+        question.setStyleSheet(f"color: {COLOR['text_secondary']}; font-size: 13px;")
+        text_column.addWidget(question)
+
+        layout.addLayout(text_column, stretch=1)
+        return row
+
+    def result_choice(self) -> str:
+        return self._result
+
+    def _accept_build(self) -> None:
+        self._result = self._RESULT_BUILD
+        self.accept()
+
+    def _accept_skip(self) -> None:
+        self._result = self._RESULT_SKIP
+        self.accept()
+
+    def _accept_later(self) -> None:
+        self._result = self._RESULT_LATER
+        self.accept()
 
 
 # ###### ДІАЛОГ НАГАДУВАННЯ ПРО ЩОДЕННИЙ ЗВІТ / SHOW MANUAL REPORT PROMPT DIALOG ######
@@ -9,50 +115,6 @@ def show_manual_report_prompt_dialog(parent: QWidget | None) -> str:
     Shows a styled daily report reminder dialog and returns the user's choice.
     """
 
-    message_box = QMessageBox(parent)
-    message_box.setIcon(QMessageBox.Icon.Question)
-    message_box.setWindowTitle("Щоденний звіт")
-    message_box.setText("Настав час сформувати щоденний звіт. Сформувати файл звіту зараз?")
-
-    build_button = message_box.addButton("Так, сформувати", QMessageBox.ButtonRole.AcceptRole)
-    remind_later_button = message_box.addButton("Нагадати пізніше", QMessageBox.ButtonRole.ActionRole)
-    skip_today_button = message_box.addButton("Пропустити сьогодні", QMessageBox.ButtonRole.DestructiveRole)
-    message_box.setDefaultButton(build_button)
-    message_box.setStyleSheet(
-        f"""
-        QMessageBox {{
-            background: {COLOR['bg_card']};
-        }}
-        QMessageBox QLabel {{
-            color: {COLOR['text_primary']};
-            font-size: 14px;
-            margin-bottom: 10px;
-            min-width: 360px;
-        }}
-        QMessageBox QPushButton {{
-            min-width: 132px;
-            padding: 8px 16px;
-            font-weight: 700;
-            border-radius: 8px;
-            color: {COLOR['button_secondary_text']};
-            background: {COLOR['button_secondary_bg']};
-            border: 1px solid {COLOR['button_secondary_border']};
-        }}
-        QMessageBox QPushButton:hover {{
-            background: {COLOR['button_secondary_hover']};
-        }}
-        QMessageBox QPushButton:pressed {{
-            background: {COLOR['button_secondary_active']};
-        }}
-        """
-    )
-    message_box.exec()
-
-    clicked_button = message_box.clickedButton()
-    if clicked_button is build_button:
-        return "build"
-    if clicked_button is skip_today_button:
-        return "skip"
-    if clicked_button is remind_later_button:
-        return "later"
-    return "later"
+    dialog = _ManualReportPromptDialog(parent)
+    dialog.exec()
+    return dialog.result_choice()

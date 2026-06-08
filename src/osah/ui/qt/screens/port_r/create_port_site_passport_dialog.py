@@ -8,20 +8,29 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from osah.application.services.create_port_site_passport import create_port_site_passport
+from osah.application.services.load_port_calibration_for_passport import load_port_calibration_for_passport
+from osah.application.services.save_port_calibration_for_passport import save_port_calibration_for_passport
 from osah.application.services.update_port_site_passport import update_port_site_passport
 from osah.domain.entities.access_role import AccessRole
+from osah.domain.entities.port_compensating_barrier_item import PortCompensatingBarrierItem
+from osah.domain.entities.port_macrovariable_threshold import PortMacrovariableThreshold
+from osah.domain.entities.port_passport_calibration import PortPassportCalibration
 from osah.domain.entities.port_site_passport_input import PortSitePassportInput
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.screens.port_r.port_calibration_panel import PortBarriersPanel, PortThresholdsPanel
+from osah.ui.qt.screens.port_r.port_calibration_simulator_dialog import PortCalibrationSimulatorDialog
 
 
 class CreatePortSitePassportDialog(QDialog):
@@ -40,6 +49,7 @@ class CreatePortSitePassportDialog(QDialog):
         *,
         passport_id: int | None = None,
         initial_input: PortSitePassportInput | None = None,
+        initial_tab_index: int = 0,
     ) -> None:
         super().__init__(parent)
         self._database_path = database_path
@@ -54,6 +64,14 @@ class CreatePortSitePassportDialog(QDialog):
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         root_layout.setSpacing(SPACING["md"])
+
+        self._tabs = QTabWidget()
+
+        # ── Вкладка 1: Загальні відомості ──
+        general_tab = QWidget()
+        general_tab_layout = QVBoxLayout(general_tab)
+        general_tab_layout.setContentsMargins(0, SPACING["sm"], 0, 0)
+        general_tab_layout.setSpacing(0)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -73,7 +91,42 @@ class CreatePortSitePassportDialog(QDialog):
         content_layout.addStretch()
 
         scroll_area.setWidget(content)
-        root_layout.addWidget(scroll_area, stretch=1)
+        general_tab_layout.addWidget(scroll_area)
+        self._tabs.addTab(general_tab, "Загальні відомості")
+
+        # ── Вкладка 2: Пороги Т-П-С-В-Б ──
+        thresholds_scroll = QScrollArea()
+        thresholds_scroll.setWidgetResizable(True)
+        thresholds_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._thresholds_panel = PortThresholdsPanel()
+        thresholds_scroll.setWidget(self._thresholds_panel)
+
+        if passport_id is None:
+            self._thresholds_panel.setEnabled(False)
+            self._thresholds_panel.setToolTip("Доступне після збереження паспорта")
+
+        self._tabs.addTab(thresholds_scroll, "Пороги Т-П-С-В-Б")
+
+        # ── Вкладка 3: Компенсуючі бар'єри ──
+        barriers_scroll = QScrollArea()
+        barriers_scroll.setWidgetResizable(True)
+        barriers_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._barriers_panel = PortBarriersPanel()
+        barriers_scroll.setWidget(self._barriers_panel)
+
+        if passport_id is None:
+            self._barriers_panel.setEnabled(False)
+            self._barriers_panel.setToolTip("Доступне після збереження паспорта")
+
+        self._tabs.addTab(barriers_scroll, "Компенсуючі бар'єри")
+
+        root_layout.addWidget(self._tabs, stretch=1)
+
+        if 0 <= initial_tab_index < self._tabs.count():
+            self._tabs.setCurrentIndex(initial_tab_index)
+
+        if passport_id is not None:
+            self._load_calibration(passport_id)
 
         self._feedback_label = FormFeedbackLabel()
         root_layout.addWidget(self._feedback_label)
@@ -83,6 +136,15 @@ class CreatePortSitePassportDialog(QDialog):
         self._clear_button.setProperty("variant", "secondary")
         self._clear_button.clicked.connect(self._clear_form)
         buttons_layout.addWidget(self._clear_button)
+
+        self._simulator_button = QPushButton("Симулятор калібрування")
+        self._simulator_button.setProperty("variant", "secondary")
+        self._simulator_button.setEnabled(passport_id is not None)
+        if passport_id is None:
+            self._simulator_button.setToolTip("Доступне після збереження паспорта")
+        self._simulator_button.clicked.connect(self._open_simulator)
+        buttons_layout.addWidget(self._simulator_button)
+
         buttons_layout.addStretch()
 
         self._cancel_button = QPushButton("Скасувати")
@@ -97,6 +159,18 @@ class CreatePortSitePassportDialog(QDialog):
         root_layout.addLayout(buttons_layout)
         if self._initial_input is not None:
             self._fill_form(self._initial_input)
+
+    def _open_simulator(self) -> None:
+        if self._passport_id is None:
+            return
+        passport_label = self._passport_code_input.text().strip() or self._site_name_input.text().strip()
+        dialog = PortCalibrationSimulatorDialog(
+            self._database_path,
+            self._passport_id,
+            passport_label,
+            self,
+        )
+        dialog.exec()
 
     def _build_identification_section(self, parent_layout: QVBoxLayout) -> None:
         form = QFormLayout()
@@ -278,6 +352,14 @@ class CreatePortSitePassportDialog(QDialog):
                 combo_box.setEditText("")
         self._feedback_label.setVisible(False)
 
+    def _load_calibration(self, passport_id: int) -> None:
+        try:
+            calibration = load_port_calibration_for_passport(self._database_path, passport_id)
+            self._thresholds_panel.load_thresholds(calibration.thresholds)
+            self._barriers_panel.load_barriers(calibration.compensating_barriers)
+        except Exception:
+            pass
+
     def _save(self) -> None:
         try:
             if self._passport_id is None:
@@ -295,12 +377,55 @@ class CreatePortSitePassportDialog(QDialog):
                     access_role=self._access_role,
                 )
                 passport_id = self._passport_id
+                self._save_calibration(passport_id)
                 self.passport_saved.emit(passport_id)
         except ValueError as error:
             self._feedback_label.show_error(str(error))
             return
 
         self.accept()
+
+    def _save_calibration(self, passport_id: int) -> None:
+        threshold_data = self._thresholds_panel.collect_thresholds()
+        barrier_data = self._barriers_panel.collect_barriers()
+
+        thresholds = tuple(
+            PortMacrovariableThreshold(
+                threshold_id=0,
+                passport_id=passport_id,
+                macrovariable=mv,
+                trigger_text=text,
+                k_value=k,
+                is_stop_trigger=is_stop,
+            )
+            for mv, text, k, is_stop in threshold_data
+        )
+        barriers = tuple(
+            PortCompensatingBarrierItem(
+                barrier_id=0,
+                passport_id=passport_id,
+                barrier_name=name,
+                description=desc,
+                k_comp=k_comp,
+                macrovariable=mv,
+            )
+            for mv, name, desc, k_comp in barrier_data
+        )
+        calibration = PortPassportCalibration(
+            passport_id=passport_id,
+            r_base=1.0,
+            thresholds=thresholds,
+            compensating_barriers=barriers,
+        )
+        try:
+            save_port_calibration_for_passport(
+                self._database_path,
+                calibration,
+                actor_name="inspector",
+                access_role=self._access_role,
+            )
+        except Exception:
+            pass
 
     def _build_passport_input(self) -> PortSitePassportInput:
         return PortSitePassportInput(

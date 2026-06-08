@@ -4,31 +4,24 @@ Alert card for dashboard notifications.
 
 from PySide6.QtCore import QEasingCurve, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from osah.domain.entities.notification_item import NotificationItem
 from osah.domain.entities.notification_level import NotificationLevel
 from osah.ui.qt.design.tokens import ANIMATION, COLOR, RADIUS, SPACING
 
 
-def _resolve_level_colors(level: NotificationLevel) -> tuple[str, str, str]:
-    """###### КОЛЬОРИ РІВНЯ / LEVEL COLORS ######"""
-
-    if level == NotificationLevel.CRITICAL:
-        return COLOR["critical"], COLOR["critical"], COLOR["text_on_accent"]
-    if level == NotificationLevel.WARNING:
-        return COLOR["warning"], COLOR["warning"], COLOR["text_on_accent"]
-    return COLOR["accent"], COLOR["accent"], COLOR["text_on_accent"]
+_LEVEL_STYLE: dict[NotificationLevel, tuple[str, str, str]] = {
+    NotificationLevel.CRITICAL: ("Критично", COLOR["critical_subtle"], COLOR["critical"]),
+    NotificationLevel.WARNING: ("Увага", COLOR["warning_subtle"], COLOR["warning"]),
+    NotificationLevel.INFO: ("Інфо", COLOR["accent_subtle"], COLOR["accent"]),
+}
 
 
-def _level_label(level: NotificationLevel) -> str:
-    """###### ПІДПИС РІВНЯ / LEVEL LABEL ######"""
+def _resolve_level_style(level: NotificationLevel) -> tuple[str, str, str]:
+    """###### СТИЛЬ РІВНЯ / LEVEL STYLE ######"""
 
-    if level == NotificationLevel.CRITICAL:
-        return "Критично"
-    if level == NotificationLevel.WARNING:
-        return "Увага"
-    return "Інфо"
+    return _LEVEL_STYLE.get(level, _LEVEL_STYLE[NotificationLevel.INFO])
 
 
 def _mix_hex_color(start_hex: str, end_hex: str, progress: float) -> str:
@@ -61,7 +54,8 @@ class AlertCard(QWidget):
         if self._is_interactive:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        bar_color, badge_bg, badge_text = _resolve_level_colors(notification.notification_level)
+        level_label, badge_bg, accent_color = _resolve_level_style(notification.notification_level)
+        self._accent_color = accent_color
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -70,46 +64,21 @@ class AlertCard(QWidget):
         card.setObjectName("alertCardFrame")
         outer.addWidget(card)
         self._card = card
-        self._apply_card_style(self._base_background, self._base_border)
+        self._apply_card_style(self._base_background, self._base_border, self._accent_color)
 
-        h = QHBoxLayout(card)
-        h.setContentsMargins(0, 0, 0, 0)
-        h.setSpacing(0)
-
-        bar = QFrame()
-        bar.setFixedWidth(3)
-        bar.setStyleSheet(
-            f"background: {bar_color};"
-            f"border-top-left-radius: {RADIUS['md']}px;"
-            f"border-bottom-left-radius: {RADIUS['md']}px;"
-            "border-top-right-radius: 0px;"
-            "border-bottom-right-radius: 0px;"
-        )
-        h.addWidget(bar)
-
-        body = QWidget()
-        body.setStyleSheet("background: transparent;")
-        v = QVBoxLayout(body)
+        v = QVBoxLayout(card)
         v.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])
         v.setSpacing(6)
-        h.addWidget(body)
 
-        pill_row = QWidget()
-        pill_row.setStyleSheet("background: transparent;")
-        pill_h = QHBoxLayout(pill_row)
-        pill_h.setContentsMargins(0, 0, 0, 0)
-        pill_h.setSpacing(0)
-
-        badge = QLabel(_level_label(notification.notification_level))
+        badge = QLabel(level_label)
         badge.setProperty("pill", notification.notification_level.value.lower())
         badge.setStyleSheet(
-            f"background: {badge_bg}; color: {badge_text};"
-            "border-radius: 9px; padding: 2px 10px;"
-            "font-size: 9px; font-weight: bold;"
+            f"background: {badge_bg}; color: {accent_color};"
+            f"border: 1px solid {accent_color};"
+            "border-radius: 10px; padding: 3px 10px;"
+            "font-size: 10px; font-weight: 700;"
         )
-        pill_h.addWidget(badge)
-        pill_h.addStretch()
-        v.addWidget(pill_row)
+        v.addWidget(badge, alignment=Qt.AlignmentFlag.AlignLeft)
 
         title = QLabel(notification.title_text)
         title.setProperty("role", "alert_title")
@@ -173,9 +142,9 @@ class AlertCard(QWidget):
         ratio = float(progress)
         background = _mix_hex_color(self._base_background, self._hover_background, ratio)
         border = _mix_hex_color(self._base_border, self._hover_border, ratio)
-        self._apply_card_style(background, border)
+        self._apply_card_style(background, border, self._accent_color)
 
-    def _apply_card_style(self, background: str, border: str) -> None:
+    def _apply_card_style(self, background: str, border: str, accent: str) -> None:
         """###### СТИЛЬ КАРТКИ / CARD STYLE ######"""
 
         if self._card is None:
@@ -185,6 +154,7 @@ class AlertCard(QWidget):
             QFrame#alertCardFrame {{
                 background: {background};
                 border: 1px solid {border};
+                border-left: 4px solid {accent};
                 border-radius: {RADIUS['md']}px;
             }}
             """

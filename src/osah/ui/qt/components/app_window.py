@@ -61,7 +61,12 @@ class AppWindow(QMainWindow):
         sections = build_available_sections_for_role(access_role)
         visual_alert_state = load_visual_alert_state(self._app_context.database_path)
 
-        self._nav = SideNav(sections, access_role, visual_alert_state.section_levels)
+        self._nav = SideNav(
+            sections,
+            access_role,
+            visual_alert_state.section_levels,
+            visual_alert_state.section_palettes,
+        )
         self._nav.section_selected.connect(self._on_section_selected)
         splitter.addWidget(self._nav)
 
@@ -183,6 +188,18 @@ class AppWindow(QMainWindow):
 
         apply_fade_in(screen)
         layout.addWidget(screen)
+        self._refresh_nav_visual_state()
+
+    def _refresh_nav_visual_state(self) -> None:
+        """Перечитує alert-рівні та палітри nav-діаграм.
+        Reloads alert levels and nav diagram palettes.
+        """
+
+        visual_alert_state = load_visual_alert_state(self._app_context.database_path)
+        self._nav.update_nav_visuals(
+            visual_alert_state.section_levels,
+            visual_alert_state.section_palettes,
+        )
 
     def navigate_back(self) -> None:
         """###### НАЗАД ПО ІСТОРІЇ / NAVIGATE BACK ######"""
@@ -332,6 +349,8 @@ class AppWindow(QMainWindow):
             return
         self._last_time_sync_marker = marker
 
+        self._refresh_nav_visual_state()
+
         current_screen = self._current_screen_widget()
         if current_screen is None or self._has_active_editor_focus():
             return
@@ -350,6 +369,7 @@ class AppWindow(QMainWindow):
     def changeEvent(self, event) -> None:  # type: ignore[override]
         super().changeEvent(event)
         if event.type() == event.Type.ActivationChange and self.isActiveWindow():
+            self._refresh_nav_visual_state()
             self._sync_time_sensitive_views()
             self._check_manual_report_reminder()
 

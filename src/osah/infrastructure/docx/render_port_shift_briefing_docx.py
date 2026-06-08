@@ -3,9 +3,13 @@ from pathlib import Path
 from docx import Document
 from docx.document import Document as DocumentType
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Cm, Pt
+from docx.oxml.ns import qn
+from docx.shared import Cm, Pt, RGBColor
 from docx.table import Table, _Cell
 
+from osah.domain.entities.port_compensating_barrier_item import PortCompensatingBarrierItem
+from osah.domain.entities.port_macrovariable import MACROVARIABLE_ORDER, PortMacrovariable, format_macrovariable
+from osah.domain.entities.port_macrovariable_threshold import PortMacrovariableThreshold
 from osah.domain.entities.port_passport_status import PortPassportStatus
 from osah.domain.entities.port_risk_level import PortRiskLevel
 from osah.domain.entities.port_risk_profile import PortRiskProfile
@@ -14,6 +18,8 @@ from osah.domain.entities.port_shift_briefing import (
     PortShiftBriefingBarrier,
     PortShiftBriefingRisk,
 )
+from osah.domain.entities.port_shift_decision import PortShiftDecision
+from osah.domain.entities.port_shift_zone import PortShiftZone, format_port_shift_zone
 
 
 _CHECKBOX_EMPTY: str = "\u2610"
@@ -39,7 +45,8 @@ def render_port_shift_briefing_docx(briefing: PortShiftBriefing, output_path: Pa
     _render_general_data_section(document, briefing)
     _render_base_profile_section(document, briefing)
     _render_key_risks_section(document, briefing.key_risks)
-    _render_tpsvb_section(document)
+    _render_tpsvb_section(document, briefing)
+    _render_compensating_barriers_section(document, briefing.compensating_barriers)
     _render_barriers_section(document, briefing.barriers)
     _render_dynamic_events_section(document)
     _render_shift_summary_section(document)
@@ -109,6 +116,8 @@ def _render_base_profile_section(document: DocumentType, briefing: PortShiftBrie
 
     profile_line = _build_profile_checkbox_line(briefing.final_profile)
     status_line = _build_status_checkbox_line(briefing.status)
+    r_dyn_line = f"{briefing.r_dyn:.3f}" if briefing.r_dyn is not None else "—"
+    zone_line = format_port_shift_zone(briefing.zone) if briefing.zone is not None else "—"
 
     rows: tuple[tuple[str, str], ...] = (
         ("Профіль ризику за паспортом:", profile_line),
@@ -116,6 +125,8 @@ def _render_base_profile_section(document: DocumentType, briefing: PortShiftBrie
         ("Дата актуалізації паспорта:", briefing.passport_updated_at),
         ("Паспорт актуальний для цієї зміни:", f"{_CHECKBOX_EMPTY} так   {_CHECKBOX_EMPTY} ні"),
         ("Якщо ні, причина:", ""),
+        ("R_dyn (динамічний ризик зміни):", r_dyn_line),
+        ("Зона ризику зміни:", zone_line),
     )
     _render_label_value_table(document, rows)
 
@@ -152,9 +163,111 @@ def _render_key_risks_section(document: DocumentType, key_risks: tuple[PortShift
     legend_run.italic = True
 
 
-def _render_tpsvb_section(document: DocumentType) -> None:
-    _render_section_heading(document, "4. ПЕРЕВІРКА Т-П-С-В-Б ПЕРЕД ПОЧАТКОМ РОБІТ")
+def _render_tpsvb_section(
+    document: DocumentType,
+    briefing: PortShiftBriefing,
+) -> None:
+    if briefing.is_record_export:
+        heading = "4. ПЕРЕВІРКА Т-П-С-В-Б (за фактом зміни"
+        if briefing.record_shift_date:
+            heading += f" від {briefing.record_shift_date}"
+        heading += ")"
+    else:
+        heading = "4. ПЕРЕВІРКА Т-П-С-В-Б ПЕРЕД ПОЧАТКОМ РОБІТ"
+    _render_section_heading(document, heading)
 
+    thresholds_by_mv: dict[PortMacrovariable, list[PortMacrovariableThreshold]] = {
+        mv: [] for mv in MACROVARIABLE_ORDER
+    }
+    for threshold in briefing.thresholds:
+        thresholds_by_mv[threshold.macrovariable].append(threshold)
+
+    has_calibration = any(thresholds_by_mv[mv] for mv in MACROVARIABLE_ORDER)
+
+    if has_calibration:
+        _render_tpsvb_calibrated(
+            document,
+            thresholds_by_mv,
+            briefing.triggered_threshold_ids,
+            briefing.is_record_export,
+        )
+    else:
+        _render_tpsvb_blank(document)
+
+    decision_paragraph = document.add_paragraph()
+    decision_paragraph.paragraph_format.space_before = Pt(6)
+    decision_run = decision_paragraph.add_run("Рішення перед початком робіт:")
+    decision_run.bold = True
+    document.add_paragraph(_build_decision_checkbox_line(briefing.decision))
+    comment_text = "Коментар: "
+    if briefing.is_record_export and briefing.active_barrier_name:
+        comment_text += f"бар'єри — {briefing.active_barrier_name}"
+    else:
+        comment_text += "____________________________________________________________"
+    document.add_paragraph(comment_text)
+
+
+def _build_decision_checkbox_line(decision: PortShiftDecision | None) -> str:
+    options = (
+        (PortShiftDecision.CONTINUE, "допустити до роботи"),
+        (PortShiftDecision.RESTRICT, "допустити після посилення бар'єрів"),
+        (PortShiftDecision.STOP, "зупинити / не допускати"),
+    )
+    parts = []
+    for value, label in options:
+        marker = _CHECKBOX_CHECKED if decision == value else _CHECKBOX_EMPTY
+        parts.append(f"{marker} {label}")
+    return "   ".join(parts)
+
+
+def _render_tpsvb_calibrated(
+    document: DocumentType,
+    thresholds_by_mv: dict[PortMacrovariable, list[PortMacrovariableThreshold]],
+    triggered_threshold_ids: frozenset[int],
+    is_record_export: bool,
+) -> None:
+    table = document.add_table(rows=1, cols=5)
+    table.style = "Light Grid Accent 1"
+    header_cells = table.rows[0].cells
+    header_cells[0].text = "Змінна"
+    header_cells[1].text = "Тригер відхилення"
+    header_cells[2].text = "K"
+    header_cells[3].text = "СТОП"
+    header_cells[4].text = "Стан / відмітка"
+    _format_table_header(table)
+
+    for mv in MACROVARIABLE_ORDER:
+        mv_triggers = thresholds_by_mv[mv]
+        if not mv_triggers:
+            row = table.add_row().cells
+            row[0].text = format_macrovariable(mv)
+            row[1].text = "—"
+            row[2].text = ""
+            row[3].text = ""
+            row[4].text = f"{_CHECKBOX_EMPTY} норма   {_CHECKBOX_EMPTY} відхилення"
+            continue
+
+        for idx, trigger in enumerate(mv_triggers):
+            row = table.add_row().cells
+            row[0].text = format_macrovariable(mv) if idx == 0 else ""
+            row[1].text = trigger.trigger_text
+            row[2].text = f"{trigger.k_value:.1f}"
+            stop_text = "⛔ ТАК" if trigger.is_stop_trigger else "ні"
+            row[3].text = stop_text
+            fired = is_record_export and trigger.threshold_id in triggered_threshold_ids
+            if is_record_export:
+                norm = _CHECKBOX_EMPTY if fired else _CHECKBOX_CHECKED
+                fired_mark = _CHECKBOX_CHECKED if fired else _CHECKBOX_EMPTY
+                row[4].text = f"{norm} норма   {fired_mark} спрацював"
+            else:
+                row[4].text = f"{_CHECKBOX_EMPTY} норма   {_CHECKBOX_EMPTY} спрацював"
+            if trigger.is_stop_trigger or fired:
+                _shade_row_red(row[1].paragraphs[0])
+
+    _set_columns_widths(table, (Cm(2.8), Cm(6.2), Cm(1.2), Cm(1.5), Cm(5.3)))
+
+
+def _render_tpsvb_blank(document: DocumentType) -> None:
     table = document.add_table(rows=1, cols=3)
     table.style = "Light Grid Accent 1"
     header_cells = table.rows[0].cells
@@ -163,32 +276,69 @@ def _render_tpsvb_section(document: DocumentType) -> None:
     header_cells[2].text = "Коментар / відхилення"
     _format_table_header(table)
 
-    variables = ("Техніка", "Персонал", "Умови", "Вантаж", "Бар'єри")
-    for variable in variables:
+    for mv in MACROVARIABLE_ORDER:
         row = table.add_row().cells
-        row[0].text = variable
+        row[0].text = format_macrovariable(mv)
         row[1].text = f"{_CHECKBOX_EMPTY} зелена   {_CHECKBOX_EMPTY} жовта   {_CHECKBOX_EMPTY} червона"
         row[2].text = ""
 
-    _set_columns_widths(table, (Cm(2.5), Cm(7.5), Cm(7.0)))
+    _set_columns_widths(table, (Cm(2.8), Cm(7.5), Cm(6.7)))
 
-    decision_paragraph = document.add_paragraph()
-    decision_paragraph.paragraph_format.space_before = Pt(6)
-    decision_run = decision_paragraph.add_run("Рішення перед початком робіт:")
-    decision_run.bold = True
-    document.add_paragraph(
-        f"{_CHECKBOX_EMPTY} допустити до роботи   "
-        f"{_CHECKBOX_EMPTY} допустити після посилення бар'єрів   "
-        f"{_CHECKBOX_EMPTY} зупинити / не допускати"
+
+def _render_compensating_barriers_section(
+    document: DocumentType,
+    compensating_barriers: tuple[PortCompensatingBarrierItem, ...],
+) -> None:
+    _render_section_heading(document, "5. КОМПЕНСУЮЧІ БАР'ЄРИ (калібрування паспорта)")
+
+    if not compensating_barriers:
+        hint = document.add_paragraph()
+        hint.paragraph_format.space_before = Pt(2)
+        hint.add_run("Компенсуючі бар'єри для цього паспорта не задані.").italic = True
+        return
+
+    barriers_by_mv: dict[PortMacrovariable, list[PortCompensatingBarrierItem]] = {
+        mv: [] for mv in MACROVARIABLE_ORDER
+    }
+    for barrier in compensating_barriers:
+        barriers_by_mv[barrier.macrovariable].append(barrier)
+
+    note = document.add_paragraph()
+    note.paragraph_format.space_before = Pt(2)
+    note_run = note.add_run(
+        "Застосовуються при R_dyn в жовтій зоні (1.41–1.80). "
+        "K_comp — знижувальний множник: що менший, то сильніший ефект бар'єра."
     )
-    document.add_paragraph("Коментар: ____________________________________________________________")
+    note_run.italic = True
+
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Light Grid Accent 1"
+    header_cells = table.rows[0].cells
+    header_cells[0].text = "Змінна"
+    header_cells[1].text = "Бар'єр"
+    header_cells[2].text = "Опис / дія"
+    header_cells[3].text = "K_comp"
+    _format_table_header(table)
+
+    for mv in MACROVARIABLE_ORDER:
+        mv_barriers = barriers_by_mv[mv]
+        if not mv_barriers:
+            continue
+        for idx, barrier in enumerate(mv_barriers):
+            row = table.add_row().cells
+            row[0].text = format_macrovariable(mv) if idx == 0 else ""
+            row[1].text = barrier.barrier_name
+            row[2].text = barrier.description
+            row[3].text = f"{barrier.k_comp:.2f}"
+
+    _set_columns_widths(table, (Cm(2.8), Cm(4.0), Cm(7.0), Cm(1.8)))
 
 
 def _render_barriers_section(
     document: DocumentType,
     barriers: tuple[PortShiftBriefingBarrier, ...],
 ) -> None:
-    _render_section_heading(document, "5. ПЕРЕВІРКА КРИТИЧНИХ БАР'ЄРІВ")
+    _render_section_heading(document, "6. ПЕРЕВІРКА КРИТИЧНИХ БАР'ЄРІВ")
 
     table = document.add_table(rows=1, cols=3)
     table.style = "Light Grid Accent 1"
@@ -218,7 +368,7 @@ def _render_barriers_section(
 
 
 def _render_dynamic_events_section(document: DocumentType) -> None:
-    _render_section_heading(document, "6. ФАКТИЧНІ ЗМІНИ ПІД ЧАС ЗМІНИ")
+    _render_section_heading(document, "7. ФАКТИЧНІ ЗМІНИ ПІД ЧАС ЗМІНИ")
 
     hint = document.add_paragraph()
     hint_run = hint.add_run("Заповнюється тільки у разі відхилення від штатного режиму.")
@@ -264,7 +414,7 @@ def _render_dynamic_events_section(document: DocumentType) -> None:
 
 
 def _render_shift_summary_section(document: DocumentType) -> None:
-    _render_section_heading(document, "7. ПІДСУМОК ЗМІНИ")
+    _render_section_heading(document, "8. ПІДСУМОК ЗМІНИ")
 
     document.add_paragraph("Роботи виконані:")
     document.add_paragraph(
@@ -284,7 +434,7 @@ def _render_shift_summary_section(document: DocumentType) -> None:
 
 
 def _render_signature_section(document: DocumentType) -> None:
-    _render_section_heading(document, "8. ПІДПИС ВІДПОВІДАЛЬНОГО ЗМІНИ")
+    _render_section_heading(document, "9. ПІДПИС ВІДПОВІДАЛЬНОГО ЗМІНИ")
     document.add_paragraph(
         "Відповідальний зміни підтверджує, що ознайомився з паспортом ділянки, перевірив "
         "критичні бар'єри, зафіксував відхилення під час зміни та прийняв рішення відповідно "
@@ -375,6 +525,23 @@ def _build_barrier_state_placeholder(barrier_name: str) -> str:
     if barrier_name == "Сигнальник":
         return f"{_CHECKBOX_EMPTY} є   {_CHECKBOX_EMPTY} немає   {_CHECKBOX_EMPTY} не потрібен"
     return f"{_CHECKBOX_EMPTY} є   {_CHECKBOX_EMPTY} немає   {_CHECKBOX_EMPTY} частково"
+
+
+def _shade_row_red(paragraph: object) -> None:
+    """Підсвічує абзац блідо-червоним тлом для тригерів СТОП.
+    Adds a light-red background shading to the paragraph for STOP triggers.
+    """
+    try:
+        from docx.oxml import OxmlElement
+
+        pPr = paragraph._p.get_or_add_pPr()  # type: ignore[attr-defined]
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "FBE7E7")
+        pPr.append(shd)
+    except Exception:
+        pass
 
 
 def _render_checkbox(is_checked: bool) -> str:

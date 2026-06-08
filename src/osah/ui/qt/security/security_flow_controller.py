@@ -12,10 +12,11 @@ from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.security.screens.initial_setup_screen import InitialSetupScreen
 from osah.ui.qt.security.screens.login_screen import LoginScreen
 from osah.ui.qt.security.screens.recovery_access_screen import RecoveryAccessScreen
+from osah.ui.qt.security.screens.setup_key_screen import SetupKeyScreen
 
 
 class SecurityFlowController:
-    """Manages transitions between login, setup and recovery screens."""
+    """Manages transitions between setup key, login, setup and recovery screens."""
 
     def __init__(
         self,
@@ -32,6 +33,24 @@ class SecurityFlowController:
     def _setup_screens(self) -> None:
         """###### ПОЧАТКОВИЙ SECURITY FLOW / INITIAL SECURITY FLOW ######"""
 
+        if not self._security_profile.is_setup_key_activated:
+            self._setup_key_screen = SetupKeyScreen(
+                self._app_context,
+                on_activated=self._on_setup_key_activated,
+            )
+            self._stacked_widget.addWidget(self._setup_key_screen)
+            self._stacked_widget.setCurrentWidget(self._setup_key_screen)
+            return
+
+        self._show_auth_entry_screen()
+
+    def _show_auth_entry_screen(self) -> None:
+        """###### ЕКРАН ВХОДУ АБО ПЕРШОГО НАЛАШТУВАННЯ / AUTH ENTRY SCREEN ######"""
+
+        while self._stacked_widget.count() > 0:
+            self._stacked_widget.removeWidget(self._stacked_widget.widget(0))
+
+        self._security_profile = load_security_profile(self._app_context.database_path)
         if self._security_profile.is_configured:
             self._login_screen = LoginScreen(
                 self._app_context,
@@ -49,20 +68,15 @@ class SecurityFlowController:
         self._stacked_widget.addWidget(self._initial_setup_screen)
         self._stacked_widget.setCurrentWidget(self._initial_setup_screen)
 
+    def _on_setup_key_activated(self) -> None:
+        """###### ПІСЛЯ АКТИВАЦІЇ КЛЮЧА / AFTER SETUP KEY ACTIVATION ######"""
+
+        self._show_auth_entry_screen()
+
     def _on_initial_setup_configured(self) -> None:
         """###### ПІСЛЯ ПЕРШОГО НАЛАШТУВАННЯ / AFTER INITIAL SETUP ######"""
 
-        self._security_profile = load_security_profile(self._app_context.database_path)
-        while self._stacked_widget.count() > 0:
-            self._stacked_widget.removeWidget(self._stacked_widget.widget(0))
-
-        self._login_screen = LoginScreen(
-            self._app_context,
-            on_authenticated=self._on_login_authenticated,
-            on_recovery_requested=self._show_recovery_screen,
-        )
-        self._stacked_widget.addWidget(self._login_screen)
-        self._stacked_widget.setCurrentWidget(self._login_screen)
+        self._show_auth_entry_screen()
 
     def _on_login_authenticated(self, access_role: AccessRole) -> None:
         """###### УСПІШНА АВТЕНТИФІКАЦІЯ / SUCCESSFUL AUTH ######"""

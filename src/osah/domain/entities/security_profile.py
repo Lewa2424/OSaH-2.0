@@ -14,3 +14,6 @@ class SecurityProfile:
     service_request_counter: int
     recovery_file_path: str
     recovery_created_at_text: str
+    is_setup_key_activated: bool
+    setup_key_customer: str
+    setup_key_activated_at_text: str

@@ -1,8 +1,8 @@
 import subprocess
-import tomllib
 from pathlib import Path
 
 from osah.domain.entities.about_snapshot import AboutSnapshot
+from osah.version import __version__
 from osah.infrastructure.database.create_database_connection import create_database_connection
 from osah.infrastructure.database.queries.count_employees import count_employees
 from osah.infrastructure.database.queries.count_unread_news_items import count_unread_news_items
@@ -40,21 +40,11 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
 
 # ###### ЧИТАННЯ ВЕРСІЇ ПРОЄКТУ / READ PROJECT VERSION ######
 def _read_app_version() -> str:
-    """Читает версию проекта из pyproject.toml.
-    Reads the project version from pyproject.toml.
+    """Повертає версію ClearWork з osah.version.
+    Returns the ClearWork version from osah.version.
     """
 
-    project_root = Path(__file__).resolve().parents[4]
-    pyproject_path = project_root / "pyproject.toml"
-    if not pyproject_path.exists():
-        return "0.1.0"
-    content = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    project_data = content.get("project")
-    if isinstance(project_data, dict):
-        value = project_data.get("version")
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return "0.1.0"
+    return __version__
 
 
 # ###### ВИЗНАЧЕННЯ ГІЛКИ РЕПОЗИТОРІЮ / RESOLVE REPOSITORY BRANCH ######

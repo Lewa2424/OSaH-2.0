@@ -10,6 +10,7 @@ class PortPassportStatus(StrEnum):
     NEEDS_RISK_ASSESSMENT = "needs_risk_assessment"
     NEEDS_ACTIONS = "needs_actions"
     ACTIVE = "active"
+    REVISION = "revision"
     ARCHIVED = "archived"
 
 
@@ -18,6 +19,7 @@ PORT_PASSPORT_STATUS_LABELS: dict[PortPassportStatus, str] = {
     PortPassportStatus.NEEDS_RISK_ASSESSMENT: "Потребує оцінки",
     PortPassportStatus.NEEDS_ACTIONS: "Потребує заходів",
     PortPassportStatus.ACTIVE: "Діючий",
+    PortPassportStatus.REVISION: "На перегляді",
     PortPassportStatus.ARCHIVED: "Архівний",
 }
 

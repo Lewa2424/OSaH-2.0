@@ -28,3 +28,7 @@ logs/
 *.log
 *.tmp
 *.bak
+
+tools/clearwork_key_admin/keys/private_key.pem
+tools/clearwork_key_admin/data/*
+!tools/clearwork_key_admin/data/.gitkeep

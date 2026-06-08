@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 140">
+  <rect width="820" height="140" fill="#F7F8FA" rx="8"/>
+  <text x="410" y="28" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600" fill="#111827">Шкала R_dyn</text>
+  <rect x="30" y="50" width="220" height="50" rx="6" fill="#DDF7E8" stroke="#07B551" stroke-width="2"/>
+  <text x="140" y="80" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" fill="#057A39">Зелена: до 1.40</text>
+  <rect x="280" y="50" width="220" height="50" rx="6" fill="#FFF1D6" stroke="#FCAD0F" stroke-width="2"/>
+  <text x="390" y="80" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" fill="#9A6700">Жовта: 1.41-1.80</text>
+  <rect x="530" y="50" width="260" height="50" rx="6" fill="#FBE7E7" stroke="#B51010" stroke-width="2"/>
+  <text x="660" y="80" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" fill="#8E0D0D">Червона: від 1.81 STOP</text>
+  <line x1="250" y1="75" x2="280" y2="75" stroke="#6B7280" stroke-width="2"/>
+  <line x1="500" y1="75" x2="530" y2="75" stroke="#6B7280" stroke-width="2"/>
+  <text x="265" y="68" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#4B5563">1.40</text>
+  <text x="515" y="68" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#4B5563">1.81</text>
+  <text x="140" y="115" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#4B5563">Продовжити</text>
+  <text x="390" y="115" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#4B5563">Обмеж. + бар'єр</text>
+  <text x="660" y="115" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#4B5563">Зупинити роботу</text>
+</svg>

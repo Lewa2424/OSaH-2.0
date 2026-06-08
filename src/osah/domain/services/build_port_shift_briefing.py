@@ -1,3 +1,4 @@
+from osah.domain.entities.port_passport_calibration import PortPassportCalibration
 from osah.domain.entities.port_passport_risk_status import PortPassportRiskStatus
 from osah.domain.entities.port_risk_level import PortRiskLevel
 from osah.domain.entities.port_shift_briefing import (
@@ -5,6 +6,8 @@ from osah.domain.entities.port_shift_briefing import (
     PortShiftBriefingBarrier,
     PortShiftBriefingRisk,
 )
+from osah.domain.entities.port_shift_checklist_detail import PortShiftChecklistDetail
+from osah.domain.entities.port_shift_zone import PortShiftZone
 from osah.domain.entities.port_site_passport_input import PortSitePassportInput
 from osah.domain.entities.port_site_passport_row import PortSitePassportRow
 from osah.domain.entities.port_site_risk import PortSiteRisk
@@ -21,13 +24,43 @@ def build_port_shift_briefing(
     passport_row: PortSitePassportRow,
     passport_input: PortSitePassportInput,
     risks: tuple[PortSiteRisk, ...],
+    calibration: PortPassportCalibration | None = None,
+    last_r_dyn: float | None = None,
+    last_zone: PortShiftZone | None = None,
+    record_detail: PortShiftChecklistDetail | None = None,
 ) -> PortShiftBriefing:
-    """Складає dataclass для оперативного листа зміни на основі паспорта і ризиків.
-    Builds the dataclass for the shift briefing based on the passport and its risks.
+    """Складає dataclass для оперативного листа зміни на основі паспорта, ризиків і калібрування.
+    Builds the dataclass for the shift briefing based on the passport, risks, and calibration.
+
+    Якщо передано record_detail — лист формується за конкретною оцінкою зміни (з відмітками спрацьованих тригерів).
+    If record_detail is provided, the briefing is built for a specific shift assessment (with triggered-trigger marks).
     """
 
     key_risks = _select_key_risks(risks)
     barriers = _build_barriers(passport_input)
+
+    if record_detail is not None:
+        record_row = record_detail.row
+        effective_r_dyn = record_row.r_dyn
+        effective_zone = record_row.zone
+        decision = record_row.decision
+        active_barrier_name = record_row.active_barrier_name
+        triggered_threshold_ids = frozenset(
+            item.threshold_id
+            for item in record_detail.triggered_items
+            if item.threshold_id is not None
+        )
+        is_record_export = True
+        record_shift_date = record_row.shift_date
+    else:
+        effective_r_dyn = last_r_dyn
+        effective_zone = last_zone
+        decision = None
+        active_barrier_name = ""
+        triggered_threshold_ids = frozenset()
+        is_record_export = False
+        record_shift_date = ""
+
     return PortShiftBriefing(
         passport_code=passport_row.passport_code,
         site_name=passport_input.site_name,
@@ -43,6 +76,16 @@ def build_port_shift_briefing(
         passport_updated_at=passport_row.updated_at,
         key_risks=key_risks,
         barriers=barriers,
+        r_dyn=effective_r_dyn,
+        zone=effective_zone,
+        r_base=calibration.r_base if calibration is not None else 1.0,
+        thresholds=calibration.thresholds if calibration is not None else (),
+        compensating_barriers=calibration.compensating_barriers if calibration is not None else (),
+        decision=decision,
+        active_barrier_name=active_barrier_name,
+        triggered_threshold_ids=triggered_threshold_ids,
+        is_record_export=is_record_export,
+        record_shift_date=record_shift_date,
     )
 
 

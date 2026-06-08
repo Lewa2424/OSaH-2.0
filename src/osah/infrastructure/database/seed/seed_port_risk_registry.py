@@ -4,6 +4,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from sqlite3 import Connection
 
+from osah.infrastructure.database.seed.port_risk_registry_records import (
+    PORT_RISK_REGISTRY_RECORDS,
+)
+
 
 _NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 _CODE_RE = re.compile(r"^(\d+\.\d+\.\d+)")
@@ -11,8 +15,11 @@ _CODE_RE = re.compile(r"^(\d+\.\d+\.\d+)")
 
 # ###### ЗАСІВ РЕЄСТРУ РИЗИКІВ ПОРТ-Р / SEED PORT-R RISK REGISTRY ######
 def seed_port_risk_registry(connection: Connection, xlsx_path: Path) -> int:
-    """Завантажує реєстр портових ризиків з Excel-файлу в базу даних (один раз).
-    Loads the port risk registry from an Excel file into the database (once only).
+    """Завантажує реєстр портових ризиків у базу даних (один раз).
+    Loads the port risk registry into the database (once only).
+
+    Спочатку використовує вбудований seed; Excel — лише dev-fallback.
+    Uses embedded seed first; Excel is a dev-only fallback.
 
     Повертає кількість доданих записів.
     Returns the number of inserted records.
@@ -21,13 +28,16 @@ def seed_port_risk_registry(connection: Connection, xlsx_path: Path) -> int:
     if _registry_is_populated(connection):
         return 0
 
-    if not xlsx_path.is_file():
-        return 0
-
-    records = _parse_xlsx(xlsx_path)
+    records = list(PORT_RISK_REGISTRY_RECORDS)
+    if not records and xlsx_path.is_file():
+        records = _parse_xlsx(xlsx_path)
     if not records:
         return 0
 
+    return _insert_records(connection, records)
+
+
+def _insert_records(connection: Connection, records: list[tuple]) -> int:
     connection.executemany(
         """
         INSERT OR IGNORE INTO port_risk_registry (
@@ -69,7 +79,6 @@ def _parse_xlsx(xlsx_path: Path) -> list[tuple]:
 
         _code_col, l1, l2, l3, sit, src, cond, cons, notes = (v.strip() for v in raw[:9])
 
-        # нормалізуємо переноси рядків з об'єднаних комірок
         l1 = _normalize_whitespace(l1)
         l2 = _normalize_whitespace(l2)
         l3 = _normalize_whitespace(l3)
@@ -82,7 +91,6 @@ def _parse_xlsx(xlsx_path: Path) -> list[tuple]:
             continue
 
         risk_code = _extract_code(l3, idx)
-        # уникаємо дублів коду у межах одного імпорту
         while risk_code in seen_codes:
             idx += 1
             risk_code = f"auto-{idx}"

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220">
+  <rect width="820" height="220" fill="#F7F8FA" rx="8"/>
+  <rect x="30" y="50" width="320" height="120" rx="10" fill="#DCEBFA" stroke="#0669C4" stroke-width="2"/>
+  <text x="190" y="85" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#05539B">Статичний контур</text>
+  <text x="190" y="110" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#111827">Паспорт ділянки</text>
+  <text x="190" y="132" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#4B5563">Базовий ризик, тригери, бар'єри</text>
+  <text x="190" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#4B5563">Інженер ОТ</text>
+  <rect x="470" y="50" width="320" height="120" rx="10" fill="#DDF7E8" stroke="#07B551" stroke-width="2"/>
+  <text x="630" y="85" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#057A39">Динамічний контур</text>
+  <text x="630" y="110" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#111827">Оцінка зміни</text>
+  <text x="630" y="132" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#4B5563">R_dyn, зона, рішення</text>
+  <text x="630" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#4B5563">Майстер / стивідор</text>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3A5F8A"/>
+    </marker>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3A5F8A"/>
+    </marker>
+  </defs>
+  <path d="M 360 110 L 450 110" stroke="#3A5F8A" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="405" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#3A5F8A">еталон</text>
+  <path d="M 450 130 L 360 130" stroke="#3A5F8A" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow2)"/>
+  <text x="405" y="148" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#3A5F8A">відхилення</text>
+</svg>

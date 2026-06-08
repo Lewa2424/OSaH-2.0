@@ -27,6 +27,9 @@ def sync_control_notifications(connection: Connection) -> None:
     ppe_records = list_ppe_records(connection)
     medical_records = list_medical_records(connection)
     work_permit_records = list_work_permit_records(connection)
+
+    # ПОРТ-Р — експериментальний модуль: не входить у контур nav/dashboard-сповіщень.
+    # PORT-R is experimental and optional; it does not participate in shell alert levels.
     notifications = (
         build_registry_notifications(employees)
         + build_training_notifications(employees, training_records)

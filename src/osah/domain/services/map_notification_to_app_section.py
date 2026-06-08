@@ -18,4 +18,6 @@ def map_notification_to_app_section(notification: NotificationItem) -> AppSectio
         return AppSection.MEDICAL
     if notification.source_module.startswith("work_permits."):
         return AppSection.WORK_PERMITS
+    if notification.source_module.startswith("port_r."):
+        return AppSection.PORT_R
     return AppSection.DASHBOARD

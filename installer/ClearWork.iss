@@ -1,5 +1,5 @@
 #define MyAppName "ClearWork"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.8.3"
 #define MyAppPublisher "ClearWork"
 #define MyAppExeName "ClearWork.exe"
 #define MyAppSourceDir "..\dist\ClearWork"
@@ -17,7 +17,7 @@ DisableProgramGroupPage=yes
 LicenseFile=license_uk.txt
 PrivilegesRequired=lowest
 OutputDir=.
-OutputBaseFilename=ClearWork-Setup-0.1.0
+OutputBaseFilename=ClearWork-Setup-0.8.3
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -36,6 +36,7 @@ Name: "desktopicon"; Description: "Створити ярлик на стільн
 [Files]
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "data\*,logs\*"
 Source: "GettingStarted_uk.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\docs\ClearWork_користувач.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"

@@ -3,14 +3,13 @@ SideNav — ліва навігаційна панель.
 Містить логотип, кнопки розділів та footer.
 SideNav — left navigation panel containing logo, buttons and footer.
 """
-from typing import Callable
-
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QFont, QPainter, QPainterPath, QPixmap
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
+from osah.domain.entities.nav_fill_palette import NavFillPalette
 from osah.domain.entities.notification_level import NotificationLevel
 from osah.ui.qt.branding import DISPLAY_NAME, LOGO_MARK_PATH
 from osah.ui.qt.components.nav_button import NavButton
@@ -27,6 +26,7 @@ class SideNav(QWidget):
         sections: tuple[AppSection, ...],
         access_role: AccessRole,
         section_levels: dict[AppSection, NotificationLevel],
+        section_palettes: dict[AppSection, NavFillPalette | None] | None = None,
     ) -> None:
         super().__init__()
         self.setProperty("role", "sidenav")
@@ -34,8 +34,13 @@ class SideNav(QWidget):
         self.setFixedWidth(SIZE["nav_width"])
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["xl"], SPACING["lg"], SPACING["xl"])
+        layout.setContentsMargins(0, SPACING["xl"], 0, SPACING["xl"])
         layout.setSpacing(SPACING["sm"])
+
+        header = QWidget()
+        header_layout = QVBoxLayout(header)
+        header_layout.setContentsMargins(SPACING["lg"], 0, SPACING["lg"], 0)
+        header_layout.setSpacing(SPACING["sm"])
 
         # ---- Логотип ----
         logo = QLabel()
@@ -51,7 +56,7 @@ class SideNav(QWidget):
             logo_font = QFont(FONT["title_xl"][0], 18)
             logo_font.setBold(True)
             logo.setFont(logo_font)
-        layout.addWidget(logo)
+        header_layout.addWidget(logo)
 
         desc = QLabel("Локальний пульт інспектора з охорони праці.")
         desc.setWordWrap(True)
@@ -61,22 +66,31 @@ class SideNav(QWidget):
             f"font-size: {FONT['nav_item'][1]}px; "
             f"font-weight: 700;"
         )
-        layout.addWidget(desc)
+        header_layout.addWidget(desc)
+        layout.addWidget(header)
 
         layout.addSpacing(SPACING["lg"])
 
-        # ---- Кнопки навігації ----
+        # ---- Кнопки навігації (full-bleed 240px) ----
         self._buttons: dict[AppSection, NavButton] = {}
+        palettes = section_palettes or {}
 
         for section in sections:
             # Розділювач перед другорядною групою
             if section == AppSection.CONTRACTORS:
                 sep = QFrame()
                 sep.setFixedHeight(1)
-                sep.setStyleSheet(f"background: {COLOR['border_soft']}; margin: 8px 0;")
+                sep.setStyleSheet(
+                    f"background: {COLOR['border_soft']}; "
+                    f"margin: 8px {SPACING['lg']}px;"
+                )
                 layout.addWidget(sep)
 
-            btn = NavButton(section, section_levels.get(section))
+            btn = NavButton(
+                section,
+                section_levels.get(section),
+                palettes.get(section),
+            )
             btn.clicked.connect(self._on_button_clicked)
             layout.addWidget(btn)
             self._buttons[section] = btn
@@ -84,9 +98,13 @@ class SideNav(QWidget):
         layout.addStretch()
 
         # ---- Footer ----
-        footer = QLabel("Система працює автономно.")
-        footer.setWordWrap(True)
-        footer.setProperty("role", "status_muted")
+        footer = QWidget()
+        footer_layout = QVBoxLayout(footer)
+        footer_layout.setContentsMargins(SPACING["lg"], 0, SPACING["lg"], 0)
+        footer_label = QLabel("Система працює автономно.")
+        footer_label.setWordWrap(True)
+        footer_label.setProperty("role", "status_muted")
+        footer_layout.addWidget(footer_label)
         layout.addWidget(footer)
 
     def _on_button_clicked(self, section: AppSection) -> None:
@@ -102,6 +120,19 @@ class SideNav(QWidget):
         """Оновлює рівні сповіщень для всіх кнопок без перестворення меню."""
         for section, btn in self._buttons.items():
             btn.set_alert_level(section_levels.get(section))
+
+    def update_nav_visuals(
+        self,
+        section_levels: dict[AppSection, NotificationLevel],
+        section_palettes: dict[AppSection, NavFillPalette | None],
+    ) -> None:
+        """Оновлює alert-рівні та палітри nav-діаграм.
+        Updates alert levels and nav diagram palettes.
+        """
+
+        for section, btn in self._buttons.items():
+            btn.set_alert_level(section_levels.get(section))
+            btn.set_fill_palette(section_palettes.get(section))
 
 
 def _build_rounded_logo_pixmap(image_path, size: int, radius: int) -> QPixmap:

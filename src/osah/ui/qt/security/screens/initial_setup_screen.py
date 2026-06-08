@@ -86,7 +86,7 @@ class InitialSetupScreen(QWidget):
         layout.addWidget(title)
 
         description = QLabel(
-            "Задайте окремі локальні паролі для інспектора і керівника. "
+            "Введіть назву підприємства та задайте окремі локальні паролі для інспектора і керівника. "
             "Кожен пароль має містити щонайменше 8 символів. "
             "Після збереження система створить recovery-файл і ввімкне локальний контур безпеки."
         )
@@ -94,6 +94,12 @@ class InitialSetupScreen(QWidget):
         description.setStyleSheet(f"color: {COLOR['text_secondary']};")
         description.setWordWrap(True)
         layout.addWidget(description)
+
+        self._enterprise_input = QLineEdit()
+        self._enterprise_input.setPlaceholderText("НАЗВА ПІДПРИЄМСТВА (НЕОБОВ'ЯЗКОВО)")
+        self._enterprise_input.setMinimumHeight(52)
+        self._enterprise_input.setStyleSheet(self._get_input_stylesheet())
+        layout.addWidget(self._enterprise_input)
 
         input_row = QHBoxLayout()
         input_row.setSpacing(SPACING["md"])
@@ -130,6 +136,7 @@ class InitialSetupScreen(QWidget):
         save_button.clicked.connect(self._on_save_clicked)
         layout.addWidget(save_button)
 
+        self.setTabOrder(self._enterprise_input, self._inspector_input)
         self.setTabOrder(self._inspector_input, self._manager_input)
         self.setTabOrder(self._manager_input, save_button)
 
@@ -181,6 +188,7 @@ class InitialSetupScreen(QWidget):
             database_path=self._app_context.database_path,
             inspector_password=inspector_password,
             manager_password=manager_password,
+            enterprise_display_name=self._enterprise_input.text(),
         )
 
         self._on_configured()

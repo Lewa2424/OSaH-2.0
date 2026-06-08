@@ -15,6 +15,9 @@ from osah.application.services.security.security_setting_keys import (
     RECOVERY_FILE_PATH,
     SERVICE_REQUEST_COUNTER,
     SERVICE_RESET_SECRET,
+    SETUP_KEY_ACTIVATED,
+    SETUP_KEY_ACTIVATED_AT,
+    SETUP_KEY_CUSTOMER,
 )
 
 
@@ -44,6 +47,12 @@ def ensure_security_baseline(database_path: Path) -> None:
             default_setting_pairs[RECOVERY_CREATED_AT] = ""
         if not app_settings.get(SERVICE_RESET_SECRET):
             default_setting_pairs[SERVICE_RESET_SECRET] = generate_service_reset_secret()
+        if SETUP_KEY_ACTIVATED not in app_settings:
+            default_setting_pairs[SETUP_KEY_ACTIVATED] = "0"
+        if SETUP_KEY_ACTIVATED_AT not in app_settings:
+            default_setting_pairs[SETUP_KEY_ACTIVATED_AT] = ""
+        if SETUP_KEY_CUSTOMER not in app_settings:
+            default_setting_pairs[SETUP_KEY_CUSTOMER] = ""
 
         if default_setting_pairs:
             upsert_app_settings_batch(connection, default_setting_pairs)

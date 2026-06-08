@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from osah.application.services.visual.load_section_nav_fill_profiles import load_section_nav_fill_profiles
 from osah.application.services.visual.should_trigger_critical_attention_shake import (
     should_trigger_critical_attention_shake,
 )
@@ -27,6 +28,7 @@ def load_visual_alert_state(database_path: Path) -> VisualAlertState:
     section_levels = build_section_alert_levels(notifications)
     return VisualAlertState(
         section_levels=section_levels,
+        section_palettes=load_section_nav_fill_profiles(database_path),
         should_shake=should_trigger_critical_attention_shake(
             section_levels,
             app_settings.get(LAST_CRITICAL_SHAKE_AT, ""),

@@ -310,6 +310,111 @@ def ensure_core_schema(connection: Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_port_risk_registry_levels
         ON port_risk_registry(level_1, level_2);
 
+        CREATE TABLE IF NOT EXISTS port_macrovariable_thresholds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passport_id INTEGER NOT NULL,
+            macrovariable TEXT NOT NULL,
+            trigger_text TEXT NOT NULL DEFAULT '',
+            k_value REAL NOT NULL DEFAULT 1.0,
+            is_stop_trigger INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (passport_id)
+                REFERENCES port_site_passports(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_port_macrovariable_thresholds_passport
+        ON port_macrovariable_thresholds(passport_id);
+
+        CREATE TABLE IF NOT EXISTS port_compensating_barriers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passport_id INTEGER NOT NULL,
+            macrovariable TEXT NOT NULL DEFAULT 'B',
+            barrier_name TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            k_comp REAL NOT NULL DEFAULT 0.9,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (passport_id)
+                REFERENCES port_site_passports(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_port_compensating_barriers_passport
+        ON port_compensating_barriers(passport_id);
+
+        CREATE TABLE IF NOT EXISTS port_shift_checklists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passport_id INTEGER NOT NULL,
+            shift_date TEXT NOT NULL DEFAULT '',
+            shift_label TEXT NOT NULL DEFAULT '',
+            responsible_person TEXT NOT NULL DEFAULT '',
+            r_base REAL NOT NULL DEFAULT 1.0,
+            r_dyn REAL NULL,
+            zone TEXT NULL,
+            decision TEXT NULL,
+            active_barrier_id INTEGER NULL,
+            stop_reason TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (passport_id)
+                REFERENCES port_site_passports(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (active_barrier_id)
+                REFERENCES port_compensating_barriers(id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_port_shift_checklists_passport
+        ON port_shift_checklists(passport_id);
+
+        CREATE INDEX IF NOT EXISTS idx_port_shift_checklists_date
+        ON port_shift_checklists(shift_date);
+
+        CREATE TABLE IF NOT EXISTS port_shift_checklist_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checklist_id INTEGER NOT NULL,
+            macrovariable TEXT NOT NULL,
+            threshold_id INTEGER NULL,
+            is_triggered INTEGER NOT NULL DEFAULT 0,
+            k_used REAL NOT NULL DEFAULT 1.0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (checklist_id)
+                REFERENCES port_shift_checklists(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (threshold_id)
+                REFERENCES port_macrovariable_thresholds(id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_port_shift_checklist_items_checklist
+        ON port_shift_checklist_items(checklist_id);
+
+        CREATE TABLE IF NOT EXISTS port_shift_checklist_barriers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checklist_id INTEGER NOT NULL,
+            barrier_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (checklist_id)
+                REFERENCES port_shift_checklists(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (barrier_id)
+                REFERENCES port_compensating_barriers(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_port_shift_checklist_barriers_unique
+        ON port_shift_checklist_barriers(checklist_id, barrier_id);
+
+        CREATE INDEX IF NOT EXISTS idx_port_shift_checklist_barriers_checklist
+        ON port_shift_checklist_barriers(checklist_id);
+
         CREATE TABLE IF NOT EXISTS import_batches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             source_name TEXT NOT NULL,
@@ -386,6 +491,9 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_work_permit_extension_columns(connection)
     _ensure_work_permit_reissue_columns(connection)
     _ensure_app_settings_columns(connection)
+    _ensure_port_passports_r_base_column(connection)
+    _ensure_port_compensating_barriers_macrovariable_column(connection)
+    _ensure_port_shift_checklist_barriers_table(connection)
     connection.commit()
 
 
@@ -721,6 +829,86 @@ def _ensure_work_permit_reissue_columns(connection: Connection) -> None:
         connection.execute("ALTER TABLE work_permits ADD COLUMN reissued_to_record_id INTEGER NULL;")
     if "reissue_reason_text" not in columns:
         connection.execute("ALTER TABLE work_permits ADD COLUMN reissue_reason_text TEXT NOT NULL DEFAULT '';")
+
+
+def _ensure_port_passports_r_base_column(connection: Connection) -> None:
+    """Додає поле базового індексу ризику для динамічного контуру ПОРТ-Р.
+    Adds the base risk index field for the PORT-R dynamic circuit.
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(port_site_passports);").fetchall()
+    }
+    if "r_base" not in columns:
+        connection.execute(
+            "ALTER TABLE port_site_passports ADD COLUMN r_base REAL NOT NULL DEFAULT 1.0;"
+        )
+
+
+def _ensure_port_compensating_barriers_macrovariable_column(connection: Connection) -> None:
+    """Додає прив'язку компенсуючого бар'єра до макрозмінної Т-П-С-В-Б.
+    Adds macrovariable linkage for compensating barriers (T-P-S-V-B).
+    """
+
+    columns = {
+        str(row["name"])
+        for row in connection.execute("PRAGMA table_info(port_compensating_barriers);").fetchall()
+    }
+    if "macrovariable" not in columns:
+        connection.execute(
+            "ALTER TABLE port_compensating_barriers ADD COLUMN macrovariable TEXT NOT NULL DEFAULT 'B';"
+        )
+
+
+def _ensure_port_shift_checklist_barriers_table(connection: Connection) -> None:
+    """Створює таблицю застосованих компенсуючих бар'єрів оцінки зміни та переносить legacy active_barrier_id.
+    Creates the applied compensating-barriers junction table and migrates legacy active_barrier_id.
+    """
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS port_shift_checklist_barriers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checklist_id INTEGER NOT NULL,
+            barrier_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (checklist_id)
+                REFERENCES port_shift_checklists(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (barrier_id)
+                REFERENCES port_compensating_barriers(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_port_shift_checklist_barriers_unique
+        ON port_shift_checklist_barriers(checklist_id, barrier_id);
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_port_shift_checklist_barriers_checklist
+        ON port_shift_checklist_barriers(checklist_id);
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO port_shift_checklist_barriers (checklist_id, barrier_id)
+        SELECT c.id, c.active_barrier_id
+        FROM port_shift_checklists c
+        WHERE c.active_barrier_id IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM port_shift_checklist_barriers cb
+              WHERE cb.checklist_id = c.id AND cb.barrier_id = c.active_barrier_id
+          );
+        """
+    )
 
 
 def _ensure_app_settings_columns(connection: Connection) -> None:
