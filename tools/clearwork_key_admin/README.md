@@ -4,10 +4,25 @@ Mini-програма для генерації та обліку ключів �
 
 ## Запуск
 
+**Портативно (рекомендовано):** подвійний клік по `ClearWorkKeyAdmin.exe` у цій папці.
+
+Поруч мають лежати:
+- `keys/private_key.pem`
+- `data/` (створюється автоматично)
+
+**Через Python (для розробки):**
+
 ```powershell
 cd tools/clearwork_key_admin
 pip install -r requirements.txt
 python main.py
+```
+
+## Перезбірка exe
+
+```powershell
+cd tools/clearwork_key_admin
+powershell -ExecutionPolicy Bypass -File build_key_admin.ps1
 ```
 
 ## Перший запуск

@@ -1,15 +1,17 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
+from resolve_key_admin_root import resolve_key_admin_root
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = resolve_key_admin_root()
 SOURCE_ROOT = PROJECT_ROOT.parents[1] / "src"
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from PySide6.QtWidgets import QApplication
 
 from ui.main_window import KeyAdminMainWindow
 

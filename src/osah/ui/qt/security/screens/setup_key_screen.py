@@ -3,7 +3,7 @@
 from typing import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -22,6 +22,7 @@ from osah.domain.services.setup_key.verify_setup_key_document import SetupKeyVer
 from osah.infrastructure.config.support_contacts import SUPPORT_EMAIL, SUPPORT_PHONE
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.security.screens.security_background_shell import SecurityBackgroundShell
+from osah.ui.qt.security.screens.setup_key_request_dialog import SetupKeyRequestDialog
 
 
 class SetupKeyScreen(QWidget):
@@ -102,6 +103,12 @@ class SetupKeyScreen(QWidget):
         activate_button.setStyleSheet(self._get_button_stylesheet())
         activate_button.clicked.connect(self._on_activate_clicked)
         layout.addWidget(activate_button)
+
+        request_button = QPushButton("Сформувати запит на ключ установки")
+        request_button.setMinimumHeight(48)
+        request_button.setStyleSheet(self._get_secondary_button_stylesheet())
+        request_button.clicked.connect(self._on_request_report_clicked)
+        layout.addWidget(request_button)
         return card
 
     def _build_service_strip(self) -> QFrame:
@@ -130,11 +137,36 @@ class SetupKeyScreen(QWidget):
         text_layout.addWidget(description)
         text_layout.addStretch()
         layout.addWidget(text_panel, 2)
-        layout.addWidget(
+
+        id_panel = QWidget()
+        id_layout = QVBoxLayout(id_panel)
+        id_layout.setContentsMargins(0, 0, 0, 0)
+        id_layout.setSpacing(SPACING["xs"])
+        id_layout.addWidget(
             self._create_info_card("ID установки", self._security_profile.installation_id),
-            3,
         )
+
+        copy_button = QPushButton("Скопіювати ID")
+        copy_button.setMinimumHeight(36)
+        copy_button.setStyleSheet(self._get_secondary_button_stylesheet())
+        copy_button.clicked.connect(self._on_copy_installation_id_clicked)
+        id_layout.addWidget(copy_button)
+        layout.addWidget(id_panel, 3)
         return strip
+
+    def _on_copy_installation_id_clicked(self) -> None:
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(self._security_profile.installation_id)
+        self._feedback_label.setStyleSheet(f"color: {COLOR['success']};")
+        self._feedback_label.setText("ID установки скопійовано в буфер обміну.")
+
+    def _on_request_report_clicked(self) -> None:
+        dialog = SetupKeyRequestDialog(
+            self,
+            installation_id=self._security_profile.installation_id,
+            data_directory=self._app_context.database_path.parent,
+        )
+        dialog.exec()
 
     def _on_activate_clicked(self) -> None:
         paste_token = self._key_input.toPlainText().strip()
@@ -221,4 +253,16 @@ class SetupKeyScreen(QWidget):
             f"}} "
             f"QPushButton:hover {{ background: {COLOR['button_primary_hover']}; }} "
             f"QPushButton:pressed {{ background: {COLOR['button_primary_active']}; }}"
+        )
+
+    def _get_secondary_button_stylesheet(self) -> str:
+        return (
+            f"QPushButton {{ "
+            f"background: {COLOR['bg_panel']}; "
+            f"color: {COLOR['text_primary']}; "
+            f"border: 1px solid {COLOR['border_soft']}; "
+            f"border-radius: {RADIUS['md']}px; "
+            f"font: 11pt 'Segoe UI'; "
+            f"}} "
+            f"QPushButton:hover {{ background: {COLOR['bg_card']}; }}"
         )
