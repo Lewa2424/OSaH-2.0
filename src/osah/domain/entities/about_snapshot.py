@@ -16,3 +16,5 @@ class AboutSnapshot:
     employee_count: int
     unread_news_count: int
     branch_name: str
+    demo_mode_label: str
+    demo_expires_at_text: str

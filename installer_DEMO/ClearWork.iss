@@ -1,23 +1,23 @@
-#define MyAppName "ClearWork"
-#define MyAppVersion "0.1.0"
+#define MyAppName "ClearWork Demo"
+#define MyAppVersion "0.8.3"
 #define MyAppPublisher "ClearWork"
 #define MyAppExeName "ClearWork.exe"
 #define MyAppSourceDir "..\dist\ClearWork"
 #define MyAppIcon "..\src\osah\ui\qt\assets\icons\clearwork.ico"
 
 [Setup]
-AppId={{6E5E9F0D-1D02-4A56-82CC-4C1F40F3EE41}
+AppId={{A4C2D8F1-9B3E-4F71-A6D2-1E8C5B0D4F92}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={localappdata}\Programs\ClearWork
-DefaultGroupName=ClearWork
+DefaultGroupName=ClearWork Demo
 DisableDirPage=no
 DisableProgramGroupPage=yes
 LicenseFile=license_uk.txt
 PrivilegesRequired=lowest
 OutputDir=.
-OutputBaseFilename=ClearWork-Setup-0.1.0
+OutputBaseFilename=ClearWork-Demo-Setup-0.8.3
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -36,21 +36,36 @@ Name: "desktopicon"; Description: "Створити ярлик на стільн
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "data\*,logs\*"
 
 [Icons]
-Name: "{group}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{group}\ClearWork Demo"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\ClearWork Demo"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Запустити ClearWork"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Запустити ClearWork Demo"; Flags: nowait postinstall skipifsilent
 
 [Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  DemoMarkerPath: String;
+  DemoTimedMarkerPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    DemoMarkerPath := ExpandConstant('{app}\ClearWork.demo');
+    DemoTimedMarkerPath := ExpandConstant('{app}\ClearWork.demo_timed');
+    SaveStringToFile(DemoMarkerPath, 'demo', False);
+    SaveStringToFile(DemoTimedMarkerPath, 'timed', False);
+  end;
+end;
+
 function InitializeUninstall: Boolean;
 begin
   Result :=
     MsgBox(
-      'Ви збираєтеся видалити ClearWork.' + #13#10#13#10 +
-      'Програма буде видалена, але робочі дані можуть залишатися у папці встановлення.' + #13#10 +
-      'Якщо після цього вручну видалити папку ClearWork, база даних, журнали та резервні копії можуть бути втрачені.' + #13#10#13#10 +
+      'Ви збираєтеся видалити ClearWork Demo.' + #13#10#13#10 +
+      'Програма буде видалена, але робочі дані можуть залишатися у папці встановлення (data\, logs\, резервні копії).' + #13#10 +
       'Перед видаленням рекомендується створити резервну копію у програмі.' + #13#10#13#10 +
+      'Важливо: демонстраційний період (48 годин) зберігається у папці data\.' + #13#10 +
+      'Якщо видалити data\, таймер і демо-дані будуть скинуті.' + #13#10#13#10 +
       'Продовжити видалення?',
       mbConfirmation,
       MB_YESNO

@@ -15,3 +15,7 @@ RECOVERY_CREATED_AT = "security.recovery_created_at"
 SETUP_KEY_ACTIVATED = "security.setup_key_activated"
 SETUP_KEY_ACTIVATED_AT = "security.setup_key_activated_at"
 SETUP_KEY_CUSTOMER = "security.setup_key_customer"
+
+DEMO_DISTRIBUTION_ENABLED = "demo.distribution_enabled"
+DEMO_STARTED_AT = "demo.started_at"
+DEMO_EXPIRES_AT = "demo.expires_at"

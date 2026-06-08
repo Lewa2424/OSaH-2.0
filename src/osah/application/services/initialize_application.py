@@ -1,7 +1,9 @@
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.ensure_startup_auto_backup import ensure_startup_auto_backup
 from osah.application.services.load_dashboard_snapshot_from_path import load_dashboard_snapshot_from_path
+from osah.application.services.security.ensure_demo_distribution_timer import ensure_demo_distribution_timer
 from osah.application.services.security.ensure_security_baseline import ensure_security_baseline
+from osah.infrastructure.config.is_demo_timed_distribution_enabled import is_demo_timed_distribution_marker_present
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.infrastructure.config.application_paths import ApplicationPaths
 from osah.infrastructure.config.is_demo_seed_enabled import is_demo_seed_enabled
@@ -37,6 +39,7 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
         if is_demo_seed_enabled():
             seed_demo_employees(connection)
             seed_demo_contractors(connection)
+        ensure_demo_distribution_timer(connection, application_paths.project_root)
         sync_control_notifications(connection)
         connection.commit()
     finally:
@@ -48,6 +51,8 @@ def initialize_application(application_paths: ApplicationPaths) -> ApplicationCo
         log_system_event("bootstrap", "Demo seed enabled for this run.")
     else:
         log_system_event("bootstrap", "Demo seed disabled; production bootstrap uses a clean database.")
+    if is_demo_timed_distribution_marker_present(application_paths.project_root):
+        log_system_event("bootstrap", "Demo-only timed distribution marker detected.")
     log_system_event("bootstrap", "Application bootstrap completed successfully.")
 
     return ApplicationContext(

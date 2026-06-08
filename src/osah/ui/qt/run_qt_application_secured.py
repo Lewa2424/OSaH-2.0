@@ -9,11 +9,13 @@ from PySide6.QtGui import QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from osah.application.services.application_context import ApplicationContext
+from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
 from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.branding import DISPLAY_NAME, ICON_PATH
 from osah.ui.qt.components.app_window import AppWindow
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.design.stylesheet import build_global_stylesheet
+from osah.ui.qt.security.screens.demo_expired_screen import DemoExpiredScreen
 from osah.ui.qt.security.security_flow_controller import SecurityFlowController
 
 
@@ -31,6 +33,7 @@ class QtApplicationShell(QMainWindow):
         super().__init__()
         self._app_context = application_context
         self._authenticated_window: AppWindow | None = None
+        self._security_controller: SecurityFlowController | None = None
 
         self.setWindowTitle(DISPLAY_NAME)
         if ICON_PATH.exists():
@@ -46,7 +49,12 @@ class QtApplicationShell(QMainWindow):
         self.setCentralWidget(self._stacked_widget)
         self._install_navigation_shortcuts()
 
-        # Контроллер безпеки
+        demo_state = load_demo_distribution_state(application_context.database_path)
+        if demo_state.is_active and demo_state.is_expired:
+            self._stacked_widget.addWidget(DemoExpiredScreen())
+            self._stacked_widget.setCurrentIndex(0)
+            return
+
         self._security_controller = SecurityFlowController(
             stacked_widget=self._stacked_widget,
             application_context=application_context,
@@ -70,7 +78,8 @@ class QtApplicationShell(QMainWindow):
         if self._authenticated_window is not None:
             self._authenticated_window.navigate_back()
             return
-        self._security_controller.navigate_back()
+        if self._security_controller is not None:
+            self._security_controller.navigate_back()
 
     def _on_authenticated(self, access_role: AccessRole) -> None:
         """

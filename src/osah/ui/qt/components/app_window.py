@@ -18,6 +18,8 @@ from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.services.should_prompt_manual_report import should_prompt_manual_report
 from osah.ui.qt.branding import DISPLAY_NAME
+from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
+from osah.ui.qt.components.demo_distribution_banner import DemoDistributionBanner
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.show_manual_report_prompt_dialog import show_manual_report_prompt_dialog
 from osah.ui.qt.components.side_nav import SideNav
@@ -77,6 +79,13 @@ class AppWindow(QMainWindow):
 
         self._top_bar = TopCommandBar(access_role)
         right_layout.addWidget(self._top_bar)
+
+        demo_state = load_demo_distribution_state(self._app_context.database_path)
+        if demo_state.is_active and not demo_state.is_expired:
+            self._demo_banner = DemoDistributionBanner(self._app_context.database_path)
+            right_layout.addWidget(self._demo_banner)
+        else:
+            self._demo_banner = None
 
         self._content_container = SectionContainer()
         right_layout.addWidget(self._content_container)

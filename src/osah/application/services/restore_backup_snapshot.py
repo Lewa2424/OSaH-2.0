@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from osah.application.services.create_backup_snapshot import create_backup_snapshot
+from osah.application.services.security.ensure_demo_distribution_not_expired import ensure_demo_distribution_not_expired
 from osah.application.services.security.ensure_write_access import ensure_write_access
+from osah.application.services.security.is_demo_timed_distribution_active import is_demo_timed_distribution_active
 from osah.application.services.sync_control_notifications import sync_control_notifications
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.backup_kind import BackupKind
@@ -26,6 +28,11 @@ def restore_backup_snapshot(
     """
 
     ensure_write_access(access_role, "restore_backup_snapshot")
+    if is_demo_timed_distribution_active(database_path):
+        raise ValueError(
+            "У демонстраційній версії ClearWork відновлення з резервної копії недоступне."
+        )
+    ensure_demo_distribution_not_expired(database_path)
     if not backup_file_path.exists():
         log_alert_event("backup_restore", f"Restore failed because backup file was not found: {backup_file_path}")
         raise ValueError("Обрану резервну копію не знайдено.")

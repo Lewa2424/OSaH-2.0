@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
 from osah.domain.entities.about_snapshot import AboutSnapshot
 from osah.version import __version__
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -23,6 +24,14 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
     finally:
         connection.close()
 
+    demo_state = load_demo_distribution_state(database_path)
+    demo_mode_label = ""
+    demo_expires_at_text = ""
+    if demo_state.is_active:
+        demo_mode_label = "Демонстраційна версія (48 годин)"
+        if demo_state.expires_at is not None:
+            demo_expires_at_text = demo_state.expires_at.strftime("%d.%m.%Y %H:%M")
+
     return AboutSnapshot(
         product_name="ClearWork",
         app_version=_read_app_version(),
@@ -35,6 +44,8 @@ def load_about_snapshot(database_path: Path, log_path: Path) -> AboutSnapshot:
         employee_count=employee_total,
         unread_news_count=unread_news_total,
         branch_name=_resolve_branch_name(database_path.parent),
+        demo_mode_label=demo_mode_label,
+        demo_expires_at_text=demo_expires_at_text,
     )
 
 

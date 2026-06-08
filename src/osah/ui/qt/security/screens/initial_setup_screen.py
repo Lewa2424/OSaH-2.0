@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.security.configure_program_access import configure_program_access
+from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
 from osah.application.services.security.load_security_profile import load_security_profile
 from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.security.screens.security_background_shell import SecurityBackgroundShell
@@ -94,6 +95,17 @@ class InitialSetupScreen(QWidget):
         description.setStyleSheet(f"color: {COLOR['text_secondary']};")
         description.setWordWrap(True)
         layout.addWidget(description)
+
+        demo_state = load_demo_distribution_state(self._app_context.database_path)
+        if demo_state.is_active and not demo_state.is_expired:
+            demo_hint = QLabel(
+                "Демонстраційна версія: для ознайомлення можна задати будь-які паролі, "
+                "головне — не менше 8 символів для кожної ролі."
+            )
+            demo_hint.setFont(QFont("Segoe UI", 11))
+            demo_hint.setStyleSheet(f"color: {COLOR['text_secondary']};")
+            demo_hint.setWordWrap(True)
+            layout.addWidget(demo_hint)
 
         self._enterprise_input = QLineEdit()
         self._enterprise_input.setPlaceholderText("НАЗВА ПІДПРИЄМСТВА (НЕОБОВ'ЯЗКОВО)")

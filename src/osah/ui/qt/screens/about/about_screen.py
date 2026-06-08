@@ -24,7 +24,7 @@ class AboutScreen(QWidget):
         """
 
         super().__init__()
-        _ = snapshot
+        self._snapshot = snapshot
         self._access_role = access_role
 
         layout = QVBoxLayout(self)
@@ -44,6 +44,8 @@ class AboutScreen(QWidget):
         content_layout.setSpacing(SPACING["lg"])
 
         content_layout.addWidget(self._build_intro_card())
+        if self._snapshot.demo_mode_label:
+            content_layout.addWidget(self._build_demo_mode_card())
         content_layout.addWidget(self._build_audience_card())
         content_layout.addWidget(self._build_capabilities_card())
         content_layout.addWidget(self._build_instructions_hub_card())
@@ -76,6 +78,27 @@ class AboutScreen(QWidget):
                 "строки, які працівники потребують уваги, які документи або записи відсутні, які новини "
                 "та нормативні зміни варто врахувати вже сьогодні. У результаті користувач отримує не "
                 "набір розрізнених таблиць, а керований і зрозумілий інструмент щоденного контролю."
+            )
+        )
+        return card
+
+    def _build_demo_mode_card(self) -> QFrame:
+        """Створює блок про демонстраційну версію з датою завершення.
+        Creates the timed demo information card.
+        """
+
+        card = self._build_card()
+        layout = card.layout()
+        layout.addWidget(self._build_title_label(self._snapshot.demo_mode_label))
+        expiry_text = (
+            f"Демонстраційний період завершується: {self._snapshot.demo_expires_at_text}."
+            if self._snapshot.demo_expires_at_text
+            else "Демонстраційний період обмежений 48 годинами з моменту першого запуску."
+        )
+        layout.addWidget(
+            self._build_body_label(
+                f"{expiry_text} Після завершення періоду програма буде заблокована. "
+                "Демонстраційна версія не призначена для виробничої експлуатації."
             )
         )
         return card
