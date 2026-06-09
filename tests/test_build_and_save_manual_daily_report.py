@@ -16,9 +16,9 @@ class BuildAndSaveManualDailyReportTests(unittest.TestCase):
     Tests for manual daily report generation and saving.
     """
 
-    def test_build_and_save_manual_daily_report_creates_user_file_and_internal_copy(self) -> None:
-        """Перевіряє створення зовнішнього .docx та внутрішньої копії звіту.
-        Checks that both the user .docx file and the internal copy are created.
+    def test_build_and_save_manual_daily_report_creates_single_user_file(self) -> None:
+        """Перевіряє створення лише одного .docx у вибраному користувачем шляху.
+        Checks that only one .docx is created at the user-selected path.
         """
 
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -31,7 +31,9 @@ class BuildAndSaveManualDailyReportTests(unittest.TestCase):
                 access_role=AccessRole.INSPECTOR,
             )
             self.assertTrue(save_result.user_file_path.exists())
-            self.assertTrue(save_result.internal_copy_path.exists())
+            self.assertEqual(save_result.user_file_path, save_result.internal_copy_path)
+            reports_directory = context.database_path.parent / "reports"
+            self.assertFalse(any(reports_directory.glob("daily-report-*.docx")))
             self.assertEqual(save_result.user_file_path.suffix.lower(), ".docx")
             with zipfile.ZipFile(save_result.user_file_path) as archive:
                 self.assertIn("word/document.xml", archive.namelist())

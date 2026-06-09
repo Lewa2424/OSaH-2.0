@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from osah.application.services.create_current_training_record import create_current_training_record
+from osah.ui.qt.components.app_dialog import show_app_confirm_dialog
 from osah.application.services.delete_training_record import delete_training_record
 from osah.application.services.update_training_record import update_training_record
 from osah.domain.entities.access_role import AccessRole
@@ -485,27 +485,13 @@ class TrainingRecordEditor(QWidget):
         self.deleted.emit()
 
     def _confirm_delete(self) -> bool:
-        box = QMessageBox(self)
-        box.setWindowTitle("Підтвердження")
-        box.setText("Ви впевнені, що хочете видалити цей запис інструктажу?")
-
-        yes_button = box.addButton("Видалити", QMessageBox.ButtonRole.AcceptRole)
-        yes_button.setStyleSheet(
-            "color: #d32f2f; font-weight: bold; padding: 6px 16px; border: 1px solid #ffcdd2; "
-            "background: #fff0f0; border-radius: 4px;"
+        return show_app_confirm_dialog(
+            self,
+            "Підтвердження",
+            "Видалити цей запис інструктажу?",
+            confirm_label="Видалити",
+            destructive=True,
         )
-        no_button = box.addButton("Скасувати", QMessageBox.ButtonRole.RejectRole)
-        no_button.setStyleSheet(
-            "padding: 6px 16px; font-weight: bold; background: #f1f3f5; border: 1px solid #dee2e6; "
-            "border-radius: 4px; color: #495057;"
-        )
-        box.setDefaultButton(no_button)
-        box.setStyleSheet(
-            f"QMessageBox {{ background: {COLOR['bg_card']}; }} "
-            "QLabel { font-size: 14px; margin-bottom: 10px; }"
-        )
-        box.exec()
-        return box.clickedButton() == yes_button
 
     def _apply_read_only_mode(self) -> None:
         """Locks mutating controls for read-only roles while keeping the card visible."""

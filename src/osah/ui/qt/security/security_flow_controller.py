@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QStackedWidget
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
 from osah.application.services.security.load_security_profile import load_security_profile
+from osah.infrastructure.config.is_development_run import is_development_run
 from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.security.screens.initial_setup_screen import InitialSetupScreen
 from osah.ui.qt.security.screens.login_screen import LoginScreen
@@ -35,7 +36,7 @@ class SecurityFlowController:
         """###### ПОЧАТКОВИЙ SECURITY FLOW / INITIAL SECURITY FLOW ######"""
 
         demo_state = load_demo_distribution_state(self._app_context.database_path)
-        skip_setup_key = demo_state.is_active and not demo_state.is_expired
+        skip_setup_key = is_development_run() or (demo_state.is_active and not demo_state.is_expired)
         if not self._security_profile.is_setup_key_activated and not skip_setup_key:
             self._setup_key_screen = SetupKeyScreen(
                 self._app_context,

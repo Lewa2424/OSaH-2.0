@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QGuiApplication
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -159,11 +159,11 @@ class KeyAdminMainWindow(QMainWindow):
         )
 
     def _on_copy_clicked(self) -> None:
-        token_text = self._token_output.toPlainText().strip()
+        token_text = self._token_output.toPlainText().strip() or self._generated_token.strip()
         if not token_text:
             QMessageBox.warning(self, "ClearWork Key Admin", "Немає ключа для копіювання.")
             return
-        self.clipboard().setText(token_text)
+        QGuiApplication.clipboard().setText(token_text)
         QMessageBox.information(self, "ClearWork Key Admin", "Ключ скопійовано в буфер обміну.")
 
     def _reload_table(self) -> None:

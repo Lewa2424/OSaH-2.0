@@ -39,5 +39,9 @@ if (-not $isccPath) {
     throw "Inno Setup compiler (ISCC.exe) not found. Install Inno Setup 6 and rerun installer/build_clearwork.ps1."
 }
 
+Write-Host "Generating quick-start PDF..."
+& $PythonExe -m pip install -q -r (Join-Path $PSScriptRoot "requirements-build.txt")
+& $PythonExe (Join-Path $PSScriptRoot "generate_quick_start_pdf.py")
+
 Write-Host "Building ClearWork installer..."
 & $isccPath (Join-Path $PSScriptRoot "ClearWork.iss")

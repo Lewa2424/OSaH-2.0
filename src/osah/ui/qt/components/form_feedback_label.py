@@ -14,6 +14,10 @@ class FormFeedbackLabel(QLabel):
         self.setWordWrap(True)
         self.setVisible(False)
         self._message_token = 0
+        self._pending_hide_token = 0
+        self._hide_timer = QTimer(self)
+        self._hide_timer.setSingleShot(True)
+        self._hide_timer.timeout.connect(self._on_hide_timer)
 
     # ###### ПОКАЗ УСПІХУ / SHOW SUCCESS ######
     def show_success(self, message: str) -> None:
@@ -45,13 +49,15 @@ class FormFeedbackLabel(QLabel):
             f"border-radius: {RADIUS['md']}px; padding: 8px 10px; font-weight: 800;"
         )
         self.setVisible(True)
-        QTimer.singleShot(6000, lambda: self._hide_if_current(current_token))
+        self._pending_hide_token = current_token
+        self._hide_timer.stop()
+        self._hide_timer.start(6000)
 
-    def _hide_if_current(self, message_token: int) -> None:
+    def _on_hide_timer(self) -> None:
         """Приховує повідомлення, якщо за цей час його не було замінено.
         Hides the message if it has not been replaced in the meantime.
         """
 
-        if message_token == self._message_token:
+        if self._pending_hide_token == self._message_token:
             self.clear()
             self.setVisible(False)

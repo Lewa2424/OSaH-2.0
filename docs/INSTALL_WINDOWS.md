@@ -1,85 +1,69 @@
-# ClearWork Windows Installation
+# ClearWork — установка в Windows
 
-## What gets installed
+Версія поставки: **0.8.3**
 
-`ClearWork-Setup-0.1.0.exe` installs ClearWork locally for the current Windows user.
+## Що встановлюється
 
-- Application folder: `%LOCALAPPDATA%\Programs\ClearWork`
-- Start Menu shortcut: `ClearWork`
-- Optional desktop shortcut: `ClearWork`
+`ClearWork-Setup-0.8.3.exe` встановлює ClearWork локально для поточного користувача Windows.
 
-Python does not need to be installed separately.
+- Папка програми: `%LOCALAPPDATA%\Programs\ClearWork`
+- Ярлик у меню Пуск: `ClearWork`
+- Ярлик інструкції: `Інструкція ClearWork` → `ClearWork_швидкий_старт.pdf`
+- Опційно: ярлик на стільниці
 
-## Installation steps
+Python окремо встановлювати не потрібно.
 
-1. Download `ClearWork-Setup-0.1.0.exe` from the official ClearWork release.
-2. Run the installer.
-3. If Windows SmartScreen shows a warning:
-   - click `More info`
-   - click `Run anyway`
-4. Follow the installer wizard.
-5. Launch ClearWork from the Start Menu or desktop shortcut.
+## Кроки установки
 
-## SmartScreen warning
+1. Запустіть `ClearWork-Setup-0.8.3.exe`.
+2. Якщо Windows SmartScreen попереджає:
+   - `Докладніше`
+   - `Все одно запустити`
+3. Завершіть майстер установки.
+4. На останньому кроці:
+   - увімкніть **«Відкрити інструкцію»** (рекомендовано перед першим запуском);
+   - **«Запустити ClearWork»** — за бажанням (для робочої версії спочатку потрібен ключ).
+5. Для робочої версії: скопіюйте ID установки, отримайте ключ `CW-...`, активуйте програму.
 
-Windows may warn about newly built unsigned applications.
+Повна інструкція: `ClearWork_користувач.md` у папці програми.
 
-ClearWork is packaged without a paid code-signing certificate in this release flow.  
-If the file was obtained from the official ClearWork release, you can use:
+## SmartScreen
 
-- `More info`
-- `Run anyway`
+ClearWork збирається без платного code signing. Для офіційної поставки:
 
-## First launch
+- `Докладніше` → `Все одно запустити`
 
-On the first launch, ClearWork opens the local security setup screen and creates its working data folders automatically.
+## Перший запуск (робоча версія)
 
-## Where user data is stored
+1. Екран активації — вставте ключ установки.
+2. Задайте паролі інспектора та керівника.
+3. Збережіть файл recovery окремо від папки програми.
 
-ClearWork uses a local on-device database and stores working data relative to the installed application folder:
+Програма автоматично створює робочі каталоги `data\` та `logs\`.
 
-- `data\`
-- `logs\`
-- `data\backups\`
-- `data\recovery\`
+## Де зберігаються дані
 
-If the application is launched normally, these folders are created automatically.
+- `%LOCALAPPDATA%\Programs\ClearWork\data\` — база
+- `%LOCALAPPDATA%\Programs\ClearWork\data\backups\` — резервні копії
+- `%LOCALAPPDATA%\Programs\ClearWork\data\recovery\` — відновлення доступу
+- `%LOCALAPPDATA%\Programs\ClearWork\logs\` — журнал
 
-## How to uninstall
+## Видалення
 
-You can remove ClearWork using one of these options:
+1. Параметри Windows → Програми → ClearWork → Видалити  
+   або `%LOCALAPPDATA%\Programs\ClearWork\unins000.exe`
 
-1. Windows Settings -> Apps -> Installed apps -> `ClearWork` -> `Uninstall`
-2. Run the uninstaller directly from:
-   - `%LOCALAPPDATA%\Programs\ClearWork\unins000.exe`
+За замовчуванням папки `data\` та `logs\` залишаються. Не видаляйте `data\` без резервної копії — там ID установки та база.
 
-By default, uninstall removes the program files and shortcuts, but leaves user-created working data in place:
+## Якщо програма не запускається
 
-- `%LOCALAPPDATA%\Programs\ClearWork\data`
-- `%LOCALAPPDATA%\Programs\ClearWork\logs`
+1. Переконайтеся, що установка завершилась без помилок.
+2. Запустіть `%LOCALAPPDATA%\Programs\ClearWork\ClearWork.exe` напряму.
+3. Перевірте `logs\osah.log`.
+4. Зверніться: alexeyovch26@gmail.com, +380954553545
 
-If a full cleanup is required, delete these folders manually after uninstall.
+## Збірка (для розробника)
 
-## If the program does not start
-
-1. Make sure the installation finished without errors.
-2. Launch ClearWork once directly from:
-   - `%LOCALAPPDATA%\Programs\ClearWork\ClearWork.exe`
-3. Check whether the folders below were created:
-   - `%LOCALAPPDATA%\Programs\ClearWork\data`
-   - `%LOCALAPPDATA%\Programs\ClearWork\logs`
-4. If SmartScreen blocked the launch, reopen the file and use:
-   - `More info`
-   - `Run anyway`
-5. If the problem persists, collect:
-   - a screenshot of the error
-   - contents of `logs\osah.log`
-
-## Packaging note
-
-This Windows installer is built with:
-
-- `PyInstaller`
-- `Inno Setup 6`
-
-The current `0.1.0` installer is the first unsigned Windows build prepared for manual testing and early distribution. Windows may show SmartScreen warnings because this version is not signed with a paid code-signing certificate.
+- `powershell -ExecutionPolicy Bypass -File installer\build_clearwork.ps1`
+- PyInstaller + Inno Setup 6
+- PDF інструкції генерується скриптом `installer\generate_quick_start_pdf.py`

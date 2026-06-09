@@ -161,4 +161,4 @@ class EmployeeImportReviewDialog(QDialog):
         if status == EmployeeImportDraftStatus.UNCHANGED:
             item.setForeground(QColor(COLOR["text_muted"]))
             return
-        item.setForeground(QColor(COLOR["danger"]))
+        item.setForeground(QColor(COLOR["critical"]))

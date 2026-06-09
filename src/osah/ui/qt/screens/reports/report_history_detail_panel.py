@@ -95,12 +95,10 @@ def _build_description_text(description_text: str) -> str:
     user_file_path = _extract_value(description_text, "saved_path")
     internal_copy_path = _extract_value(description_text, "internal_copy")
     if user_file_path or internal_copy_path:
-        parts: list[str] = []
-        if user_file_path:
-            parts.append(f"Файл користувача: {user_file_path}")
-        if internal_copy_path:
-            parts.append(f"Внутрішня копія: {internal_copy_path}")
-        return "\n".join(parts)
+        if user_file_path and internal_copy_path and user_file_path != internal_copy_path:
+            return f"Файл користувача: {user_file_path}\nВнутрішня копія: {internal_copy_path}"
+        saved_path = user_file_path or internal_copy_path
+        return f"Файл звіту: {saved_path}"
     return description_text
 
 

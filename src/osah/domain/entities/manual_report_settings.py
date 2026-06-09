@@ -14,3 +14,4 @@ class ManualReportSettings:
     next_prompt_at: str = ""
     default_save_directory: str = ""
     ask_save_path_each_time: bool = True
+    last_saved_file_path: str = ""

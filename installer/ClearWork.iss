@@ -35,15 +35,18 @@ Name: "desktopicon"; Description: "Створити ярлик на стільн
 
 [Files]
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "data\*,logs\*"
+Source: "ClearWork_швидкий_старт.pdf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "GettingStarted_uk.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\docs\ClearWork_користувач.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{group}\Інструкція ClearWork"; Filename: "{app}\ClearWork_швидкий_старт.pdf"
 Name: "{autodesktop}\ClearWork"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Запустити ClearWork"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\ClearWork_швидкий_старт.pdf"; Description: "Відкрити інструкцію"; Flags: postinstall shellexec skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Запустити ClearWork"; Flags: nowait postinstall skipifsilent unchecked
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);

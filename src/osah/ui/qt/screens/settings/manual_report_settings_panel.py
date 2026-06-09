@@ -84,5 +84,6 @@ class ManualReportSettingsPanel(SettingsSectionCard):
                 next_prompt_at=self._base_settings.next_prompt_at,
                 default_save_directory=self._base_settings.default_save_directory,
                 ask_save_path_each_time=self._base_settings.ask_save_path_each_time,
+                last_saved_file_path=self._base_settings.last_saved_file_path,
             )
         )

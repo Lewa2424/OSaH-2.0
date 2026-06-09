@@ -25,4 +25,5 @@ def load_manual_report_settings(database_path: Path) -> ManualReportSettings:
         next_prompt_at=app_settings.get("report.next_prompt_at", ""),
         default_save_directory=app_settings.get("report.default_save_directory", ""),
         ask_save_path_each_time=app_settings.get("report.ask_save_path_each_time", "1") == "1",
+        last_saved_file_path=app_settings.get("report.last_saved_file_path", ""),
     )

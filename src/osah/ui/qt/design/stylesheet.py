@@ -135,6 +135,23 @@ QPushButton[variant="secondary"]:pressed {{
     background: {c["button_secondary_active"]};
 }}
 
+/* ── Небезпечна дія / Danger button ── */
+QPushButton[variant="danger"] {{
+    background: {c["status_critical_bg"]};
+    color: {c["status_critical_text"]};
+    border: 1px solid {c["critical"]};
+    border-radius: {r["md"]}px;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: bold;
+}}
+QPushButton[variant="danger"]:hover {{
+    background: #F8D7D7;
+}}
+QPushButton[variant="danger"]:pressed {{
+    background: #F2C4C4;
+}}
+
 /* ── NavButton (idle) ── */
 QPushButton[nav="true"] {{
     background: transparent;

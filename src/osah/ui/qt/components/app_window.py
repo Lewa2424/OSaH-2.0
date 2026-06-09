@@ -467,6 +467,7 @@ class AppWindow(QMainWindow):
             next_prompt_at=(datetime.now() + timedelta(minutes=30)).isoformat(timespec="minutes"),
             default_save_directory=manual_report_settings.default_save_directory,
             ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
+            last_saved_file_path=manual_report_settings.last_saved_file_path,
         )
         save_manual_report_settings(
             self._app_context.database_path,
@@ -486,6 +487,7 @@ class AppWindow(QMainWindow):
             next_prompt_at="",
             default_save_directory=manual_report_settings.default_save_directory,
             ask_save_path_each_time=manual_report_settings.ask_save_path_each_time,
+            last_saved_file_path=manual_report_settings.last_saved_file_path,
         )
         save_manual_report_settings(
             self._app_context.database_path,

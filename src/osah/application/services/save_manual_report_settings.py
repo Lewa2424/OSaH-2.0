@@ -30,6 +30,7 @@ def save_manual_report_settings(
             "report.next_prompt_at": manual_report_settings.next_prompt_at.strip(),
             "report.default_save_directory": manual_report_settings.default_save_directory.strip(),
             "report.ask_save_path_each_time": "1" if manual_report_settings.ask_save_path_each_time else "0",
+            "report.last_saved_file_path": manual_report_settings.last_saved_file_path.strip(),
         }
         for setting_key, setting_value in setting_pairs.items():
             upsert_app_setting(connection, setting_key, setting_value)

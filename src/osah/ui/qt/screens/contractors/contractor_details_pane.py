@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 from osah.domain.entities.contractor_readiness_snapshot import ContractorReadinessSnapshot
 from osah.domain.entities.contractor_record import ContractorRecord
 from osah.domain.entities.contractor_worker import ContractorWorker
-from osah.ui.qt.screens.contractors.confirm_delete_contractor_dialog import ConfirmDeleteContractorDialog
+from osah.ui.qt.components.app_dialog import show_app_confirm_dialog
 
 
 class ContractorDetailsPane(QWidget):
@@ -294,8 +294,18 @@ class ContractorDetailsPane(QWidget):
 
         if not self._current_id:
             return
-        dialog = ConfirmDeleteContractorDialog(self._company.text().strip(), self)
-        if dialog.exec() != dialog.DialogCode.Accepted:
+        contractor_name = self._company.text().strip()
+        detail_lines = ["Дію буде зафіксовано в журналі аудиту."]
+        if contractor_name:
+            detail_lines.insert(0, f"Організація: {contractor_name}")
+        if not show_app_confirm_dialog(
+            self,
+            "Видалити підрядника",
+            "Видалити поточний запис підрядника з реєстру?",
+            detail="\n".join(detail_lines),
+            confirm_label="Видалити",
+            destructive=True,
+        ):
             return
         self.delete_requested.emit(self._current_id)
 

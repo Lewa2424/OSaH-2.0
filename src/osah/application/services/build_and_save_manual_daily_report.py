@@ -3,7 +3,6 @@ from pathlib import Path
 
 from osah.application.services.build_daily_report_document import build_daily_report_document
 from osah.application.services.load_manual_report_settings import load_manual_report_settings
-from osah.application.services.save_daily_report_copy import save_daily_report_copy
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.security.ensure_write_access import ensure_write_access
 from osah.domain.entities.access_role import AccessRole
@@ -21,8 +20,8 @@ def build_and_save_manual_daily_report(
     *,
     access_role: AccessRole,
 ) -> ManualReportSaveResult:
-    """Формує щоденний звіт, зберігає його у вибраний шлях та внутрішню історію.
-    Builds the daily report, saves it to the chosen path and to the internal history.
+    """Формує щоденний звіт і зберігає його у вибраний користувачем файл.
+    Builds the daily report and saves it to the user-selected file.
     """
 
     ensure_write_access(access_role, "build_and_save_manual_daily_report")
@@ -30,8 +29,7 @@ def build_and_save_manual_daily_report(
     target_path.parent.mkdir(parents=True, exist_ok=True)
     if target_path.suffix.lower() != ".docx":
         target_path = target_path.with_suffix(".docx")
-    render_daily_report_docx(report_document.snapshot, target_path)
-    internal_copy_path = save_daily_report_copy(database_path, report_document)
+    saved_path = render_daily_report_docx(report_document.snapshot, target_path)
 
     current_settings = load_manual_report_settings(database_path)
     updated_settings = ManualReportSettings(
@@ -42,6 +40,7 @@ def build_and_save_manual_daily_report(
         next_prompt_at="",
         default_save_directory=current_settings.default_save_directory,
         ask_save_path_each_time=current_settings.ask_save_path_each_time,
+        last_saved_file_path=str(saved_path.resolve()),
     )
     save_manual_report_settings(database_path, updated_settings, access_role=access_role)
 
@@ -55,14 +54,14 @@ def build_and_save_manual_daily_report(
             actor_name="user",
             entity_name="daily_report",
             result_status="success",
-            description_text=f"saved_path={target_path};internal_copy={internal_copy_path}",
+            description_text=f"saved_path={saved_path}",
         )
         connection.commit()
     finally:
         connection.close()
 
     return ManualReportSaveResult(
-        user_file_path=target_path,
-        internal_copy_path=internal_copy_path,
+        user_file_path=saved_path,
+        internal_copy_path=saved_path,
         created_at_text=report_document.created_at_text,
     )

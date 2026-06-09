@@ -94,7 +94,7 @@ class SetupKeyScreen(QWidget):
 
         self._feedback_label = QLabel("")
         self._feedback_label.setFont(QFont("Segoe UI", 11))
-        self._feedback_label.setStyleSheet(f"color: {COLOR['danger']};")
+        self._feedback_label.setStyleSheet(f"color: {COLOR['critical']};")
         self._feedback_label.setWordWrap(True)
         layout.addWidget(self._feedback_label)
 

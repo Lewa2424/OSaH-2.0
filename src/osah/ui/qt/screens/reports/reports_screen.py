@@ -91,13 +91,13 @@ class ReportsScreen(QWidget):
             self.feedback.show_error("Збереження звіту скасовано.")
             return
 
-        self._last_report_path = save_result.internal_copy_path
+        self._last_report_path = save_result.user_file_path
         self._reload_state()
         self.feedback.show_success(f"Звіт сформовано: {save_result.user_file_path}")
 
     def _open_report(self) -> None:
-        """Відкриває останню внутрішню копію сформованого звіту.
-        Opens the latest internal copy of the generated report.
+        """Відкриває останній збережений файл щоденного звіту.
+        Opens the latest saved daily report file.
         """
 
         if self._last_report_path is None:

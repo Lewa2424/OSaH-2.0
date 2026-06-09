@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QPushButton, QSplitter, QVBoxLayout, QWidget
+
+from osah.ui.qt.components.app_dialog import show_app_confirm_dialog
 
 from osah.application.services.archive_employee import archive_employee
 from osah.application.services.load_employee_workspace import load_employee_workspace
@@ -187,23 +189,13 @@ class EmployeesScreen(QWidget):
     def _archive_employee(self, row: EmployeeWorkspaceRow) -> None:
         """Переміщує працівника в архів з підтвердженням."""
 
-        box = QMessageBox(self)
-        box.setWindowTitle("Підтвердження")
-        box.setText(f"Ви впевнені, що хочете перемістити працівника '{row.employee.full_name}' в архів?")
-        
-        yes_btn = box.addButton("Архівувати", QMessageBox.ButtonRole.AcceptRole)
-        yes_btn.setStyleSheet("color: #d32f2f; font-weight: bold; padding: 6px 16px; border: 1px solid #ffcdd2; background: #fff0f0; border-radius: 4px;")
-        
-        no_btn = box.addButton("Скасувати", QMessageBox.ButtonRole.RejectRole)
-        no_btn.setStyleSheet("padding: 6px 16px; font-weight: bold; background: #f1f3f5; border: 1px solid #dee2e6; border-radius: 4px; color: #495057;")
-        
-        box.setDefaultButton(no_btn)
-        
-        from osah.ui.qt.design.tokens import COLOR
-        box.setStyleSheet(f"QMessageBox {{ background: {COLOR['bg_card']}; }} QLabel {{ font-size: 14px; margin-bottom: 10px; }}")
-        
-        box.exec()
-        if box.clickedButton() == yes_btn:
+        if show_app_confirm_dialog(
+            self,
+            "Підтвердження",
+            f"Перемістити працівника «{row.employee.full_name}» в архів?",
+            confirm_label="Архівувати",
+            destructive=True,
+        ):
             archive_employee(
                 self._database_path,
                 row.employee.personnel_number,
