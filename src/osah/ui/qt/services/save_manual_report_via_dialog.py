@@ -25,7 +25,7 @@ def save_manual_report_via_dialog(
         parent,
         "Зберегти щоденний звіт",
         str(suggested_path),
-        "Text files (*.txt);;All files (*)",
+        "Word documents (*.docx);;All files (*)",
     )
     if not selected_path_text:
         return None

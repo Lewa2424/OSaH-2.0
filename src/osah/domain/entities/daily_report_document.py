@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from osah.domain.entities.daily_report_snapshot import DailyReportSnapshot
+
 
 @dataclass(slots=True)
 class DailyReportDocument:
@@ -9,4 +11,4 @@ class DailyReportDocument:
 
     created_at_text: str
     subject_text: str
-    body_text: str
+    snapshot: DailyReportSnapshot

@@ -1,5 +1,6 @@
 from sqlite3 import Connection
 
+from osah.infrastructure.database.seed.assign_demo_employee_scenarios import assign_demo_employee_scenarios
 from osah.infrastructure.database.seed.build_demo_employee_rows import build_demo_employee_rows
 from osah.infrastructure.database.seed.build_demo_medical_rows import build_demo_medical_rows
 from osah.infrastructure.database.seed.build_demo_ppe_rows import build_demo_ppe_rows
@@ -18,10 +19,11 @@ def seed_demo_employees(connection: Connection) -> None:
         return
 
     employee_rows = build_demo_employee_rows()
-    training_rows = build_demo_training_rows(employee_rows)
-    ppe_rows = build_demo_ppe_rows(employee_rows)
-    medical_rows = build_demo_medical_rows(employee_rows)
-    work_permit_rows, work_permit_participants = build_demo_work_permit_rows(employee_rows)
+    employee_scenarios = assign_demo_employee_scenarios(employee_rows)
+    training_rows = build_demo_training_rows(employee_rows, employee_scenarios)
+    ppe_rows = build_demo_ppe_rows(employee_rows, employee_scenarios)
+    medical_rows = build_demo_medical_rows(employee_rows, employee_scenarios)
+    work_permit_rows, work_permit_participants = build_demo_work_permit_rows(employee_rows, employee_scenarios)
 
     connection.executemany(
         """

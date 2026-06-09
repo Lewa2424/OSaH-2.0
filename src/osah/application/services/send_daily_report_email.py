@@ -40,7 +40,11 @@ def send_daily_report_email(
 
     daily_report_document = build_daily_report_document(database_path)
     report_copy_path = save_daily_report_copy(database_path, daily_report_document)
-    email_message = build_daily_report_email_message(daily_report_document, mail_settings)
+    email_message = build_daily_report_email_message(
+        daily_report_document,
+        mail_settings,
+        report_copy_path,
+    )
 
     last_error: Exception | None = None
     for attempt_index in range(attempt_limit):

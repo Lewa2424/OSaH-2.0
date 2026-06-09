@@ -13,7 +13,7 @@ def load_latest_manual_report_file_path(database_path: Path) -> Path | None:
 
     report_paths = tuple(
         path
-        for path in report_directory.glob("daily-report-*.txt")
+        for path in report_directory.glob("daily-report-*.docx")
         if path.is_file()
     )
     if not report_paths:

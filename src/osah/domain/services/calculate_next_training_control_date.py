@@ -17,4 +17,4 @@ def calculate_next_training_control_date(
         return add_months_to_date(event_date, 3)
     if work_risk_category == TrainingWorkRiskCategory.REGULAR:
         return add_months_to_date(event_date, 6)
-    raise ValueError("Для расчёта следующего повторного инструктажа нужно выбрать категорию работ.")
+    raise ValueError("Для розрахунку наступного повторного інструктажу потрібно обрати категорію робіт.")

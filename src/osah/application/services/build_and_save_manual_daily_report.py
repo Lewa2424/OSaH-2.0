@@ -11,6 +11,7 @@ from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.manual_report_save_result import ManualReportSaveResult
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.create_database_connection import create_database_connection
+from osah.infrastructure.docx.render_daily_report_docx import render_daily_report_docx
 
 
 # ###### РУЧНЕ ФОРМУВАННЯ ТА ЗБЕРЕЖЕННЯ ЩОДЕННОГО ЗВІТУ / BUILD AND SAVE MANUAL DAILY REPORT ######
@@ -27,8 +28,9 @@ def build_and_save_manual_daily_report(
     ensure_write_access(access_role, "build_and_save_manual_daily_report")
     report_document = build_daily_report_document(database_path)
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    report_text = f"{report_document.subject_text}\n\n{report_document.body_text}"
-    target_path.write_text(report_text, encoding="utf-8")
+    if target_path.suffix.lower() != ".docx":
+        target_path = target_path.with_suffix(".docx")
+    render_daily_report_docx(report_document.snapshot, target_path)
     internal_copy_path = save_daily_report_copy(database_path, report_document)
 
     current_settings = load_manual_report_settings(database_path)

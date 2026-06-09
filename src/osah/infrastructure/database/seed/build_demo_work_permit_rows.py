@@ -1,55 +1,104 @@
 from datetime import datetime, timedelta
 
+from osah.infrastructure.database.seed.assign_demo_employee_scenarios import (
+    DemoEmployeeScenario,
+    assign_demo_employee_scenarios,
+)
+
 
 # ###### ПОБУДОВА ДЕМО-НАРЯДІВ-ДОПУСКІВ / BUILD DEMO WORK PERMIT ROWS ######
 def build_demo_work_permit_rows(
     employee_rows: list[tuple[str, str, str, str, str]],
+    scenarios: dict[str, DemoEmployeeScenario] | None = None,
 ) -> tuple[list[tuple[str, str, str, str, str, str, str, str, str | None, str, str, str, str, str, str]], list[tuple[str, str, str]]]:
-    """Возвращает демонстрационные наряды-допуски и участников на новой схеме.
-    Returns demo work permits and participants using the new schema.
+    """Повертає демонстраційні наряди-допуски та учасників за сценаріями працівників.
+    Returns demo work permits and participants according to employee scenarios.
     """
 
-    active_employees = [row for row in employee_rows if row[4] == "active"]
+    scenario_map = scenarios or assign_demo_employee_scenarios(employee_rows)
     now = datetime.now().replace(microsecond=0, second=0)
     permit_rows: list[tuple[str, str, str, str, str, str, str, str, str | None, str, str, str, str, str, str]] = []
     participant_rows: list[tuple[str, str, str]] = []
-    work_kinds = (
-        ("ND-2026-001", "Ремонт електрошафи 0,4 кВ", "Енергетична служба / щитова №2"),
-        ("ND-2026-002", "Газополум'яні роботи на трубопроводі", "Зварювальна дільниця"),
-        ("ND-2026-003", "Роботи на висоті при ревізії кран-балки", "Механоcкладальний цех"),
-        ("ND-2026-004", "Очищення резервуара після промивки", "Склад і логістика"),
-        ("ND-2026-005", "Заміна кабелю живлення компресора", "Енергетична служба"),
-        ("ND-2026-006", "Зварювання опорної рами", "Зварювальна дільниця"),
-        ("ND-2026-007", "Ремонт транспортера подачі", "Ремонтна служба"),
-        ("ND-2026-008", "Діагностика вентиляції", "Лабораторія контролю якості"),
-    )
 
-    for index, (permit_number, work_kind, work_location) in enumerate(work_kinds):
-        starts_at = now - timedelta(hours=12 * index)
-        ends_at = starts_at + timedelta(hours=18 + index)
-        closed_at = None if index < 5 else (ends_at + timedelta(hours=2)).isoformat(sep=" ")
-        permit_rows.append(
-            (
-                permit_number,
-                work_kind,
-                work_location,
-                starts_at.isoformat(sep=" "),
-                ends_at.isoformat(sep=" "),
-                "Іваненко Сергій Петрович",
-                "Коваль Олена Вікторівна",
-                "Контрольований демонстраційний наряд-допуск для типової виробничої ситуації.",
-                closed_at,
-                "required_not_done" if index < 3 else "done",
-                starts_at.date().isoformat() if index >= 3 else "",
-                "Старший виробник робіт" if index >= 3 else "",
-                "Відмітка про цільовий інструктаж у наряді." if index >= 3 else "",
-                "Наряд-допуск підприємства",
-                "",
-            )
+    critical_permit_employees = [
+        personnel_number
+        for personnel_number, scenario in scenario_map.items()
+        if scenario == DemoEmployeeScenario.CRITICAL_PERMIT
+    ]
+    warning_permit_employees = [
+        personnel_number
+        for personnel_number, scenario in scenario_map.items()
+        if scenario == DemoEmployeeScenario.WARNING_PERMIT
+    ]
+    misc_permit_employees = [
+        personnel_number
+        for personnel_number, scenario in scenario_map.items()
+        if scenario == DemoEmployeeScenario.MISC_PERMIT
+    ]
+
+    if critical_permit_employees:
+        starts_at = now - timedelta(hours=30)
+        ends_at = now - timedelta(hours=2)
+        permit_rows.append(_build_permit_row("ND-2026-CRIT", starts_at, ends_at, closed_at=None))
+        for personnel_number in critical_permit_employees:
+            participant_rows.append(("ND-2026-CRIT", personnel_number, "executor"))
+
+    if warning_permit_employees:
+        starts_at = now - timedelta(hours=8)
+        ends_at = now + timedelta(hours=2)
+        permit_rows.append(_build_permit_row("ND-2026-WARN", starts_at, ends_at, closed_at=None))
+        for personnel_number in warning_permit_employees:
+            participant_rows.append(("ND-2026-WARN", personnel_number, "executor"))
+
+    if misc_permit_employees:
+        starts_at = now - timedelta(hours=6)
+        ends_at = now + timedelta(hours=2)
+        permit_rows.append(_build_permit_row("ND-2026-MISC", starts_at, ends_at, closed_at=None))
+        for personnel_number in misc_permit_employees:
+            participant_rows.append(("ND-2026-MISC", personnel_number, "team_member"))
+
+    closed_starts_at = now - timedelta(days=14)
+    closed_ends_at = closed_starts_at + timedelta(hours=10)
+    permit_rows.append(
+        _build_permit_row(
+            "ND-2026-DONE",
+            closed_starts_at,
+            closed_ends_at,
+            closed_at=(closed_ends_at + timedelta(hours=1)).isoformat(sep=" "),
         )
-        for offset in range(3):
-            employee_row = active_employees[(index * 3 + offset + 2) % len(active_employees)]
-            participant_role = "executor" if offset == 0 else "team_member" if offset == 1 else "observer"
-            participant_rows.append((permit_number, employee_row[0], participant_role))
+    )
+    ok_employees = [
+        personnel_number
+        for personnel_number, scenario in scenario_map.items()
+        if scenario == DemoEmployeeScenario.OK
+    ][:3]
+    for personnel_number in ok_employees:
+        participant_rows.append(("ND-2026-DONE", personnel_number, "observer"))
 
     return permit_rows, participant_rows
+
+
+def _build_permit_row(
+    permit_number: str,
+    starts_at: datetime,
+    ends_at: datetime,
+    *,
+    closed_at: str | None,
+) -> tuple[str, str, str, str, str, str, str, str, str | None, str, str, str, str, str, str]:
+    return (
+        permit_number,
+        "Контрольовані демонстраційні роботи",
+        "Основний виробничий контур",
+        starts_at.isoformat(sep=" "),
+        ends_at.isoformat(sep=" "),
+        "Іваненко Сергій Петрович",
+        "Коваль Олена Вікторівна",
+        "Демонстраційний наряд-допуск для типової ситуації.",
+        closed_at,
+        "done" if closed_at else "required_not_done",
+        starts_at.date().isoformat() if closed_at else "",
+        "Старший виробник робіт" if closed_at else "",
+        "Відмітка про цільовий інструктаж у наряді." if closed_at else "",
+        "Наряд-допуск підприємства",
+        "",
+    )

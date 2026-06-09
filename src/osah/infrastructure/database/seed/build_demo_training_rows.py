@@ -1,79 +1,124 @@
 from datetime import date, timedelta
 
+from osah.infrastructure.database.seed.assign_demo_employee_scenarios import (
+    DemoEmployeeScenario,
+    assign_demo_employee_scenarios,
+)
 
-# ###### ПОСТРОЕНИЕ ДЕМО-ЗАПИСЕЙ ИНСТРУКТАЖЕЙ / BUILD DEMO TRAINING ROWS ######
+
+# ###### ПОБУДОВА ДЕМО-ЗАПИСІВ ІНСТРУКТАЖІВ / BUILD DEMO TRAINING ROWS ######
 def build_demo_training_rows(
     employee_rows: list[tuple[str, str, str, str, str]],
+    scenarios: dict[str, DemoEmployeeScenario] | None = None,
 ) -> list[tuple[str, str, str, str, str, str, str, int, str, str, str, str, str, str, str]]:
-    """Возвращает демонстрационные записи инструктажей с новыми нормативными полями.
-    Returns demo training records with the new normative fields populated.
+    """Повертає демонстраційні записи інструктажів з урахуванням сценаріїв працівників.
+    Returns demo training records according to employee scenarios.
     """
 
     today = date.today()
+    scenario_map = scenarios or assign_demo_employee_scenarios(employee_rows)
     rows: list[tuple[str, str, str, str, str, str, str, int, str, str, str, str, str, str, str]] = []
-    active_employees = [row for row in employee_rows if row[4] == "active"]
 
-    for index, employee_row in enumerate(active_employees):
+    for employee_row in employee_rows:
+        if employee_row[4] != "active":
+            continue
         personnel_number = employee_row[0]
-        if index % 9 == 0:
+        scenario = scenario_map[personnel_number]
+        if scenario == DemoEmployeeScenario.CRITICAL_MISSING_TRAINING:
             continue
 
-        event_date = today - timedelta(days=320 - (index % 25))
-        next_control_date = today + timedelta(days=45 - (index % 80))
-        training_type = "repeated"
-        if index % 7 == 0:
-            training_type = "primary"
-        elif index % 5 == 0:
-            training_type = "targeted"
-
-        knowledge_check_result = "satisfactory"
-        work_admission_status = "allowed"
-        knowledge_check_note = "Проверка знаний проведена ответственным лицом."
-        if training_type == "targeted" and index % 10 == 0:
-            knowledge_check_result = "unsatisfactory"
-            work_admission_status = "not_allowed"
-            knowledge_check_note = "Целевой инструктаж завершен неудовлетворительным результатом."
-
+        introductory_event_date = today - timedelta(days=320)
+        introductory_next_control = today + timedelta(days=120)
         rows.append(
-            (
+            _build_training_row(
                 personnel_number,
-                training_type,
-                event_date.isoformat(),
-                next_control_date.isoformat(),
-                "Коваль Олена Вікторівна",
-                "Плановий контроль знань з охорони праці.",
-                "own_employee",
-                1,
-                "regular",
-                "manual",
-                knowledge_check_result,
-                work_admission_status,
-                knowledge_check_note,
-                "Журнал інструктажів підприємства",
-                "",
+                "introductory",
+                introductory_event_date,
+                introductory_next_control,
+                next_control_basis="requires_primary_after_introductory",
+                knowledge_check_result="satisfactory",
+                work_admission_status="allowed",
+                knowledge_check_note="Вступний інструктаж проведено.",
+                note_text="Вступний інструктаж на підприємстві.",
             )
         )
 
-        if index % 6 == 0:
-            extra_event_date = today - timedelta(days=35 + index)
-            rows.append(
-                (
-                    personnel_number,
-                    "unscheduled",
-                    extra_event_date.isoformat(),
-                    (extra_event_date + timedelta(days=180)).isoformat(),
-                    "Іваненко Сергій Петрович",
-                    "Позаплановий інструктаж після зміни технології робіт.",
-                    "own_employee",
-                    1,
-                    "regular",
-                    "manual",
-                    "satisfactory",
-                    "allowed",
-                    "Внеплановый контроль знаний подтвержден.",
-                    "Наказ про зміну технології робіт",
-                    "",
-                )
+        primary_event_date = today - timedelta(days=280)
+        primary_next_control = today + timedelta(days=120)
+        rows.append(
+            _build_training_row(
+                personnel_number,
+                "primary",
+                primary_event_date,
+                primary_next_control,
+                knowledge_check_result="satisfactory",
+                work_admission_status="allowed",
+                knowledge_check_note="Первинний інструктаж проведено відповідальною особою.",
+                note_text="Базовий допуск до роботи на робочому місці.",
             )
+        )
+
+        if scenario not in {
+            DemoEmployeeScenario.CRITICAL_TRAINING,
+            DemoEmployeeScenario.WARNING_TRAINING,
+        }:
+            continue
+
+        repeated_event_date = today - timedelta(days=120)
+        repeated_next_control = today + timedelta(days=90)
+        knowledge_check_result = "satisfactory"
+        work_admission_status = "allowed"
+        knowledge_check_note = "Перевірку знань проведено відповідальною особою."
+
+        if scenario == DemoEmployeeScenario.CRITICAL_TRAINING:
+            knowledge_check_result = "unsatisfactory"
+            work_admission_status = "not_allowed"
+            knowledge_check_note = "Цільовий інструктаж завершено з незадовільним результатом."
+        elif scenario == DemoEmployeeScenario.WARNING_TRAINING:
+            repeated_next_control = today + timedelta(days=5)
+
+        rows.append(
+            _build_training_row(
+                personnel_number,
+                "repeated",
+                repeated_event_date,
+                repeated_next_control,
+                knowledge_check_result=knowledge_check_result,
+                work_admission_status=work_admission_status,
+                knowledge_check_note=knowledge_check_note,
+                note_text="Плановий контроль знань з охорони праці.",
+            )
+        )
 
     return rows
+
+
+def _build_training_row(
+    personnel_number: str,
+    training_type: str,
+    event_date: date,
+    next_control_date: date,
+    *,
+    knowledge_check_result: str,
+    work_admission_status: str,
+    knowledge_check_note: str,
+    note_text: str,
+    next_control_basis: str = "manual",
+) -> tuple[str, str, str, str, str, str, str, int, str, str, str, str, str, str, str]:
+    return (
+        personnel_number,
+        training_type,
+        event_date.isoformat(),
+        next_control_date.isoformat(),
+        "Коваль Олена Вікторівна",
+        note_text,
+        "own_employee",
+        1,
+        "regular",
+        next_control_basis,
+        knowledge_check_result,
+        work_admission_status,
+        knowledge_check_note,
+        "Журнал інструктажів підприємства",
+        "",
+    )

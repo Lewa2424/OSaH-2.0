@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from datetime import datetime
@@ -14,13 +15,13 @@ class BuildDailyReportDocumentTests(unittest.TestCase):
     Тесты построения ежедневного отчёта.
     """
 
-    # ###### ПЕРЕВІРКА ПОБУДОВИ ДОКУМЕНТА ЩОДЕННОГО ЗВІТУ / ПРОВЕРКА ПОСТРОЕНИЯ ДОКУМЕНТА ЕЖЕДНЕВНОГО ОТЧЁТА ######
-    def test_build_daily_report_document_returns_subject_and_body(self) -> None:
-        """Перевіряє, що документ звіту містить тему та ключові рядки тіла.
-        Проверяет, что документ отчёта содержит тему и ключевые строки тела.
+    def test_build_daily_report_document_returns_subject_and_snapshot(self) -> None:
+        """Перевіряє, що документ звіту містить тему та структурований знімок.
+        Checks that the report document contains the subject and structured snapshot.
         """
 
         with tempfile.TemporaryDirectory() as temporary_directory:
+            os.environ["OSAH_ENABLE_DEMO_SEED"] = "1"
             application_paths = build_application_paths(Path(temporary_directory))
             context = initialize_application(application_paths)
 
@@ -30,8 +31,15 @@ class BuildDailyReportDocumentTests(unittest.TestCase):
             )
 
             self.assertIn("2026-04-10", daily_report_document.subject_text)
-            self.assertIn("Працівників у системі", daily_report_document.body_text)
-            self.assertIn("Фокус дня", daily_report_document.body_text)
+            snapshot = daily_report_document.snapshot
+            self.assertEqual(len(snapshot.sections), 5)
+            self.assertEqual(
+                tuple(section.title for section in snapshot.sections),
+                ("Інструктажі", "ЗІЗ", "Медицина", "Наряди-допуски", "Підрядники"),
+            )
+            self.assertGreaterEqual(snapshot.employee_total, 1)
+            self.assertTrue(snapshot.focus_of_the_day.strip())
+            self.assertIsInstance(snapshot.no_remarks_employees, tuple)
             shut_down_logging()
 
 
