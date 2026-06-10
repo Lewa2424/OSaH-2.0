@@ -13,6 +13,10 @@ from osah.application.services.security.load_demo_distribution_state import load
 from osah.domain.entities.access_role import AccessRole
 from osah.ui.qt.branding import DISPLAY_NAME, ICON_PATH
 from osah.ui.qt.components.app_window import AppWindow
+from osah.ui.qt.components.configure_light_application_theme import configure_light_application_theme
+from osah.ui.qt.components.install_combo_box_wheel_scroll_guard import (
+    install_combo_box_wheel_scroll_guard,
+)
 from osah.ui.qt.design.tokens import COLOR
 from osah.ui.qt.design.stylesheet import build_global_stylesheet
 from osah.ui.qt.security.screens.demo_expired_screen import DemoExpiredScreen
@@ -112,7 +116,9 @@ def run_qt_application(application_context: ApplicationContext) -> None:
     app.setApplicationDisplayName(DISPLAY_NAME)
     if ICON_PATH.exists():
         app.setWindowIcon(QIcon(str(ICON_PATH)))
+    configure_light_application_theme(app)
     app.setStyleSheet(build_global_stylesheet())
+    install_combo_box_wheel_scroll_guard(app)
 
     # Створити головне вікно із security flow
     shell = QtApplicationShell(application_context)

@@ -13,7 +13,7 @@ class WorkPermitSummaryPanel(SummaryStrip):
             (
                 ("Діють", summary.active_total, COLOR["success"]),
                 ("Скоро спливають", summary.warning_total, COLOR["warning"]),
-                ("Критично", summary.expired_total, COLOR["critical"]),
+                ("Прострочені", summary.expired_total, COLOR["critical"]),
                 ("Конфлікти", summary.conflict_total, COLOR["critical"]),
                 ("Учасники активних робіт", summary.active_participants_total, COLOR["accent"]),
             )

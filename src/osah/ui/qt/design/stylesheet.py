@@ -316,6 +316,13 @@ QComboBox {{
     border-radius: {r["md"]}px;
     padding: 8px 34px 8px 10px;
     min-height: 24px;
+    selection-background-color: {c["selection_bg"]};
+    selection-color: {c["text_primary"]};
+}}
+QTextEdit,
+QPlainTextEdit {{
+    selection-background-color: {c["selection_bg"]};
+    selection-color: {c["text_primary"]};
 }}
 QLineEdit {{
     padding: 8px 10px;
@@ -347,6 +354,54 @@ QComboBox::down-arrow {{
 }}
 QComboBox::down-arrow:disabled {{
     image: none;
+}}
+QComboBox QAbstractItemView {{
+    background-color: {c["bg_card"]};
+    color: {c["input_text"]};
+    selection-background-color: {c["selection_bg"]};
+    selection-color: {c["text_primary"]};
+    border: 1px solid {c["input_border"]};
+    border-radius: {r["sm"]}px;
+    padding: 4px;
+    outline: none;
+}}
+QComboBox QAbstractItemView::item {{
+    min-height: 24px;
+    padding: 4px 8px;
+    border-radius: {r["sm"]}px;
+}}
+QComboBox QAbstractItemView::item:selected {{
+    background-color: {c["selection_bg"]};
+    color: {c["text_primary"]};
+}}
+QComboBox QAbstractItemView::item:hover {{
+    background-color: {c["hover_bg"]};
+    color: {c["text_primary"]};
+}}
+QMenu {{
+    background: {c["bg_card"]};
+    color: {c["text_primary"]};
+    border: 1px solid {c["border_default"]};
+    border-radius: {r["md"]}px;
+    padding: 6px 0px;
+}}
+QMenu::item {{
+    background: transparent;
+    color: {c["text_primary"]};
+    padding: 8px 14px;
+    margin: 0px 4px;
+    border-radius: {r["sm"]}px;
+}}
+QMenu::item:selected {{
+    background: {c["selection_bg"]};
+    color: {c["text_primary"]};
+}}
+QToolTip {{
+    background-color: {c["bg_card"]};
+    color: {c["text_primary"]};
+    border: 1px solid {c["border_default"]};
+    border-radius: {r["sm"]}px;
+    padding: 6px 8px;
 }}
 QCheckBox {{
     spacing: 6px;

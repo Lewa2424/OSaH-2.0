@@ -44,12 +44,22 @@ def build_work_permit_extension_summary(work_permit_record: WorkPermitRecord | N
         state_text = "Продовження недоступне для поточного стану наряду."
         can_extend = False
 
+    if work_permit_record.extension_count > 0:
+        notice_text = (
+            "Дати після продовження не змінюються вручну — лише кнопкою «Продовжити наряд». "
+            "Цільовий інструктаж і примітки можна зберігати звичайно."
+        )
+    else:
+        notice_text = (
+            "Строк дії змінюється кнопкою «Продовжити наряд», а не ручним редагуванням полів дат."
+        )
+
     return {
         "base_term_text": f"Базовий строк: до {format_ui_datetime(base_ends_at)}",
         "current_term_text": f"Поточний строк: до {format_ui_datetime(work_permit_record.ends_at)}",
         "state_text": state_text,
         "reason_text": f"Причина продовження: {work_permit_record.extension_reason_text or '-'}",
-        "notice_text": "Дати чинного наряду змінюються лише через окрему дію продовження.",
+        "notice_text": notice_text,
         "can_extend": can_extend,
         "lock_dates": True,
     }

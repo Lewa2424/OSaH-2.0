@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
@@ -24,10 +25,17 @@ class WorkPermitDetailsPane(QScrollArea):
         super().__init__()
         self.setWidgetResizable(True)
         self.setMinimumWidth(380)
+        self._read_only = access_role != AccessRole.INSPECTOR
         self._current_employee_number: str | None = None
         self.participants_panel = PermitParticipantsPanel()
         self.editor = WorkPermitEditor(database_path, employees, access_role)
         self.editor.module_navigation_requested.connect(self.module_navigation_requested.emit)
+        self.new_permit_button = QPushButton("Новий наряд")
+        self.new_permit_button.setProperty("variant", "accent")
+        self.new_permit_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.new_permit_button.clicked.connect(self.editor.clear_form)
+        self.new_permit_button.setVisible(not self._read_only)
+        self.new_permit_button.setEnabled(not self._read_only)
         self.open_employee_button = QPushButton("Відкрити картку учасника")
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)
@@ -40,14 +48,24 @@ class WorkPermitDetailsPane(QScrollArea):
 
         container = QWidget()
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], 6, SPACING["lg"])
         layout.setSpacing(SPACING["md"])
         title = QLabel("Наряд-допуск")
         title.setStyleSheet("font-size: 15px; font-weight: 900;")
-        hint = QLabel("Оберіть наряд у реєстрі або створіть новий контрольований наряд.")
+        header_row = QWidget()
+        header_layout = QHBoxLayout(header_row)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(SPACING["sm"])
+        header_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        header_layout.addStretch(1)
+        header_layout.addWidget(
+            self.new_permit_button,
+            alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+        )
+        hint = QLabel("Оберіть наряд у таблиці зліва або натисніть «Новий наряд» вгорі картки.")
         hint.setWordWrap(True)
         hint.setStyleSheet(f"color: {COLOR['text_secondary']};")
-        layout.addWidget(title)
+        layout.addWidget(header_row)
         layout.addWidget(hint)
         layout.addWidget(self.participants_panel)
         layout.addWidget(self.editor)

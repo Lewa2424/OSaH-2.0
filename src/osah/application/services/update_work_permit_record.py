@@ -16,6 +16,7 @@ from osah.domain.services.parse_service_date_text import parse_service_date_text
 from osah.domain.services.parse_service_datetime_text import parse_service_datetime_text
 from osah.domain.services.serialize_work_permit_record_for_audit import serialize_work_permit_record_for_audit
 from osah.domain.services.validate_work_permit_timeline import validate_work_permit_base_timeline
+from osah.domain.services.work_permit_stored_datetime_texts_equal import work_permit_stored_datetime_texts_equal
 from osah.infrastructure.database.commands.delete_work_permit_participants import delete_work_permit_participants
 from osah.infrastructure.database.commands.insert_audit_log import insert_audit_log
 from osah.infrastructure.database.commands.insert_work_permit_participant import insert_work_permit_participant
@@ -52,36 +53,38 @@ def update_work_permit_record(
     """
 
     ensure_write_access(access_role, "update_work_permit_record")
-    normalized = _validate_work_permit_input(
-        permit_number,
-        work_kind,
-        work_location,
-        starts_at_text,
-        ends_at_text,
-        responsible_person,
-        issuer_person,
-        employee_personnel_number,
-        participant_role,
-        note_text,
-        target_training_status,
-        target_training_date_text,
-        target_training_conducted_by,
-        target_training_note,
-        basis_text,
-        basis_note,
-        participants=participants,
-    )
     connection = create_database_connection(database_path)
     try:
         previous_record = next((item for item in list_work_permit_records(connection) if item.record_id == record_id), None)
         if previous_record is None:
             raise ValueError("Обраний наряд-допуск не знайдено.")
+        normalized = _validate_work_permit_input(
+            permit_number,
+            work_kind,
+            work_location,
+            starts_at_text,
+            ends_at_text,
+            responsible_person,
+            issuer_person,
+            employee_personnel_number,
+            participant_role,
+            note_text,
+            target_training_status,
+            target_training_date_text,
+            target_training_conducted_by,
+            target_training_note,
+            basis_text,
+            basis_note,
+            participants=participants,
+            allow_extended_timeline=previous_record.extension_count > 0,
+        )
         if previous_record.closed_at or previous_record.canceled_at:
             raise ValueError("Закритий або скасований наряд не редагується.")
         if previous_record.extension_count > 0 and (
-            str(normalized["starts_at"]) != previous_record.starts_at or str(normalized["ends_at"]) != previous_record.ends_at
+            not work_permit_stored_datetime_texts_equal(str(normalized["starts_at"]), previous_record.starts_at)
+            or not work_permit_stored_datetime_texts_equal(str(normalized["ends_at"]), previous_record.ends_at)
         ):
-            raise ValueError("Після продовження строку дії дати наряду змінюються лише через окрему дію продовження.")
+            raise ValueError("Після продовження строку дії дати наряду змінюються лише через кнопку «Продовжити наряд».")
         if (
             str(normalized["work_kind"]) != previous_record.work_kind
             or str(normalized["work_location"]) != previous_record.work_location
@@ -151,10 +154,15 @@ def _validate_work_permit_input(
     basis_text: str,
     basis_note: str,
     participants: tuple[WorkPermitParticipant, ...] | None = None,
+    *,
+    allow_extended_timeline: bool = False,
 ) -> dict[str, object]:
     starts_at = parse_service_datetime_text(starts_at_text)
     ends_at = parse_service_datetime_text(ends_at_text)
-    validate_work_permit_base_timeline(starts_at, ends_at)
+    if not allow_extended_timeline:
+        validate_work_permit_base_timeline(starts_at, ends_at)
+    elif ends_at <= starts_at:
+        raise ValueError("Час завершення має бути пізніше часу початку.")
 
     normalized_permit_number = permit_number.strip()
     normalized_work_kind = work_kind.strip()

@@ -76,18 +76,7 @@ class WorkPermitEditor(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING["md"])
 
-        intro_label = QLabel(
-            "Реєстр нарядів: спочатку лише основні дані. Склад бригади, інструктаж і щоденні перевірки ведуться лише за потреби."
-        )
-        intro_label.setWordWrap(True)
-        intro_label.setStyleSheet(f"color: {COLOR['text_muted']};")
-        layout.addWidget(intro_label)
-
-        self._participants_summary_label = QLabel("Учасники: 0")
-        self._participants_summary_label.setWordWrap(True)
-        layout.addWidget(self._participants_summary_label)
-
-        self.manage_participants_button = QPushButton("Задати склад бригади")
+        self.manage_participants_button = QPushButton("1. Задати склад бригади")
         self.manage_participants_button.setProperty("variant", "secondary")
         self.manage_participants_button.clicked.connect(self._manage_participants)
         layout.addWidget(self.manage_participants_button)
@@ -193,7 +182,14 @@ class WorkPermitEditor(QWidget):
         self.record_daily_check_button.clicked.connect(self._record_daily_check)
         layout.addWidget(self.record_daily_check_button)
 
-        layout.addWidget(self._section_title("Цільовий інструктаж"))
+        layout.addWidget(self._section_title("2. Цільовий інструктаж (для всієї бригади)"))
+        target_hint = QLabel(
+            "Один раз заповніть для наряду — запис з'явиться у всіх учасників у розділі «Інструктажі». "
+            "Потім натисніть «Зберегти зміни» внизу."
+        )
+        target_hint.setWordWrap(True)
+        target_hint.setStyleSheet(f"color: {COLOR['text_muted']};")
+        layout.addWidget(target_hint)
         target_form = QFormLayout()
 
         self.target_training_status_input = QComboBox()
@@ -268,15 +264,10 @@ class WorkPermitEditor(QWidget):
         self.feedback_label = FormFeedbackLabel()
         layout.addWidget(self.feedback_label)
 
-        self.save_button = QPushButton("Зберегти наряд")
+        self.save_button = QPushButton("Зберегти зміни")
         self.save_button.setProperty("variant", "accent")
         self.save_button.clicked.connect(self._save_record)
         layout.addWidget(self.save_button)
-
-        self.new_button = QPushButton("Новий наряд")
-        self.new_button.setProperty("variant", "secondary")
-        self.new_button.clicked.connect(self.clear_form)
-        layout.addWidget(self.new_button)
 
         self.clear_form()
         self._apply_read_only_mode()
@@ -305,7 +296,6 @@ class WorkPermitEditor(QWidget):
         self._participants = row.record.participants
         self._pending_reissue_participants = ()
         self._set_participant_options(self._participants, row.employee_numbers[0] if row.employee_numbers else None)
-        self._update_participants_summary()
         self._apply_participants_mode()
         self._apply_reissue_mode()
         self._apply_lifecycle_actions_mode()
@@ -363,7 +353,6 @@ class WorkPermitEditor(QWidget):
         self.work_kind_selector.setCurrentIndex(0)
         self._sync_work_kind_selector("")
         self._set_participant_options(None, None)
-        self._update_participants_summary()
         self._apply_participants_mode()
         self._apply_reissue_mode()
         self._apply_lifecycle_actions_mode()
@@ -500,30 +489,15 @@ class WorkPermitEditor(QWidget):
         self.employee_input.blockSignals(False)
         self._sync_role_for_current_participant()
 
-    def _update_participants_summary(self) -> None:
-        """Оновлює короткий текст із кількістю та переліком учасників.
-        Updates the short text with participant count and names.
-        """
-
-        if self._participants:
-            names = ", ".join(participant.employee_full_name for participant in self._participants)
-            self._participants_summary_label.setText(f"Учасники: {len(self._participants)} — {names}")
-            return
-        current_text = self.employee_input.currentText().strip()
-        if current_text and self.current_employee_personnel_number():
-            self._participants_summary_label.setText(f"Учасники: 1 — {current_text}")
-            return
-        self._participants_summary_label.setText("Склад бригади не ведеться")
-
     def _apply_participants_mode(self) -> None:
         """Оновлює підпис кнопки окремого керування складом бригади.
         Refreshes the separate brigade-management button label.
         """
 
         if self._current_record_id is None:
-            self.manage_participants_button.setText("Задати склад бригади")
+            self.manage_participants_button.setText("1. Задати склад бригади")
             return
-        self.manage_participants_button.setText("Змінити склад бригади")
+        self.manage_participants_button.setText("1. Змінити склад бригади")
 
     def _apply_reissue_mode(self) -> None:
         """Оновлює доступність окремої дії перевипуску наряду.
@@ -582,7 +556,6 @@ class WorkPermitEditor(QWidget):
         self._participants = participants
         selected_personnel_number = participants[0].employee_personnel_number if participants else None
         self._set_participant_options(participants, selected_personnel_number)
-        self._update_participants_summary()
         self._refresh_readiness_panel()
         self.permit_number_input.setText(suggested_number)
         self.work_kind_input.setText(work_kind)
@@ -632,8 +605,6 @@ class WorkPermitEditor(QWidget):
 
         self._sync_role_for_current_participant()
         self._refresh_readiness_panel()
-        if self._current_record_id is None:
-            self._update_participants_summary()
 
     def _sync_role_for_current_participant(self) -> None:
         """Підтягує роль вибраного учасника у форму.
@@ -747,7 +718,6 @@ class WorkPermitEditor(QWidget):
             self._participants = participants
             selected_personnel_number = participants[0].employee_personnel_number if participants else None
             self._set_participant_options(participants, selected_personnel_number)
-            self._update_participants_summary()
             self._refresh_readiness_panel()
             self.feedback_label.show_success("Склад бригади підготовлено для нового наряду.")
             return
@@ -771,7 +741,6 @@ class WorkPermitEditor(QWidget):
         self._pending_reissue_participants = ()
         selected_personnel_number = participants[0].employee_personnel_number if participants else None
         self._set_participant_options(participants, selected_personnel_number)
-        self._update_participants_summary()
         self._refresh_readiness_panel()
         if outcome.reissued:
             self.feedback_label.show_success(
@@ -811,7 +780,6 @@ class WorkPermitEditor(QWidget):
             self.cancel_button,
             self.record_daily_check_button,
             self.save_button,
-            self.new_button,
         ):
             button.setVisible(not self._read_only)
             button.setEnabled(not self._read_only)

@@ -10,11 +10,18 @@ import sys
 from pathlib import Path
 
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 INSTALLER_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = INSTALLER_DIR.parent
 VERSION_FILE = PROJECT_ROOT / "src" / "osah" / "version.py"
 OUTPUT_PATH = INSTALLER_DIR / "ClearWork_швидкий_старт.pdf"
+
+_COLOR_TITLE = (58, 95, 138)
+_COLOR_HEADING = (17, 24, 39)
+_COLOR_BODY = (55, 65, 81)
+_COLOR_FOOTER = (107, 114, 128)
+_COLOR_RULE = (211, 217, 226)
 
 
 def _load_version() -> str:
@@ -43,7 +50,7 @@ def _resolve_font_paths() -> tuple[Path, Path]:
 
 
 class QuickStartPdf(FPDF):
-    """Компактний PDF-документ швидкого старту ClearWork."""
+    """Компактний односторінковий PDF швидкого старту ClearWork."""
 
     def __init__(self, version_text: str) -> None:
         super().__init__(orientation="P", unit="mm", format="A4")
@@ -51,49 +58,74 @@ class QuickStartPdf(FPDF):
         regular_path, bold_path = _resolve_font_paths()
         self.add_font("ClearWork", "", str(regular_path))
         self.add_font("ClearWork", "B", str(bold_path))
-        self.set_auto_page_break(auto=True, margin=14)
-        self.set_margins(16, 14, 16)
+        self.set_auto_page_break(auto=True, margin=12)
+        self.set_margins(18, 12, 18)
 
     def header(self) -> None:
-        self.set_font("ClearWork", "B", 15)
-        self.set_text_color(58, 95, 138)
-        self.cell(self.epw, 8, f"ClearWork — швидкий старт ({self._version_text})", new_x="LMARGIN", new_y="NEXT")
-        self.set_draw_color(211, 217, 226)
+        self.set_font("ClearWork", "B", 13)
+        self.set_text_color(*_COLOR_TITLE)
+        self.cell(
+            self.epw,
+            7,
+            f"ClearWork — швидкий старт ({self._version_text})",
+            new_x=XPos.LMARGIN,
+            new_y=YPos.NEXT,
+        )
+        self.set_draw_color(*_COLOR_RULE)
         self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
-        self.ln(3)
+        self.ln(2)
 
     def footer(self) -> None:
-        self.set_y(-10)
-        self.set_font("ClearWork", "", 8)
-        self.set_text_color(107, 114, 128)
-        self.cell(0, 5, f"ClearWork {self._version_text}  |  локальна програма обліку охорони праці", align="C")
+        self.set_y(-9)
+        self.set_font("ClearWork", "", 7.5)
+        self.set_text_color(*_COLOR_FOOTER)
+        self.cell(
+            0,
+            4,
+            f"ClearWork {self._version_text}  |  локальна програма обліку охорони праці",
+            align="C",
+            new_x=XPos.RIGHT,
+            new_y=YPos.TOP,
+        )
 
 
 def _section(pdf: QuickStartPdf, title: str) -> None:
-    pdf.set_font("ClearWork", "B", 11)
-    pdf.set_text_color(17, 24, 39)
-    pdf.cell(0, 6, title, new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(1)
+    pdf.set_font("ClearWork", "B", 10)
+    pdf.set_text_color(*_COLOR_HEADING)
+    pdf.cell(0, 5, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.ln(0.5)
 
 
 def _body(pdf: QuickStartPdf, text: str) -> None:
-    pdf.set_font("ClearWork", "", 9.5)
-    pdf.set_text_color(55, 65, 81)
-    pdf.multi_cell(pdf.epw, 4.6, text)
-    pdf.ln(1.5)
+    pdf.set_font("ClearWork", "", 9)
+    pdf.set_text_color(*_COLOR_BODY)
+    pdf.multi_cell(
+        pdf.epw,
+        4.2,
+        text,
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.ln(0.8)
 
 
 def _bullet_list(pdf: QuickStartPdf, items: tuple[str, ...]) -> None:
-    pdf.set_font("ClearWork", "", 9.5)
-    pdf.set_text_color(55, 65, 81)
+    pdf.set_font("ClearWork", "", 9)
+    pdf.set_text_color(*_COLOR_BODY)
     for item in items:
-        pdf.multi_cell(pdf.epw, 4.6, f"- {item}")
-    pdf.ln(1)
+        pdf.multi_cell(
+            pdf.epw,
+            4.2,
+            f"• {item}",
+            new_x=XPos.LMARGIN,
+            new_y=YPos.NEXT,
+        )
+    pdf.ln(0.6)
 
 
 def build_quick_start_pdf(version_text: str) -> FPDF:
-    """Збирає двосторінковий PDF швидкого старту.
-    Builds the two-page quick-start PDF.
+    """Збирає компактний односторінковий PDF швидкого старту.
+    Builds a compact single-page quick-start PDF.
     """
 
     pdf = QuickStartPdf(version_text)
@@ -137,8 +169,6 @@ def build_quick_start_pdf(version_text: str) -> FPDF:
         "Не видаляйте data\\ при оновленні, якщо потрібно зберегти робочі записи.",
     )
 
-    pdf.add_page()
-
     _section(pdf, "Основні розділи програми")
     _bullet_list(
         pdf,
@@ -153,35 +183,23 @@ def build_quick_start_pdf(version_text: str) -> FPDF:
         ),
     )
 
-    _section(pdf, "Щоденний звіт")
-    _body(
-        pdf,
-        "Програма не надсилає звіт автоматично. У заданий час з'явиться нагадування — "
-        "сформуйте файл .docx і відправте його вручну зручним для підприємства способом.",
-    )
-
-    _section(pdf, "Резервні копії та оновлення")
+    _section(pdf, "Щоденний звіт, резервні копії та оновлення")
     _bullet_list(
         pdf,
         (
-            "Автокопія створюється раз на день при запуску.",
-            "Додаткову копію можна зробити в Налаштуваннях перед оновленням.",
+            "Програма не надсилає звіт автоматично — у заданий час з'явиться нагадування, сформуйте .docx і відправте вручну.",
+            "Автокопія створюється раз на день при запуску; додаткову — у Налаштуваннях.",
             "Нову версію встановлюйте поверх старої. Не видаляйте data\\ без потреби.",
-            "Якщо data\\ видалено — з'явиться новий ID установки і знадобиться новий ключ (перепривязка через розробника, один раз).",
+            "Якщо data\\ видалено — з'явиться новий ID установки і знадобиться новий ключ (перепривязка через розробника).",
         ),
     )
 
-    _section(pdf, "Демонстрація")
+    _section(pdf, "Демонстрація та підтримка")
     _body(
         pdf,
-        "ClearWork-Demo-Setup — окрема демо-збірка на 48 годин без ключа. "
-        "Звичайний інсталятор із демо-галочкою дає тестові дані, але ключ установки все одно потрібен.",
-    )
-
-    _section(pdf, "Підтримка")
-    _body(
-        pdf,
-        "alexeyovch26@gmail.com  |  +380954553545\n"
+        "ClearWork-Demo-Setup — демо на 48 годин без ключа. Звичайний інсталятор із демо-галочкою дає тестові дані, "
+        "але ключ установки все одно потрібен.\n"
+        "Підтримка: alexeyovch26@gmail.com, +380954553545. "
         "Повна інструкція: ClearWork_користувач.md у папці програми. "
         "Якщо програма не запускається — перевірте logs\\osah.log.",
     )

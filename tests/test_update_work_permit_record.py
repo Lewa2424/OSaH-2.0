@@ -5,7 +5,9 @@ from pathlib import Path
 from osah.application.services.create_work_permit_record import create_work_permit_record
 from osah.application.services.initialize_application import initialize_application
 from osah.application.services.load_work_permit_registry import load_work_permit_registry
+from osah.application.services.extend_work_permit_record import extend_work_permit_record
 from osah.application.services.update_work_permit_record import update_work_permit_record
+from osah.domain.entities.work_permit_target_training_status import WorkPermitTargetTrainingStatus
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
 from osah.domain.entities.work_permit_participant_role import WorkPermitParticipantRole
 from osah.infrastructure.config.application_paths import build_application_paths
@@ -68,5 +70,73 @@ class UpdateWorkPermitRecordTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'перевипуск'):
                 update_work_permit_record(context.database_path, int(created_record.record_id), 'ND-UT-204', 'Газонебезпечні роботи', 'Дільниця Б', '2099-04-10 08:00', '2099-04-10 12:00', 'Майстер', 'Інспектор', '0001', 'executor', 'Спроба змінити умови робіт', access_role=AccessRole.INSPECTOR)
             shut_down_logging()
+
+    def test_update_extended_permit_target_training_ignores_datetime_format_drift(self) -> None:
+        """Після продовження можна зберегти цільовий інструктаж без хибної перевірки дат.
+        After extension, target training can be saved without false date-change rejection.
+        """
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            application_paths = build_application_paths(Path(temporary_directory))
+            context = initialize_application(application_paths)
+            create_work_permit_record(
+                context.database_path,
+                "ND-UT-205",
+                "Вогневі роботи",
+                "Дільниця А",
+                "2099-04-10 08:00",
+                "2099-04-20 18:00",
+                "Майстер",
+                "Інспектор",
+                "0001",
+                "executor",
+                "Початковий наряд",
+                access_role=AccessRole.INSPECTOR,
+            )
+            created_record = next(
+                record for record in load_work_permit_registry(context.database_path) if record.permit_number == "ND-UT-205"
+            )
+            extend_work_permit_record(
+                context.database_path,
+                int(created_record.record_id),
+                "2099-05-05 18:00",
+                "Потрібно завершити роботи",
+                access_role=AccessRole.INSPECTOR,
+            )
+            connection = sqlite3.connect(context.database_path)
+            connection.execute(
+                "UPDATE work_permits SET starts_at = ?, ends_at = ? WHERE id = ?;",
+                ("2099-04-10 08:00:00", "2099-05-05 18:00:00", int(created_record.record_id)),
+            )
+            connection.commit()
+            connection.close()
+
+            update_work_permit_record(
+                context.database_path,
+                int(created_record.record_id),
+                "ND-UT-205",
+                "Вогневі роботи",
+                "Дільниця А",
+                "10.04.2099 08:00",
+                "05.05.2099 18:00",
+                "Майстер",
+                "Інспектор",
+                "0001",
+                "executor",
+                "Після продовження",
+                WorkPermitTargetTrainingStatus.DONE_PASSED.value,
+                "10.04.2099",
+                "Інспектор ОП",
+                "",
+                access_role=AccessRole.INSPECTOR,
+            )
+            updated_record = next(
+                record
+                for record in load_work_permit_registry(context.database_path)
+                if int(record.record_id) == int(created_record.record_id)
+            )
+            self.assertEqual(updated_record.target_training_status, WorkPermitTargetTrainingStatus.DONE_PASSED)
+            shut_down_logging()
+
+
 if __name__ == '__main__':
     unittest.main()
