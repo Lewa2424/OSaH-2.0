@@ -20,3 +20,5 @@ class QtNavigationIntent:
     medical_record_id: int | None = None
     work_permit_status_filter: str | None = None
     work_permit_record_id: int | None = None
+    work_permit_number: str | None = None
+    port_passport_code: str | None = None

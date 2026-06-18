@@ -1,0 +1,396 @@
+{
+  "version": 2,
+  "description": "Smoke-набор фраз: базовые write/read, контекст, инструкции, стресс. Статус: на утверждение.",
+  "phrases": [
+    {
+      "id": "nav_ppe_ru",
+      "category": "navigation",
+      "command": "Покажи СИЗ",
+      "notes": "Базовый read-only: навигация без grounding"
+    },
+    {
+      "id": "nav_dashboard",
+      "category": "navigation",
+      "command": "Покажи дашборд",
+      "notes": "Базовый fast-path"
+    },
+    {
+      "id": "read_overdue",
+      "category": "read_query",
+      "command": "Покажи просрочки",
+      "notes": "Сводка / read"
+    },
+    {
+      "id": "read_daily_focus",
+      "category": "read_query",
+      "command": "Що закрити сьогодні?",
+      "notes": "Дневной фокус"
+    },
+    {
+      "id": "read_dept_ambiguous",
+      "category": "read_query",
+      "command": "Кто работает в подразделении служб?",
+      "notes": "Ambiguous department → clarify"
+    },
+    {
+      "id": "read_employee_readiness",
+      "category": "read_query",
+      "command": "Готовий Петренко до робіт?",
+      "notes": "Поиск сотрудника + ответ"
+    },
+    {
+      "id": "read_missing_ppe",
+      "category": "read_query",
+      "command": "Кому не видали каску?",
+      "notes": "Список без выдачи"
+    },
+    {
+      "id": "ppe_single_yatsenko_gloves_ru",
+      "category": "ppe_single",
+      "command": "Выдай Яценко Андрею защитные рукавицы сегодняшним числом",
+      "notes": "RU имя, дательный падеж"
+    },
+    {
+      "id": "ppe_single_petrov_helmet",
+      "category": "ppe_single",
+      "command": "Занеси Петрову каску и ботинки за сегодня",
+      "notes": "Классика smoke LLM"
+    },
+    {
+      "id": "ppe_single_ivanov",
+      "category": "ppe_single",
+      "command": "Выдай Иванову каску",
+      "notes": "Минимальная выдача ЗІЗ"
+    },
+    {
+      "id": "ppe_bulk_welders",
+      "category": "ppe_bulk",
+      "command": "Выдай всем сварщикам Сварочного участка защитные рукавицы сегодняшним числом",
+      "notes": "Bulk по подразделению RU/UK"
+    },
+    {
+      "id": "ppe_bulk_electricians",
+      "category": "ppe_bulk",
+      "command": "Выдай всем Электромонтерам по паре защитных рукавиц сегодняшним числом",
+      "notes": "position vs department"
+    },
+    {
+      "id": "ppe_bulk_electricians_short",
+      "category": "ppe_bulk",
+      "command": "Выдай электромонтерам защитные рукавицы сегодняшним числом",
+      "notes": "Короткая bulk-форма"
+    },
+    {
+      "id": "training_repeat_yatsenko",
+      "category": "training",
+      "command": "проведи повторный инструктаж для Яценко Андрея. Дата 16.06.2026",
+      "notes": "regex «. Дата» в employee_query"
+    },
+    {
+      "id": "training_repeat_sydorenko",
+      "category": "training",
+      "command": "Добавь повторный инструктаж Сидоренко",
+      "notes": "Инструктаж без даты"
+    },
+    {
+      "id": "training_petrenko_today",
+      "category": "training",
+      "command": "Занеси повторний інструктаж Петренку на сьогодні",
+      "notes": "UA формулировка"
+    },
+    {
+      "id": "medical_create_sydorenko",
+      "category": "medical",
+      "command": "Добавь медосмотр Сидоренко до 15 июля",
+      "notes": "Создание медзаписи"
+    },
+    {
+      "id": "medical_restriction_demchenko",
+      "category": "medical",
+      "command": "Добавь для Демченко Натальи ограничение по работе на высоте",
+      "notes": "compile ломает LLM"
+    },
+    {
+      "id": "medical_extend_petrenko",
+      "category": "medical",
+      "command": "Продовжи медогляд Петренка",
+      "notes": "Обновление медзаписи"
+    },
+    {
+      "id": "employee_update_position",
+      "category": "employee_update",
+      "command": "Онови посаду Петренка на стропальника",
+      "notes": "Смена должности"
+    },
+    {
+      "id": "ppe_update_helmet",
+      "category": "employee_update",
+      "command": "Заміни каску Петренку",
+      "notes": "Обновление записи ЗІЗ"
+    },
+    {
+      "id": "work_permit_create",
+      "category": "work_permit",
+      "command": "Створи наряд на погрузку завтра",
+      "notes": "Черновик наряда"
+    },
+    {
+      "id": "work_permit_add_participant",
+      "category": "work_permit",
+      "command": "Додай Петренка до наряду №5",
+      "notes": "Участник наряда"
+    },
+    {
+      "id": "forbidden_delete",
+      "category": "negative",
+      "command": "Удали запись Петрова",
+      "notes": "Ожидание: отказ"
+    },
+    {
+      "id": "unknown_port_r",
+      "category": "negative",
+      "command": "Утверди PORT-R",
+      "notes": "Ожидание: unsupported"
+    },
+
+    {
+      "id": "ctx_anaphora_missing_ppe",
+      "category": "context",
+      "command": "выдай им каски сегодняшней датой",
+      "context_setup": {
+        "type": "from_missing_ppe",
+        "ppe_item_query": "каска"
+      },
+      "notes": "Анафора «им» после списка без касок"
+    },
+    {
+      "id": "ctx_subset_named_from_audience",
+      "category": "context",
+      "command": "Выдай каски Коваль Р.С. и Савченко Т.П. сегодняшней датой",
+      "context_setup": {
+        "type": "manual",
+        "audience_personnel_numbers": ["0040", "0014"],
+        "audience_labels": ["Коваль Роман Сергійович", "Савченко Тетяна Петрович"],
+        "ppe_item_query": "каски",
+        "source_intent": "query_missing_ppe"
+      },
+      "notes": "Подмножество аудитории по инициалам"
+    },
+    {
+      "id": "ctx_dept_followup_problems",
+      "category": "context",
+      "command": "а у кого из них проблемы с инструктажами?",
+      "context_setup": {
+        "type": "from_department",
+        "department_query": "Лабораторія контролю якості"
+      },
+      "notes": "Follow-up по подразделению из dialogue_state"
+    },
+    {
+      "id": "ctx_dept_followup_issue_gloves",
+      "category": "context",
+      "command": "выдай им перчатки сегодня",
+      "context_setup": {
+        "type": "from_department",
+        "department_query": "Служба охорони праці",
+        "pending_kind": "department_employees"
+      },
+      "notes": "Bulk PPE на аудиторию подразделения"
+    },
+    {
+      "id": "ctx_scenario_missing_then_anaphora",
+      "category": "context_scenario",
+      "command": "выдай им каски сегодняшней датой",
+      "scenario": [
+        {
+          "step": "setup",
+          "command": "Кому не видали каску?",
+          "build_dialogue": true
+        },
+        {
+          "step": "act",
+          "command": "выдай им каски сегодняшней датой"
+        }
+      ],
+      "notes": "Полный сценарий: список → выдача всем"
+    },
+    {
+      "id": "ctx_scenario_dept_list_then_issue",
+      "category": "context_scenario",
+      "command": "выдай им рукавицы сегодня",
+      "scenario": [
+        {
+          "step": "setup",
+          "command": "Кто у нас работает в подразделении Лаборатория?",
+          "build_dialogue": true
+        },
+        {
+          "step": "act",
+          "command": "выдай им рукавицы сегодня"
+        }
+      ],
+      "notes": "Список сотрудников отдела → bulk выдача"
+    },
+    {
+      "id": "ctx_scenario_readiness_then_ppe",
+      "category": "context_scenario",
+      "command": "тогда выдай ему каску сегодня",
+      "scenario": [
+        {
+          "step": "setup",
+          "command": "Готовий Петренко до робіт?",
+          "build_dialogue": true
+        },
+        {
+          "step": "act",
+          "command": "тогда выдай ему каску сегодня"
+        }
+      ],
+      "notes": "Контекст после readiness (слабый/экспериментальный)"
+    },
+    {
+      "id": "ctx_ignore_nav_clears_context",
+      "category": "context",
+      "command": "Покажи ЗІЗ",
+      "context_setup": {
+        "type": "from_missing_ppe",
+        "ppe_item_query": "каска"
+      },
+      "notes": "Независимая команда не должна тянуть bulk-аудиторию"
+    },
+
+    {
+      "id": "instr_what_is_target_training",
+      "category": "instructions",
+      "command": "Що таке цільовий інструктаж?",
+      "notes": "explain_help domain"
+    },
+    {
+      "id": "instr_why_red_status",
+      "category": "instructions",
+      "command": "Чому червоний статус?",
+      "notes": "explain_help status"
+    },
+    {
+      "id": "instr_how_ppe_works_ru",
+      "category": "instructions",
+      "command": "Как работает выдача СИЗ в системе?",
+      "notes": "explain_help / domain RU"
+    },
+    {
+      "id": "instr_field_next_control",
+      "category": "instructions",
+      "command": "Що означає поле «наступний контроль»?",
+      "notes": "explain_help ui"
+    },
+    {
+      "id": "instr_medical_restriction_help",
+      "category": "instructions",
+      "command": "Що таке обмеження медогляду?",
+      "notes": "Справка по медограничениям"
+    },
+    {
+      "id": "instr_how_add_employee",
+      "category": "instructions",
+      "command": "Як додати нового працівника?",
+      "notes": "Может уйти в explain или unsupported"
+    },
+    {
+      "id": "instr_what_is_port_r",
+      "category": "instructions",
+      "command": "Що таке PORT-R?",
+      "notes": "Доменная справка"
+    },
+
+    {
+      "id": "stress_run_on_multi_ppe_dept",
+      "category": "stress",
+      "command": "ну типа выдай всем кто на сварке перчатки и рукавицы если можно сегодня",
+      "notes": "Разговорный run-on, два PPE, неявная аудитория"
+    },
+    {
+      "id": "stress_mixed_ua_ru_two_intents",
+      "category": "stress",
+      "command": "Занеси Петренку каску і проведи повторний інструктаж завтра",
+      "notes": "Два write-intent в одной фразе"
+    },
+    {
+      "id": "stress_dept_as_recipient",
+      "category": "stress",
+      "command": "выдай каску отделу охраны труда",
+      "notes": "Подразделение вместо сотрудника"
+    },
+    {
+      "id": "stress_colloquial_yatsenko",
+      "category": "stress",
+      "command": "забей каску яценко на сегодня",
+      "notes": "Сленг + фамилия без падежа"
+    },
+    {
+      "id": "stress_polite_question_as_write",
+      "category": "stress",
+      "command": "можешь выдать каску Петрову?",
+      "notes": "Вопросительная форма write"
+    },
+    {
+      "id": "stress_ultra_short",
+      "category": "stress",
+      "command": "каска петров",
+      "notes": "Минимальный телеграфный стиль"
+    },
+    {
+      "id": "stress_initials_only_bulk",
+      "category": "stress",
+      "command": "выдай каски Коваль Р.С. и Савченко Т.П. сегодня",
+      "notes": "Инициалы, возможный ambiguous"
+    },
+    {
+      "id": "stress_personnel_number_with_text",
+      "category": "stress",
+      "command": "открой таб 014 и выдай каску",
+      "notes": "Смешение navigation + write"
+    },
+    {
+      "id": "stress_negation_filter",
+      "category": "stress",
+      "command": "кому НЕ выдавали каски кроме лаборатории",
+      "notes": "Отрицание + фильтр подразделения"
+    },
+    {
+      "id": "stress_relative_monday_training",
+      "category": "stress",
+      "command": "инструктаж Петренко на следующий понедельник повторный",
+      "notes": "Относительная дата, перестановка слов"
+    },
+    {
+      "id": "stress_medical_restriction_telegraphic",
+      "category": "stress",
+      "command": "ограничение демченко высота без лесов",
+      "notes": "Телеграфный медицинский restriction"
+    },
+    {
+      "id": "stress_bulk_everyone_except",
+      "category": "stress",
+      "command": "выдай всем кроме лаборатории защитные очки сегодня",
+      "notes": "Bulk с исключением (скорее всего unsupported)"
+    },
+    {
+      "id": "stress_duplicate_contradictory",
+      "category": "stress",
+      "command": "удали медосмотр Петренко и добавь новый на завтра",
+      "notes": "Запрет + create в одной фразе"
+    },
+    {
+      "id": "stress_typos_electromonter",
+      "category": "stress",
+      "command": "выдай электмантерам рукавиці сьогодні",
+      "notes": "Опечатка + UA/RU mix"
+    },
+    {
+      "id": "stress_anaphora_without_context",
+      "category": "stress",
+      "command": "выдай им то же самое сегодня",
+      "notes": "Анафора без dialogue_state — должен не молча bulk-ить"
+    }
+  ]
+}

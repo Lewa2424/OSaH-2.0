@@ -1,0 +1,17 @@
+"""Метрики AI UI: розміри контролів і мікро-відступи між ними.
+AI UI metrics: control sizes and micro-gaps between fields, buttons and icons.
+"""
+
+from osah.ui.qt.design.tokens import SPACING
+
+AI_CONTROL_GAP = SPACING["xxs"]
+AI_CONTROL_BORDER = "1px"
+AI_INPUT_HEIGHT = 40
+AI_ICON_BUTTON_SIZE = 40
+AI_PANEL_CLOSE_SIZE = 28
+AI_DRAWER_TAB_BODY_WIDTH = 38
+AI_DRAWER_TAB_EDGE_GAP = AI_CONTROL_GAP
+AI_DRAWER_TAB_WIDTH = AI_DRAWER_TAB_BODY_WIDTH + AI_DRAWER_TAB_EDGE_GAP
+AI_DRAWER_PANEL_TAB_GAP = AI_CONTROL_GAP
+AI_DRAWER_PANEL_WIDTH = 540
+AI_THINKING_INDICATOR_DELAY_MS = 3000

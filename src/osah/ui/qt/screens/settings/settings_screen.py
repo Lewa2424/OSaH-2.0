@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QObject, Signal
 
+from osah.application.services.ai.load_ai_prefer_fallback_model import load_ai_prefer_fallback_model
+from osah.application.services.ai.save_ai_prefer_fallback_model import save_ai_prefer_fallback_model
 from osah.application.services.create_news_source import create_news_source
 from osah.application.services.discover_news_feed_url import discover_news_feed_url
 from osah.application.services.delete_news_source import delete_news_source
@@ -35,6 +37,7 @@ from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.components.show_styled_message_box import show_styled_message_box
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
 from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.screens.settings.ai_settings_panel import AiSettingsPanel
 from osah.ui.qt.screens.settings.backup_settings_panel import BackupSettingsPanel
 from osah.ui.qt.screens.settings.employee_import_review_dialog import EmployeeImportReviewDialog
 from osah.ui.qt.screens.settings.manual_report_settings_panel import ManualReportSettingsPanel
@@ -144,6 +147,14 @@ class SettingsScreen(QWidget):
         backup_panel.save_requested.connect(self._save_backup_preferences)
         backup_panel.open_backup_requested.connect(self._open_backup_directory)
         self._content_layout.addWidget(backup_panel)
+
+        if not self._read_only:
+            ai_panel = AiSettingsPanel(
+                prefer_fallback_model=load_ai_prefer_fallback_model(self._database_path),
+                read_only=False,
+            )
+            ai_panel.prefer_fallback_model_changed.connect(self._save_ai_settings)
+            self._content_layout.addWidget(ai_panel)
 
         self._operations_panel = OperationsSettingsPanel(read_only=self._read_only)
         self._operations_panel.create_backup_requested.connect(self._start_create_backup)
@@ -412,6 +423,24 @@ class SettingsScreen(QWidget):
         """Saves backup-related preferences through behavior settings service."""
 
         self._save_behavior_settings(backup_auto_enabled=backup_auto_enabled, backup_max_copies=backup_max_copies)
+
+    def _save_ai_settings(self, prefer_fallback_model: bool) -> None:
+        """Зберігає налаштування локального AI.
+        Saves local AI settings.
+        """
+
+        if self._read_only:
+            self._feedback.show_error("Режим лише перегляду: зміни недоступні.")
+            return
+        try:
+            save_ai_prefer_fallback_model(
+                self._database_path,
+                prefer_fallback_model=prefer_fallback_model,
+                access_role=self._access_role,
+            )
+            self._feedback.show_success("Налаштування ClearWork AI збережено.")
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(str(error))
 
     # ###### ЗБЕРЕЖЕННЯ ПОВЕДІНКОВИХ ПАРАМЕТРІВ / SAVE BEHAVIOR SETTINGS ######
     def _save_behavior_settings(

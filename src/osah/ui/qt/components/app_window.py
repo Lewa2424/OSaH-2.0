@@ -8,6 +8,8 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QComboBox, QLineEdit, QMainWindow, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
+from osah.application.services.load_work_permit_registry import load_work_permit_registry
+from osah.application.services.ai.load_ai_prefer_fallback_model import load_ai_prefer_fallback_model
 from osah.application.services.application_context import ApplicationContext
 from osah.application.services.load_manual_report_settings import load_manual_report_settings
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
@@ -16,6 +18,9 @@ from osah.application.services.visual.load_visual_alert_state import load_visual
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.manual_report_settings import ManualReportSettings
+from osah.domain.entities.ai_command_resolution import AiCommandResolution
+from osah.domain.services.ai.should_continue_ai_session import should_continue_ai_session
+from osah.domain.services.ai.should_apply_ai_conversation_context import should_apply_dialogue_state
 from osah.domain.services.should_prompt_manual_report import should_prompt_manual_report
 from osah.ui.qt.branding import DISPLAY_NAME
 from osah.application.services.security.load_demo_distribution_state import load_demo_distribution_state
@@ -25,11 +30,15 @@ from osah.ui.qt.components.show_manual_report_prompt_dialog import show_manual_r
 from osah.ui.qt.components.side_nav import SideNav
 from osah.ui.qt.components.status_strip import StatusStrip
 from osah.ui.qt.components.top_command_bar import TopCommandBar
-from osah.ui.qt.design.tokens import SIZE
+from osah.ui.qt.design.tokens import ANIMATION, SIZE
 from osah.ui.qt.routing.build_screen_for_section import build_screen_for_section
 from osah.ui.qt.routing.map_notification_source_to_problem_key import map_notification_source_to_problem_key
 from osah.ui.qt.routing.qt_context import QtContext
+from osah.infrastructure.config.application_paths import build_application_paths
 from osah.ui.qt.routing.qt_navigation_intent import QtNavigationIntent
+from osah.ui.qt.services.ai_command_handler import AiCommandHandler
+from osah.ui.qt.services.build_ai_ui_context import build_ai_ui_context
+from osah.ui.qt.workers.ai_command_worker import AiCommandWorker
 from osah.ui.qt.services.save_manual_report_via_dialog import save_manual_report_via_dialog
 from osah.ui.shared.security.build_available_sections_for_role import build_available_sections_for_role
 from osah.ui.qt.workers.news_refresh_worker import NewsRefreshWorker
@@ -90,6 +99,44 @@ class AppWindow(QMainWindow):
         self._content_container = SectionContainer()
         right_layout.addWidget(self._content_container)
 
+        self._right_panel = right_panel
+        self._ai_panel = None
+        self._ai_drawer = None
+        self._ai_task_controller = None
+        self._ai_command_handler = None
+        self._pending_ai_command_text = ""
+        if access_role == AccessRole.INSPECTOR:
+            from osah.application.services.ai.load_ai_drawer_tab_y_ratio import load_ai_drawer_tab_y_ratio
+            from osah.ui.qt.components.ai_assistant_panel import AiAssistantPanel
+            from osah.ui.qt.components.ai_drawer_overlay import AiDrawerOverlay
+
+            self._ai_panel = AiAssistantPanel()
+            self._ai_drawer = AiDrawerOverlay(
+                right_panel,
+                self._ai_panel,
+                tab_y_ratio=load_ai_drawer_tab_y_ratio(self._app_context.database_path),
+                database_path=self._app_context.database_path,
+                access_role=access_role,
+            )
+            self._ai_task_controller = WorkerTaskController()
+            self._ai_task_controller.started.connect(self._on_ai_task_started)
+            self._ai_task_controller.progress.connect(self._on_ai_task_progress)
+            self._ai_task_controller.success.connect(self._on_ai_command_resolved)
+            self._ai_task_controller.error.connect(self._on_ai_command_failed)
+            self._ai_task_controller.finished.connect(self._on_ai_task_finished)
+            self._ai_command_handler = AiCommandHandler(
+                database_path=self._app_context.database_path,
+                access_role=self._access_role,
+                parent_widget=self,
+                navigate_callback=self._navigate_from_ai_intent,
+                show_panel_callback=self._show_ai_panel,
+                workspace_reload_callback=self._reload_workspace_after_ai_write,
+                submit_command_callback=self._submit_ai_command,
+            )
+            self._ai_panel.entity_choice_selected.connect(self._on_ai_entity_choice_selected)
+            self._ai_panel.panel_close_requested.connect(self._hide_ai_panel)
+            self._ai_panel.command_submitted.connect(self._submit_ai_command)
+
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
@@ -112,6 +159,170 @@ class AppWindow(QMainWindow):
         self._install_time_tracking()
         self._schedule_news_refresh()
         self._install_manual_report_reminder()
+        self._install_ai_shortcuts()
+        self._schedule_ai_prewarm()
+
+    def _schedule_ai_prewarm(self) -> None:
+        """###### ПОПЕРЕДНІЙ ЗАПУСК AI / AI PREWARM ######"""
+
+        if self._access_role != AccessRole.INSPECTOR:
+            return
+        QTimer.singleShot(5000, self._start_ai_prewarm)
+
+    def _start_ai_prewarm(self) -> None:
+        if self._ai_task_controller is None or self._ai_task_controller.is_busy():
+            return
+        from osah.ui.qt.workers.ai_prewarm_worker import AiPrewarmWorker
+
+        worker = AiPrewarmWorker(build_application_paths().project_root)
+        self._ai_task_controller.start_worker(worker)
+
+    def _install_ai_shortcuts(self) -> None:
+        """###### ГАРЯЧІ КЛАВІШІ AI / AI SHORTCUTS ######"""
+
+        if self._access_role != AccessRole.INSPECTOR:
+            return
+
+        focus_shortcut = QShortcut(QKeySequence("Ctrl+K"), self)
+        focus_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        focus_shortcut.activated.connect(self._focus_ai_command_input)
+
+    def _focus_ai_command_input(self) -> None:
+        self._show_ai_panel()
+
+    def _show_ai_panel(self) -> None:
+        if self._ai_drawer is None:
+            return
+        self._ai_drawer.open_drawer()
+        if self._ai_panel is not None:
+            QTimer.singleShot(ANIMATION["normal"], self._ai_panel.focus_command_input)
+
+    def _hide_ai_panel(self) -> None:
+        if self._ai_drawer is None:
+            return
+        self._ai_drawer.close_drawer()
+
+    def _submit_ai_command(self, command_text: str) -> None:
+        if self._ai_task_controller is None or self._ai_panel is None:
+            return
+        if self._ai_task_controller.is_busy():
+            self._ai_panel.append_assistant_message("Попередня команда ще обробляється.")
+            return
+
+        active_session = None
+        dialogue_state = None
+        ui_context = build_ai_ui_context(
+            section=self._current_section,
+            navigation_intent=self._current_navigation_intent,
+        )
+        if self._ai_command_handler is not None:
+            current_session = self._ai_command_handler.active_session
+            if should_continue_ai_session(current_session, command_text):
+                active_session = current_session
+            else:
+                self._ai_command_handler.clear_active_session()
+                if should_apply_dialogue_state(
+                    self._ai_command_handler.dialogue_state,
+                    command_text,
+                ):
+                    dialogue_state = self._ai_command_handler.dialogue_state
+                else:
+                    self._ai_command_handler.clear_dialogue_state()
+            self._ai_command_handler.record_user_turn(command_text)
+
+        self._show_ai_panel()
+        self._pending_ai_command_text = command_text
+        self._ai_panel.append_user_message(command_text)
+        worker = AiCommandWorker(
+            command_text,
+            self._access_role,
+            project_root=build_application_paths().project_root,
+            prefer_fallback_model=load_ai_prefer_fallback_model(self._app_context.database_path),
+            database_path=self._app_context.database_path,
+            active_session=active_session,
+            dialogue_state=dialogue_state,
+            ui_context=ui_context,
+        )
+        self._ai_panel.set_command_input_enabled(False)
+        self._ai_task_controller.start_worker(worker)
+
+    def _on_ai_task_started(self) -> None:
+        if self._ai_panel is None or self._ai_drawer is None or not self._ai_drawer.is_open():
+            return
+        self._ai_panel.set_busy(True)
+
+    def _on_ai_task_progress(self, _progress: int, message: str) -> None:
+        if self._ai_panel is None or self._ai_drawer is None or not self._ai_drawer.is_open():
+            return
+        self._ai_panel.set_busy(True, message)
+
+    def _on_ai_task_finished(self) -> None:
+        if self._ai_panel is not None:
+            self._ai_panel.set_command_input_enabled(True)
+            self._ai_panel.set_busy(False)
+
+    def _on_ai_command_failed(self, message: str) -> None:
+        if self._ai_panel is not None:
+            self._ai_panel.append_assistant_message(message)
+
+    def _on_ai_command_resolved(self, resolution) -> None:
+        if not isinstance(resolution, AiCommandResolution):
+            return
+        if self._ai_command_handler is None or self._ai_panel is None:
+            return
+        ui_context = build_ai_ui_context(
+            section=self._current_section,
+            navigation_intent=self._current_navigation_intent,
+        )
+        self._ai_command_handler.handle_resolution(
+            resolution,
+            ui_context=ui_context,
+            assistant_panel=self._ai_panel,
+        )
+
+    def _on_ai_entity_choice_selected(self, choice_id: str) -> None:
+        if self._ai_command_handler is None or self._ai_panel is None:
+            return
+        self._ai_command_handler.handle_entity_choice(choice_id, self._ai_panel)
+
+    def _navigate_from_ai_intent(self, intent: QtNavigationIntent) -> None:
+        self._navigate_to(intent.target_section, intent=intent)
+
+    def _reload_workspace_after_ai_write(self, intent) -> None:
+        """Перезавантажує поточний екран після AI-запису в БД.
+        Reloads the current screen after an AI database write.
+        """
+
+        from osah.domain.entities.ai_intent_kind import AiIntentKind
+
+        section_by_intent = {
+            AiIntentKind.CREATE_PPE_ISSUANCE: AppSection.PPE,
+            AiIntentKind.UPDATE_PPE_RECORD: AppSection.PPE,
+            AiIntentKind.BULK_CREATE_PPE_ISSUANCE: AppSection.PPE,
+            AiIntentKind.CREATE_TRAINING_RECORD: AppSection.TRAININGS,
+            AiIntentKind.UPDATE_TRAINING_RECORD: AppSection.TRAININGS,
+            AiIntentKind.BULK_CREATE_TRAINING_RECORD: AppSection.TRAININGS,
+            AiIntentKind.CREATE_MEDICAL_RECORD: AppSection.MEDICAL,
+            AiIntentKind.UPDATE_MEDICAL_RECORD: AppSection.MEDICAL,
+            AiIntentKind.BULK_CREATE_MEDICAL_RECORD: AppSection.MEDICAL,
+            AiIntentKind.UPDATE_EMPLOYEE_FIELDS: AppSection.EMPLOYEES,
+            AiIntentKind.BULK_UPDATE_EMPLOYEE_FIELDS: AppSection.EMPLOYEES,
+            AiIntentKind.CREATE_WORK_PERMIT_DRAFT: AppSection.WORK_PERMITS,
+            AiIntentKind.ADD_WORK_PERMIT_PARTICIPANT: AppSection.WORK_PERMITS,
+            AiIntentKind.REMOVE_WORK_PERMIT_PARTICIPANT: AppSection.WORK_PERMITS,
+            AiIntentKind.BULK_ADD_WORK_PERMIT_PARTICIPANTS: AppSection.WORK_PERMITS,
+        }
+        target_section = section_by_intent.get(intent)
+
+        self._refresh_nav_visual_state()
+
+        current_screen = self._current_screen_widget()
+        if current_screen is not None and hasattr(current_screen, "_reload_workspace"):
+            current_screen._reload_workspace()
+            return
+
+        if target_section is not None and target_section == self._current_section:
+            self._navigate_to(target_section, intent=self._current_navigation_intent, record_history=False)
 
     def _install_navigation_shortcuts(self) -> None:
         """###### ГАРЯЧІ КЛАВІШІ НАВІГАЦІЇ / NAVIGATION SHORTCUTS ######"""
@@ -265,6 +476,16 @@ class AppWindow(QMainWindow):
         )
         self._navigate_to(AppSection.WORK_PERMITS, intent=intent)
 
+    def _lookup_work_permit_number(self, record_id: int) -> str | None:
+        """Повертає номер наряду за record_id для AI UI-контексту.
+        Returns work permit number by record id for AI UI context.
+        """
+
+        for record in load_work_permit_registry(self._app_context.database_path):
+            if record.record_id == record_id:
+                return record.permit_number
+        return None
+
     def _open_module_for_employee(self, target_section: AppSection, personnel_number: str) -> None:
         """###### ПЕРЕХІД ДО МОДУЛЯ ДЛЯ ПРАЦІВНИКА / OPEN MODULE FOR EMPLOYEE ######"""
 
@@ -291,6 +512,11 @@ class AppWindow(QMainWindow):
             ppe_record_id=record_id if target_section == AppSection.PPE and record_id > 0 else None,
             medical_record_id=record_id if target_section == AppSection.MEDICAL and record_id > 0 else None,
             work_permit_record_id=record_id if target_section == AppSection.WORK_PERMITS and record_id > 0 else None,
+            work_permit_number=(
+                self._lookup_work_permit_number(record_id)
+                if target_section == AppSection.WORK_PERMITS and record_id > 0
+                else None
+            ),
         )
         self._navigate_to(target_section, intent=intent)
 

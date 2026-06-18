@@ -1,0 +1,40 @@
+from enum import StrEnum
+
+
+class AiIntentKind(StrEnum):
+    """Підтримувані наміри ClearWork AI.
+    Supported ClearWork AI intents.
+    """
+
+    NAVIGATE_SECTION = "navigate_section"
+    SHOW_OVERDUE = "show_overdue"
+    OPEN_EMPLOYEE_CARD = "open_employee_card"
+    CREATE_PPE_ISSUANCE = "create_ppe_issuance"
+    CREATE_TRAINING_RECORD = "create_training_record"
+    CREATE_MEDICAL_RECORD = "create_medical_record"
+    GENERATE_REPORT_TEXT = "generate_report_text"
+    QUERY_MISSING_PPE = "query_missing_ppe"
+    QUERY_DAILY_FOCUS = "query_daily_focus"
+    QUERY_EMPLOYEE_READINESS = "query_employee_readiness"
+    QUERY_OVERDUE_SUMMARY = "query_overdue_summary"
+    QUERY_SECTION_PROBLEMS = "query_section_problems"
+    QUERY_EMPLOYEE_RECORDS = "query_employee_records"
+    QUERY_EMPLOYEES_FILTER = "query_employees_filter"
+    QUERY_MODULE_STATUS = "query_module_status"
+    QUERY_WORK_PERMIT_LIST = "query_work_permit_list"
+    QUERY_WORK_PERMIT_READINESS = "query_work_permit_readiness"
+    QUERY_PORT_R_GAPS = "query_port_r_gaps"
+    EXPLAIN_HELP = "explain_help"
+    UPDATE_PPE_RECORD = "update_ppe_record"
+    UPDATE_TRAINING_RECORD = "update_training_record"
+    UPDATE_MEDICAL_RECORD = "update_medical_record"
+    UPDATE_EMPLOYEE_FIELDS = "update_employee_fields"
+    CREATE_WORK_PERMIT_DRAFT = "create_work_permit_draft"
+    ADD_WORK_PERMIT_PARTICIPANT = "add_work_permit_participant"
+    REMOVE_WORK_PERMIT_PARTICIPANT = "remove_work_permit_participant"
+    BULK_CREATE_TRAINING_RECORD = "bulk_create_training_record"
+    BULK_CREATE_PPE_ISSUANCE = "bulk_create_ppe_issuance"
+    BULK_CREATE_MEDICAL_RECORD = "bulk_create_medical_record"
+    BULK_UPDATE_EMPLOYEE_FIELDS = "bulk_update_employee_fields"
+    BULK_ADD_WORK_PERMIT_PARTICIPANTS = "bulk_add_work_permit_participants"
+    UNKNOWN = "unknown"

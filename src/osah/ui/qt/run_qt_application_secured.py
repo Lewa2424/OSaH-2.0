@@ -23,6 +23,16 @@ from osah.ui.qt.security.screens.demo_expired_screen import DemoExpiredScreen
 from osah.ui.qt.security.security_flow_controller import SecurityFlowController
 
 
+def _shutdown_ai_runtime_on_exit() -> None:
+    """Зупиняє llama-server при виході з Qt-застосунку.
+    Stops llama-server when the Qt application exits.
+    """
+
+    from osah.application.services.ai.shutdown_ai_runtime import shutdown_ai_runtime
+
+    shutdown_ai_runtime()
+
+
 class QtApplicationShell(QMainWindow):
     """
     Головне вікно Qt-застосунку, що має вітрину для security flow.
@@ -119,6 +129,7 @@ def run_qt_application(application_context: ApplicationContext) -> None:
     configure_light_application_theme(app)
     app.setStyleSheet(build_global_stylesheet())
     install_combo_box_wheel_scroll_guard(app)
+    app.aboutToQuit.connect(_shutdown_ai_runtime_on_exit)
 
     # Створити головне вікно із security flow
     shell = QtApplicationShell(application_context)

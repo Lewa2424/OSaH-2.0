@@ -491,6 +491,7 @@ def ensure_core_schema(connection: Connection) -> None:
     _ensure_work_permit_extension_columns(connection)
     _ensure_work_permit_reissue_columns(connection)
     _ensure_app_settings_columns(connection)
+    _ensure_ai_tables(connection)
     _ensure_port_passports_r_base_column(connection)
     _ensure_port_compensating_barriers_macrovariable_column(connection)
     _ensure_port_shift_checklist_barriers_table(connection)
@@ -940,5 +941,37 @@ def _ensure_app_settings_columns(connection: Connection) -> None:
         DROP TABLE app_settings;
 
         ALTER TABLE app_settings_v2 RENAME TO app_settings;
+        """
+    )
+
+
+def _ensure_ai_tables(connection: Connection) -> None:
+    """Додає таблиці AI-журналу та AI-пам'яті.
+    Adds AI journal and AI pattern memory tables.
+    """
+
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS ai_action_journal (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            raw_command TEXT NOT NULL,
+            intent TEXT NOT NULL,
+            draft_json TEXT NOT NULL DEFAULT '',
+            was_confirmed INTEGER NOT NULL DEFAULT 0,
+            result_status TEXT NOT NULL,
+            result_message TEXT NOT NULL DEFAULT '',
+            actor_role TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS ai_pattern_memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_phrase TEXT NOT NULL,
+            mapping_type TEXT NOT NULL,
+            target_value TEXT NOT NULL,
+            hit_count INTEGER NOT NULL DEFAULT 1,
+            last_confirmed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source_phrase, mapping_type)
+        );
         """
     )
