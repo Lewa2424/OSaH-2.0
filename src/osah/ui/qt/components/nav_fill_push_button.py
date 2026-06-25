@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QPushButton, QStyle, QStyleOptionButton
 
 from osah.domain.services.nav_fill_constants import SEGMENT_COUNT
 from osah.ui.qt.design.tokens import COLOR, FONT, RADIUS
+from osah.ui.qt.design.ui_scale import scaled_px
 
 
 class NavFillPushButton(QPushButton):
@@ -60,7 +61,7 @@ class NavFillPushButton(QPushButton):
             self.style().drawControl(QStyle.ControlElement.CE_PushButton, option, painter, self)
             return
 
-        radius = RADIUS["md"]
+        radius = scaled_px(RADIUS["md"])
         clip_path = QPainterPath()
         clip_path.addRoundedRect(rect, radius, radius)
         painter.setClipPath(clip_path)
@@ -90,10 +91,10 @@ class NavFillPushButton(QPushButton):
         )
 
         painter.setPen(QColor(COLOR["nav_item_text"]))
-        label_font = QFont(FONT["nav_item"][0], FONT["nav_item"][1])
+        label_font = QFont(FONT["nav_item"][0], scaled_px(FONT["nav_item"][1]))
         label_font.setBold(True)
         painter.setFont(label_font)
-        text_rect = rect.adjusted(12, 0, -8, 0)
+        text_rect = rect.adjusted(scaled_px(12), 0, -scaled_px(8), 0)
         painter.drawText(
             text_rect.toRect(),
             int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),

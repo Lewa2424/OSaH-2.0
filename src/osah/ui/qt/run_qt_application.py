@@ -22,18 +22,16 @@ def run_qt_application(application_context: ApplicationContext) -> None:
 
     from osah.domain.entities.access_role import AccessRole
     from osah.ui.qt.components.app_window import AppWindow
-    from osah.ui.qt.components.configure_light_application_theme import configure_light_application_theme
+    from osah.ui.qt.components.apply_application_visual_theme import apply_application_visual_theme
     from osah.ui.qt.components.install_combo_box_wheel_scroll_guard import (
         install_combo_box_wheel_scroll_guard,
     )
-    from osah.ui.qt.design.stylesheet import build_global_stylesheet
 
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
 
-    configure_light_application_theme(app)
-    app.setStyleSheet(build_global_stylesheet())
+    apply_application_visual_theme(app, application_context.database_path)
     install_combo_box_wheel_scroll_guard(app)
 
     # Тимчасово: пропускаємо логін, використовуємо роль INSPECTOR для дев-режиму

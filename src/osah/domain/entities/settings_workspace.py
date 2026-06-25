@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.news_source import NewsSource
 from osah.domain.entities.security_profile import SecurityProfile
+from osah.domain.entities.ui_scale_preset import UiScalePreset
 
 
 @dataclass(slots=True)
@@ -18,6 +19,7 @@ class SettingsWorkspace:
     backup_auto_enabled: bool
     ppe_warning_days: int
     training_warning_days: int
+    ui_scale_preset: UiScalePreset
     news_refresh_time: str
     app_version: str
     database_path: str

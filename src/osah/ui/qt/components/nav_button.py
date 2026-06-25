@@ -10,6 +10,7 @@ from osah.domain.entities.app_section import AppSection
 from osah.domain.entities.nav_fill_palette import NavFillPalette
 from osah.domain.entities.notification_level import NotificationLevel
 from osah.ui.qt.components.nav_fill_push_button import NavFillPushButton
+from osah.ui.qt.design.ui_scale import scaled_px
 
 
 class NavButton(QWidget):
@@ -32,14 +33,14 @@ class NavButton(QWidget):
         self._fill_palette = fill_palette
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 2, 0, 2)
+        layout.setContentsMargins(0, scaled_px(2), 0, scaled_px(2))
         layout.setSpacing(0)
 
         self._btn = NavFillPushButton(section.value)
         self._btn.setProperty("nav", "true")
         self._btn.setCheckable(True)
         self._btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._btn.setFixedHeight(38)
+        self._btn.setFixedHeight(scaled_px(38))
         self._btn.clicked.connect(lambda: self.clicked.emit(self._section))
         layout.addWidget(self._btn)
 

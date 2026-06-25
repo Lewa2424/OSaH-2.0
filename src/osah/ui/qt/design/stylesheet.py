@@ -6,6 +6,7 @@ QSS styling for OSaH 2.0 Qt UI — generated from design tokens.
 from pathlib import Path
 
 from osah.ui.qt.design.tokens import COLOR, RADIUS
+from osah.ui.qt.design.ui_scale import scaled_px as s
 
 
 def build_global_stylesheet() -> str:
@@ -13,7 +14,7 @@ def build_global_stylesheet() -> str:
     Returns the global QSS string for the application.
     """
     c = COLOR
-    r = RADIUS
+    r = {key: s(value) for key, value in RADIUS.items()}
     icon_dir = Path(__file__).resolve().parents[1] / "assets" / "icons"
     chevron_down = (icon_dir / "chevron_down_accent.svg").as_posix()
 
@@ -21,7 +22,7 @@ def build_global_stylesheet() -> str:
 /* ── Загальна скидання / Global reset ── */
 * {{
     font-family: "Segoe UI";
-    font-size: 11px;
+    font-size: {s(11)}px;
     color: {c["text_primary"]};
     outline: none;
 }}
@@ -38,13 +39,13 @@ QWidget {{
 /* ── Скролбари / Scrollbars ── */
 QScrollBar:vertical {{
     background: transparent;
-    width: 6px;
+    width: {s(6)}px;
     margin: 0px 0px 0px 0px;
 }}
 QScrollBar::handle:vertical {{
     background: {c["border_strong"]};
-    border-radius: 3px;
-    min-height: 30px;
+    border-radius: {s(3)}px;
+    min-height: {s(30)}px;
 }}
 QScrollBar::handle:vertical:hover {{
     background: {c["text_muted"]};
@@ -59,14 +60,14 @@ QScrollBar::sub-page:vertical {{
 }}
 QScrollBar:horizontal {{
     background: {c["bg_panel"]};
-    height: 8px;
-    border-radius: 4px;
+    height: {s(8)}px;
+    border-radius: {s(4)}px;
     margin: 2px 4px 2px 4px;
 }}
 QScrollBar::handle:horizontal {{
     background: {c["border_strong"]};
-    border-radius: 4px;
-    min-width: 30px;
+    border-radius: {s(4)}px;
+    min-width: {s(30)}px;
 }}
 QScrollBar::handle:horizontal:hover {{
     background: {c["text_muted"]};
@@ -102,8 +103,8 @@ QPushButton[variant="accent"] {{
     color: {c["button_primary_text"]};
     border: 1px solid {c["button_primary_border"]};
     border-radius: {r["md"]}px;
-    padding: 8px 20px;
-    font-size: 12px;
+    padding: {s(8)}px {s(20)}px;
+    font-size: {s(12)}px;
     font-weight: bold;
 }}
 QPushButton[variant="accent"]:hover {{
@@ -124,8 +125,8 @@ QPushButton[variant="secondary"] {{
     color: {c["button_secondary_text"]};
     border: 1px solid {c["button_secondary_border"]};
     border-radius: {r["md"]}px;
-    padding: 8px 20px;
-    font-size: 12px;
+    padding: {s(8)}px {s(20)}px;
+    font-size: {s(12)}px;
 }}
 QPushButton[variant="secondary"]:hover {{
     background: {c["button_secondary_hover"]};
@@ -141,8 +142,8 @@ QPushButton[variant="danger"] {{
     color: {c["status_critical_text"]};
     border: 1px solid {c["critical"]};
     border-radius: {r["md"]}px;
-    padding: 8px 20px;
-    font-size: 12px;
+    padding: {s(8)}px {s(20)}px;
+    font-size: {s(12)}px;
     font-weight: bold;
 }}
 QPushButton[variant="danger"]:hover {{
@@ -158,9 +159,9 @@ QPushButton[nav="true"] {{
     color: {c["nav_item_text"]};
     border: 1px solid {c["border_default"]};
     border-radius: {r["md"]}px;
-    padding: 8px 12px;
+    padding: {s(8)}px {s(12)}px;
     text-align: left;
-    font-size: 12px;
+    font-size: {s(12)}px;
     font-weight: bold;
 }}
 QPushButton[nav="true"]:hover {{
@@ -201,41 +202,41 @@ QSplitter::handle:vertical {{
 
 /* ── Pill badge / Badge-label ── */
 QLabel[pill="true"] {{
-    border-radius: 9px;
-    padding: 2px 10px;
-    font-size: 9px;
+    border-radius: {s(9)}px;
+    padding: {s(2)}px {s(10)}px;
+    font-size: {s(9)}px;
     font-weight: bold;
 }}
 QLabel[pill="critical"] {{
     background: {c["status_critical"]};
     color: {c["text_on_accent"]};
-    border-radius: 9px;
-    padding: 2px 10px;
-    font-size: 9px;
+    border-radius: {s(9)}px;
+    padding: {s(2)}px {s(10)}px;
+    font-size: {s(9)}px;
     font-weight: bold;
 }}
 QLabel[pill="warning"] {{
     background: {c["status_warning"]};
     color: {c["text_on_accent"]};
-    border-radius: 9px;
-    padding: 2px 10px;
-    font-size: 9px;
+    border-radius: {s(9)}px;
+    padding: {s(2)}px {s(10)}px;
+    font-size: {s(9)}px;
     font-weight: bold;
 }}
 QLabel[pill="info"] {{
     background: {c["status_info"]};
     color: {c["text_on_accent"]};
-    border-radius: 9px;
-    padding: 2px 10px;
-    font-size: 9px;
+    border-radius: {s(9)}px;
+    padding: {s(2)}px {s(10)}px;
+    font-size: {s(9)}px;
     font-weight: bold;
 }}
 QLabel[pill="success"] {{
     background: {c["status_ok"]};
     color: {c["text_on_accent"]};
-    border-radius: 9px;
-    padding: 2px 10px;
-    font-size: 9px;
+    border-radius: {s(9)}px;
+    padding: {s(2)}px {s(10)}px;
+    font-size: {s(9)}px;
     font-weight: bold;
 }}
 
@@ -260,39 +261,39 @@ QWidget[role="statusbar"] {{
 /* ── General Elements ── */
 QLabel[role="section_title"] {{
     color: {c["text_primary"]};
-    font-size: 16px;
+    font-size: {s(16)}px;
     font-weight: bold;
 }}
 QLabel[role="section_header_title"] {{
     color: {c["text_primary"]};
-    font-size: 22px;
+    font-size: {s(22)}px;
     font-weight: 900;
 }}
 QLabel[role="section_header_subtitle"] {{
     color: {c["text_secondary"]};
-    font-size: 11px;
+    font-size: {s(11)}px;
     font-weight: 500;
 }}
 QLabel[role="state_title"] {{
     color: {c["text_secondary"]};
-    font-size: 12px;
+    font-size: {s(12)}px;
     font-weight: 800;
 }}
 QLabel[role="state_subtitle"] {{
     color: {c["text_muted"]};
-    font-size: 10px;
+    font-size: {s(10)}px;
 }}
 QLabel[role="state_loading"] {{
     color: {c["accent"]};
-    font-size: 11px;
+    font-size: {s(11)}px;
     font-weight: 700;
 }}
 QLabel[role="state_error"] {{
     color: {c["status_critical_text"]};
     background: {c["error_bg"]};
     border: 1px solid {c["status_critical"]};
-    border-radius: 10px;
-    padding: 8px 10px;
+    border-radius: {s(10)}px;
+    padding: {s(8)}px {s(10)}px;
     font-weight: 700;
 }}
 QLabel[role="readonly_banner"] {{
@@ -300,7 +301,7 @@ QLabel[role="readonly_banner"] {{
     background: {c["readonly_bg"]};
     border: 1px dashed {c["border_default"]};
     border-radius: {r["md"]}px;
-    padding: 8px 10px;
+    padding: {s(8)}px {s(10)}px;
     font-weight: 700;
 }}
 QWidget[role="section_bg"] {{
@@ -314,8 +315,8 @@ QComboBox {{
     color: {c["input_text"]};
     border: 1px solid {c["input_border"]};
     border-radius: {r["md"]}px;
-    padding: 8px 34px 8px 10px;
-    min-height: 24px;
+    padding: {s(8)}px {s(34)}px {s(8)}px {s(10)}px;
+    min-height: {s(24)}px;
     selection-background-color: {c["selection_bg"]};
     selection-color: {c["text_primary"]};
 }}
@@ -325,7 +326,7 @@ QPlainTextEdit {{
     selection-color: {c["text_primary"]};
 }}
 QLineEdit {{
-    padding: 8px 10px;
+    padding: {s(8)}px {s(10)}px;
 }}
 QComboBox:hover {{
     border-color: {c["input_border_hover"]};
@@ -338,7 +339,7 @@ QComboBox:focus {{
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 30px;
+    width: {s(30)}px;
     border: none;
     border-top-right-radius: {r["md"]}px;
     border-bottom-right-radius: {r["md"]}px;
@@ -349,8 +350,8 @@ QComboBox::drop-down:hover {{
 }}
 QComboBox::down-arrow {{
     image: url("{chevron_down}");
-    width: 16px;
-    height: 16px;
+    width: {s(16)}px;
+    height: {s(16)}px;
 }}
 QComboBox::down-arrow:disabled {{
     image: none;
@@ -362,12 +363,12 @@ QComboBox QAbstractItemView {{
     selection-color: {c["text_primary"]};
     border: 1px solid {c["input_border"]};
     border-radius: {r["sm"]}px;
-    padding: 4px;
+    padding: {s(4)}px;
     outline: none;
 }}
 QComboBox QAbstractItemView::item {{
-    min-height: 24px;
-    padding: 4px 8px;
+    min-height: {s(24)}px;
+    padding: {s(4)}px {s(8)}px;
     border-radius: {r["sm"]}px;
 }}
 QComboBox QAbstractItemView::item:selected {{
@@ -383,12 +384,12 @@ QMenu {{
     color: {c["text_primary"]};
     border: 1px solid {c["border_default"]};
     border-radius: {r["md"]}px;
-    padding: 6px 0px;
+    padding: {s(6)}px 0px;
 }}
 QMenu::item {{
     background: transparent;
     color: {c["text_primary"]};
-    padding: 8px 14px;
+    padding: {s(8)}px {s(14)}px;
     margin: 0px 4px;
     border-radius: {r["sm"]}px;
 }}
@@ -401,7 +402,7 @@ QToolTip {{
     color: {c["text_primary"]};
     border: 1px solid {c["border_default"]};
     border-radius: {r["sm"]}px;
-    padding: 6px 8px;
+    padding: {s(6)}px {s(8)}px;
 }}
 QCheckBox {{
     spacing: 6px;
@@ -424,11 +425,11 @@ QHeaderView::section {{
     border-bottom: 1px solid {c["table_border"]};
     color: {c["table_header_text"]};
     font-weight: 800;
-    padding: 8px;
+    padding: {s(8)}px;
 }}
 QTreeWidget::item,
 QTableWidget::item {{
-    padding: 6px;
+    padding: {s(6)}px;
 }}
 QTreeWidget::item:hover,
 QTableWidget::item:hover {{
@@ -450,7 +451,7 @@ QTabBar::tab {{
     border-bottom: none;
     border-top-left-radius: {r["md"]}px;
     border-top-right-radius: {r["md"]}px;
-    padding: 8px 12px;
+    padding: {s(8)}px {s(12)}px;
     margin-right: 4px;
 }}
 QTabBar::tab:selected {{
@@ -470,21 +471,21 @@ QLabel[role="title"] {{
 }}
 QLabel[role="subtitle"] {{
     color: {c["text_muted"]};
-    font-size: 11px;
+    font-size: {s(11)}px;
 }}
 QLabel[role="status_muted"] {{
     color: {c["text_muted"]};
-    font-size: 9px;
+    font-size: {s(9)}px;
 }}
 QLabel[role="status_success"] {{
     color: {c["success"]};
-    font-size: 9px;
+    font-size: {s(9)}px;
 }}
 
 /* ── Dashboard / MetricCard ── */
 QLabel[role="metric_title"] {{
     color: {c["metric_title"]};
-    font-size: 10px;
+    font-size: {s(10)}px;
     font-weight: bold;
 }}
 QLabel[role="metric_value"] {{
@@ -492,22 +493,22 @@ QLabel[role="metric_value"] {{
 }}
 QLabel[role="metric_subtitle"] {{
     color: {c["text_secondary"]};
-    font-size: 9px;
+    font-size: {s(9)}px;
 }}
 
 /* ── AlertCard ── */
 QLabel[role="alert_title"] {{
     color: {c["text_primary"]};
-    font-size: 13px;
+    font-size: {s(13)}px;
     font-weight: bold;
 }}
 QLabel[role="alert_body"] {{
     color: {c["text_secondary"]};
-    font-size: 10px;
+    font-size: {s(10)}px;
 }}
 QLabel[role="empty_state"] {{
     color: {c["status_ok_text"]};
-    padding: 16px;
+    padding: {s(16)}px;
 }}
 
 /* ── ScrollArea viewport ── */

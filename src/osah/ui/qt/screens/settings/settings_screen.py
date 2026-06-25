@@ -24,13 +24,15 @@ from osah.application.services.security.change_program_access_password import ch
 from osah.application.services.save_manual_report_settings import save_manual_report_settings
 from osah.application.services.save_news_refresh_time import save_news_refresh_time
 from osah.application.services.save_system_behavior_settings import save_system_behavior_settings
+from osah.application.services.save_ui_scale_preset import save_ui_scale_preset
 from osah.application.services.toggle_news_source_activity import toggle_news_source_activity
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.manual_report_settings import ManualReportSettings
 from osah.domain.entities.news_source_kind import NewsSourceKind
+from osah.domain.entities.ui_scale_preset import UiScalePreset
 from osah.domain.services.build_news_source_name_from_url import build_news_source_name_from_url
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
+from osah.ui.qt.components.request_application_restart import request_application_restart
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.components.show_styled_message_box import show_styled_message_box
 from osah.ui.qt.components.task_progress_widget import TaskProgressWidget
@@ -41,6 +43,7 @@ from osah.ui.qt.screens.settings.manual_report_settings_panel import ManualRepor
 from osah.ui.qt.screens.settings.news_sources_settings_panel import NewsSourcesSettingsPanel
 from osah.ui.qt.screens.settings.operations_settings_panel import OperationsSettingsPanel
 from osah.ui.qt.screens.settings.security_settings_panel import SecuritySettingsPanel
+from osah.ui.qt.screens.settings.ui_scale_settings_panel import UiScaleSettingsPanel
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 from osah.ui.qt.workers.backup_create_worker import BackupCreateWorker
 from osah.ui.qt.workers.import_worker import ImportWorker
@@ -99,6 +102,7 @@ class SettingsScreen(QWidget):
         layout.addWidget(self._scroll, stretch=1)
 
         self._operations_panel: OperationsSettingsPanel | None = None
+        self._ui_scale_panel: UiScaleSettingsPanel | None = None
         self._rebuild_sections()
 
     # ###### ПЕРЕБУДОВА СЕКЦІЙ ЕКРАНУ / REBUILD SETTINGS SECTIONS ######
@@ -112,6 +116,10 @@ class SettingsScreen(QWidget):
                 widget.deleteLater()
 
         self._workspace = load_system_settings_workspace(self._database_path)
+        self._ui_scale_panel = UiScaleSettingsPanel(self._workspace.ui_scale_preset)
+        self._ui_scale_panel.save_requested.connect(self._save_ui_scale_preset)
+        self._content_layout.addWidget(self._ui_scale_panel)
+
         security_panel = SecuritySettingsPanel(self._workspace.security_profile, self._access_role)
         security_panel.password_change_requested.connect(self._change_program_access_password)
         self._content_layout.addWidget(security_panel)
@@ -406,6 +414,39 @@ class SettingsScreen(QWidget):
         self._feedback.show_success(f"Розклад перевірки збережено: щодня о {refresh_time}.")
         self.news_refresh_schedule_saved.emit(refresh_time)
         self._rebuild_sections()
+
+    # ###### ЗБЕРЕЖЕННЯ МАСШТАБУ ІНТЕРФЕЙСУ / SAVE UI SCALE PRESET ######
+    def _save_ui_scale_preset(self, ui_scale_preset: UiScalePreset) -> None:
+        """Зберігає обраний пресет масштабу інтерфейсу.
+        Persists the selected UI scale preset.
+        """
+
+        if self._active_task_name is not None:
+            self._feedback.show_error("Завершіть поточну операцію перед зміною масштабу.")
+            if self._ui_scale_panel is not None:
+                self._ui_scale_panel.mark_preset_saved(self._workspace.ui_scale_preset)
+            return
+
+        try:
+            save_ui_scale_preset(
+                self._database_path,
+                ui_scale_preset,
+                access_role=self._access_role,
+            )
+        except Exception as error:  # noqa: BLE001
+            self._feedback.show_error(f"Не вдалося зберегти масштаб: {error}")
+            if self._ui_scale_panel is not None:
+                self._ui_scale_panel.mark_preset_saved(self._workspace.ui_scale_preset)
+            return
+
+        self._workspace = load_system_settings_workspace(self._database_path)
+        if self._ui_scale_panel is not None:
+            self._ui_scale_panel.mark_preset_saved(ui_scale_preset)
+
+        if not request_application_restart():
+            self._feedback.show_error(
+                "Масштаб збережено, але не вдалося перезапустити програму. Закрийте ClearWork і відкрийте знову."
+            )
 
     # ###### ЗБЕРЕЖЕННЯ НАЛАШТУВАНЬ БЕКАПУ / SAVE BACKUP PREFERENCES ######
     def _save_backup_preferences(self, backup_auto_enabled: bool, backup_max_copies: int) -> None:

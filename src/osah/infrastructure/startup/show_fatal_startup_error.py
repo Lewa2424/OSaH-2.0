@@ -33,13 +33,13 @@ def show_fatal_startup_error(log_file_path: Path, error: BaseException) -> None:
         from PySide6.QtWidgets import QApplication, QMessageBox
 
         from osah.ui.qt.branding import DISPLAY_NAME
+        from osah.ui.qt.components.apply_application_visual_theme import apply_application_visual_theme
         from osah.ui.qt.components.show_styled_message_box import show_styled_message_box
-        from osah.ui.qt.design.stylesheet import build_global_stylesheet
 
         application = QApplication.instance()
         if application is None:
             application = QApplication([])
-            application.setStyleSheet(build_global_stylesheet())
+            apply_application_visual_theme(application, None)
 
         show_styled_message_box(
             None,

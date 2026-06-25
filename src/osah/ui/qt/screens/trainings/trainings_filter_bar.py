@@ -84,7 +84,7 @@ class TrainingsFilterBar(QWidget):
         self.status_filter.addItem("Увага", TrainingRegistryFilter.WARNING.value)
         self.status_filter.addItem("Критично", TrainingRegistryFilter.OVERDUE.value)
         self.status_filter.addItem("Відсутній", TrainingRegistryFilter.MISSING.value)
-        self.status_filter.addItem("РљРѕРЅС„Р»С–РєС‚", TrainingRegistryFilter.INVALID.value)
+        self.status_filter.addItem("Конфлікт", TrainingRegistryFilter.INVALID.value)
         self.status_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         second_row.addWidget(self.status_filter)
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from osah.application.services.load_backup_registry import load_backup_registry
 from osah.application.services.load_manual_report_settings import load_manual_report_settings
 from osah.application.services.load_news_sources import load_news_sources
+from osah.domain.services.parse_ui_scale_preset import parse_ui_scale_preset
 from osah.application.services.security.load_security_profile import load_security_profile
 from osah.domain.entities.settings_workspace import SettingsWorkspace
 from osah.infrastructure.database.create_database_connection import create_database_connection
@@ -26,6 +27,7 @@ def load_system_settings_workspace(database_path: Path) -> SettingsWorkspace:
     backup_max_copies = int(app_settings.get("backup.max_copies", "20") or "20")
     backup_auto_enabled = app_settings.get("backup.auto_enabled", "1") == "1"
     news_refresh_time = app_settings.get("news.refresh_time", "09:00") or "09:00"
+    ui_scale_preset = parse_ui_scale_preset(app_settings.get("ui.scale_preset"))
 
     return SettingsWorkspace(
         security_profile=load_security_profile(database_path),
@@ -37,6 +39,7 @@ def load_system_settings_workspace(database_path: Path) -> SettingsWorkspace:
         backup_auto_enabled=backup_auto_enabled,
         ppe_warning_days=ppe_warning_days,
         training_warning_days=training_warning_days,
+        ui_scale_preset=ui_scale_preset,
         news_refresh_time=news_refresh_time,
         app_version=_read_app_version(),
         database_path=str(database_path),
