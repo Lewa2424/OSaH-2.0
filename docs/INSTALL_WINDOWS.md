@@ -1,10 +1,10 @@
 # ClearWork — установка в Windows
 
-Версія поставки: **0.8.3**
+Версія поставки: **1.1.3**
 
 ## Що встановлюється
 
-`ClearWork-Setup-0.8.3.exe` встановлює ClearWork локально для поточного користувача Windows.
+`ClearWork-Setup-1.1.3.exe` встановлює ClearWork локально для поточного користувача Windows.
 
 - Папка програми: `%LOCALAPPDATA%\Programs\ClearWork`
 - Ярлик у меню Пуск: `ClearWork`
@@ -15,7 +15,7 @@ Python окремо встановлювати не потрібно.
 
 ## Кроки установки
 
-1. Запустіть `ClearWork-Setup-0.8.3.exe`.
+1. Запустіть `ClearWork-Setup-1.1.3.exe`.
 2. Якщо Windows SmartScreen попереджає:
    - `Докладніше`
    - `Все одно запустити`

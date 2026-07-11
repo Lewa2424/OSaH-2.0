@@ -1,5 +1,5 @@
 #define MyAppName "ClearWork Demo"
-#define MyAppVersion "0.8.3"
+#define MyAppVersion "1.1.3"
 #define MyAppPublisher "ClearWork"
 #define MyAppExeName "ClearWork.exe"
 #define MyAppSourceDir "..\dist\ClearWork"
@@ -17,7 +17,7 @@ DisableProgramGroupPage=yes
 LicenseFile=license_uk.txt
 PrivilegesRequired=lowest
 OutputDir=.
-OutputBaseFilename=ClearWork-Demo-Setup-0.8.3
+OutputBaseFilename=ClearWork-Demo-Setup-1.1.3
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

@@ -32,6 +32,8 @@ from osah.domain.entities.news_source_kind import NewsSourceKind
 from osah.domain.entities.ui_scale_preset import UiScalePreset
 from osah.domain.services.build_news_source_name_from_url import build_news_source_name_from_url
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
+from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.request_application_restart import request_application_restart
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.components.show_styled_message_box import show_styled_message_box
@@ -73,6 +75,8 @@ class SettingsScreen(QWidget):
         self._task_controller.error.connect(self._on_task_error)
         self._task_controller.finished.connect(self._on_task_finished)
 
+        install_ambient_background(self, "settingsScreen", theme="settings")
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
@@ -94,6 +98,8 @@ class SettingsScreen(QWidget):
 
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self._content_widget = QWidget()
         self._content_layout = QVBoxLayout(self._content_widget)
         self._content_layout.setContentsMargins(0, 0, 0, 0)

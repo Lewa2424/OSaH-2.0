@@ -12,14 +12,12 @@ from osah.domain.entities.training_workspace_row import TrainingWorkspaceRow
 from osah.domain.services.build_training_workspace_rows import build_training_workspace_rows
 from osah.domain.services.format_training_type_label import format_training_type_label
 from osah.domain.services.format_ui_date import format_ui_date
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.screens.trainings.training_record_editor import TrainingRecordEditor
 
 
 class TrainingRecordDetailsPane(QScrollArea):
-    """Права панель картки інструктажів працівника.
-    Right employee training-card pane.
-    """
+    """Right employee training-card pane. / Права панель картки інструктажів працівника."""
 
     employee_requested = Signal(str)
 
@@ -27,7 +25,8 @@ class TrainingRecordDetailsPane(QScrollArea):
         super().__init__()
         self._read_only = access_role != AccessRole.INSPECTOR
         self.setWidgetResizable(True)
-        self.setMinimumWidth(360)
+        self.setMinimumWidth(420)
+        self.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         self._database_path = database_path
         self._employees_by_number = {employee.personnel_number: employee for employee in employees}
         self._current_personnel_number: str | None = None
@@ -36,48 +35,12 @@ class TrainingRecordDetailsPane(QScrollArea):
         self.open_employee_button = QPushButton("Відкрити картку працівника")
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)
-
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
-        layout.setSpacing(SPACING["md"])
-
-        self.title = QLabel("Картка інструктажів")
-        self.title.setStyleSheet("font-size: 15px; font-weight: 900;")
-        layout.addWidget(self.title)
-
-        self.employee_name_label = QLabel("Оберіть працівника у реєстрі.")
-        self.employee_name_label.setWordWrap(True)
-        self.employee_name_label.setStyleSheet(
-            f"color: {COLOR['text_secondary']}; font-size: 15px; font-weight: 900;"
-        )
-        layout.addWidget(self.employee_name_label)
-
-        self.selector_label = QLabel("Виберіть відображуваний тип інструктажу")
-        self.selector_label.setStyleSheet("font-weight: 800;")
-        layout.addWidget(self.selector_label)
-
-        self.training_selector = QComboBox()
-        self.training_selector.currentIndexChanged.connect(self._apply_selector_choice)
-        layout.addWidget(self.training_selector)
-
-        self.editor_section_label = QLabel("Дані інструктажу та редагування")
-        self.editor_section_label.setStyleSheet("font-weight: 800;")
-        layout.addWidget(self.editor_section_label)
-
-        layout.addWidget(self.editor)
-        layout.addWidget(self.open_employee_button)
-        layout.addStretch()
-        self.setWidget(container)
         self.show_empty_state()
 
     def show_empty_state(self) -> None:
-        """Показує порожній стан картки без вибраного працівника.
-        Shows the empty card state without a selected employee.
-        """
-
         self._current_personnel_number = None
         self._row_lookup = {}
+        container = self._build_container()
         self.employee_name_label.setText("Оберіть працівника у реєстрі.")
         self.training_selector.blockSignals(True)
         self.training_selector.clear()
@@ -87,17 +50,15 @@ class TrainingRecordDetailsPane(QScrollArea):
         self.editor.setEnabled(False)
         self.editor.clear_form()
         self.editor.set_type_locked(False)
+        self.setWidget(container)
 
     def show_row(self, row: TrainingWorkspaceRow) -> None:
-        """Відкриває картку інструктажів вибраного працівника.
-        Opens the employee training card for the selected row.
-        """
-
         employee = self._employees_by_number.get(row.employee_personnel_number)
         if employee is None:
             self.show_empty_state()
             return
 
+        container = self._build_container()
         self._current_personnel_number = employee.personnel_number
         self.employee_name_label.setText(f"{employee.full_name} ({employee.personnel_number})")
         self.open_employee_button.setEnabled(True)
@@ -105,23 +66,87 @@ class TrainingRecordDetailsPane(QScrollArea):
         self.editor.set_locked_employee(employee.personnel_number)
 
         current_records = tuple(
-            record
-            for record in load_training_registry(self._database_path)
-            if record.employee_personnel_number == employee.personnel_number
+            record for record in load_training_registry(self._database_path) if record.employee_personnel_number == employee.personnel_number
         )
         employee_rows = build_training_workspace_rows((employee,), current_records)
         self._row_lookup = {
-            int(employee_row.record_id): employee_row
-            for employee_row in employee_rows
-            if employee_row.record_id is not None
+            int(employee_row.record_id): employee_row for employee_row in employee_rows if employee_row.record_id is not None
         }
         self._rebuild_selector(employee_rows, row)
+        self.setWidget(container)
 
-    def _rebuild_selector(
-        self,
-        employee_rows: tuple[TrainingWorkspaceRow, ...],
-        selected_row: TrainingWorkspaceRow,
-    ) -> None:
+    def _build_container(self) -> QWidget:
+        container = QWidget()
+        container.setObjectName("trainingDetailsPane")
+        container.setStyleSheet(
+            f"""
+            QWidget#trainingDetailsPane {{
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#trainingDetailsPane QComboBox {{
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#trainingDetailsPane QComboBox::drop-down {{
+                width: 30px;
+                border: none;
+                background: transparent;
+            }}
+            QLabel#detailsTitle {{
+                color: {COLOR['text_primary']};
+                font-size: 22px;
+                font-weight: 900;
+            }}
+            QLabel#detailsLead {{
+                color: {COLOR['text_secondary']};
+                font-size: 16px;
+                font-weight: 800;
+            }}
+            QLabel#detailsCaption {{
+                color: {COLOR['text_secondary']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
+        layout.setSpacing(SPACING["md"])
+
+        self.title = QLabel("Картка інструктажів")
+        self.title.setObjectName("detailsTitle")
+        layout.addWidget(self.title)
+
+        self.employee_name_label = QLabel("Оберіть працівника у реєстрі.")
+        self.employee_name_label.setWordWrap(True)
+        self.employee_name_label.setObjectName("detailsLead")
+        layout.addWidget(self.employee_name_label)
+
+        self.selector_label = QLabel("Відображуваний тип інструктажу")
+        self.selector_label.setObjectName("detailsCaption")
+        layout.addWidget(self.selector_label)
+
+        self.training_selector = QComboBox()
+        self.training_selector.currentIndexChanged.connect(self._apply_selector_choice)
+        layout.addWidget(self.training_selector)
+
+        self.editor_section_label = QLabel("Дані інструктажу та редагування")
+        self.editor_section_label.setObjectName("detailsCaption")
+        layout.addWidget(self.editor_section_label)
+
+        layout.addWidget(self.editor)
+        layout.addWidget(self.open_employee_button)
+        layout.addStretch()
+        return container
+
+    def _rebuild_selector(self, employee_rows: tuple[TrainingWorkspaceRow, ...], selected_row: TrainingWorkspaceRow) -> None:
         self.training_selector.blockSignals(True)
         self.training_selector.clear()
         row_by_type = {
@@ -150,30 +175,24 @@ class TrainingRecordDetailsPane(QScrollArea):
             training_row = row_by_type.get(training_type)
             if training_row is not None:
                 self.training_selector.addItem(
-                    f"{format_training_type_label(training_type)} — {format_ui_date(training_row.event_date)}",
+                    f"{format_training_type_label(training_type)} - {format_ui_date(training_row.event_date)}",
                     ("existing", int(training_row.record_id)),
                 )
                 continue
             if training_type == TrainingType.PRIMARY and missing_primary_row is not None:
-                self.training_selector.addItem(
-                    f"{format_training_type_label(training_type)} — не створено",
-                    ("missing", training_type.value),
-                )
+                self.training_selector.addItem(f"{format_training_type_label(training_type)} - не створено", ("missing", training_type.value))
                 continue
-            self.training_selector.addItem(
-                f"{format_training_type_label(training_type)} — не створено",
-                ("missing", training_type.value),
-            )
+            self.training_selector.addItem(f"{format_training_type_label(training_type)} - не створено", ("missing", training_type.value))
 
         if targeted_rows:
             for targeted_row in targeted_rows:
-                label = f"Цільовий — {format_ui_date(targeted_row.event_date)}"
+                label = f"Цільовий - {format_ui_date(targeted_row.event_date)}"
                 target_row = self._row_lookup.get(int(targeted_row.record_id or 0))
                 if target_row and target_row.basis_text:
                     label = f"{label} ({target_row.basis_text})"
                 self.training_selector.addItem(label, ("existing", int(targeted_row.record_id)))
         else:
-            self.training_selector.addItem("Цільовий — не створено", ("missing", TrainingType.TARGETED.value))
+            self.training_selector.addItem("Цільовий - не створено", ("missing", TrainingType.TARGETED.value))
 
         if not self._read_only:
             self.training_selector.addItem("+ Створити новий інструктаж", ("create_new", ""))
@@ -214,27 +233,15 @@ class TrainingRecordDetailsPane(QScrollArea):
                 self.editor.show_card_row(row, lock_type=True)
             return
         if mode == "missing":
-            self.editor.prepare_card_create_mode(
-                self._current_personnel_number,
-                TrainingType(str(value)),
-                lock_type=True,
-            )
+            self.editor.prepare_card_create_mode(self._current_personnel_number, TrainingType(str(value)), lock_type=True)
             return
         self.editor.prepare_card_create_mode(self._current_personnel_number, None, lock_type=False)
 
     def _emit_employee_request(self) -> None:
-        """Передає запит відкрити картку працівника.
-        Emits a request to open the employee card.
-        """
-
         if self._current_personnel_number:
             self.employee_requested.emit(self._current_personnel_number)
 
     def _style_action_item(self, combo_box: QComboBox, index: int) -> None:
-        """Виділяє сервісний пункт вибору як дію створення.
-        Highlights the service selector item as a creation action.
-        """
-
         combo_box.setItemData(index, QColor(COLOR["accent"]), Qt.ItemDataRole.ForegroundRole)
         action_font = QFont()
         action_font.setBold(True)

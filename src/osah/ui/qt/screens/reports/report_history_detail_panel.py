@@ -12,7 +12,21 @@ class ReportHistoryDetailPanel(QFrame):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setProperty("card", "true")
+        self.setObjectName("reportHistoryDetailPanel")
+        self.setStyleSheet(
+            f"""
+            QFrame#reportHistoryDetailPanel {{
+                background: rgba(255, 255, 255, 0.94);
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: 24px;
+            }}
+            QFrame#reportHistoryDetailPanel QLabel[role="section_title"] {{
+                color: {COLOR['text_primary']};
+                font-size: 20px;
+                font-weight: 800;
+            }}
+            """
+        )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["sm"])
@@ -23,17 +37,18 @@ class ReportHistoryDetailPanel(QFrame):
 
         self._hint_label = QLabel("Оберіть запис в історії вгорі, щоб побачити подробиці.")
         self._hint_label.setWordWrap(True)
-        self._hint_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic;")
+        self._hint_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-style: italic; font-size: 15px;")
         layout.addWidget(self._hint_label)
 
         self._meta_label = QLabel("")
         self._meta_label.setWordWrap(True)
-        self._meta_label.setStyleSheet(f"color: {COLOR['text_secondary']};")
+        self._meta_label.setStyleSheet(f"color: {COLOR['text_secondary']}; font-size: 14px;")
         layout.addWidget(self._meta_label)
 
         self._description_label = QLabel("")
         self._description_label.setWordWrap(True)
         self._description_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self._description_label.setStyleSheet(f"font-size: 15px; color: {COLOR['text_primary']};")
         layout.addWidget(self._description_label)
 
         self.show_placeholder()

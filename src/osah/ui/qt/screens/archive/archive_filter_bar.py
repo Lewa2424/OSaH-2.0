@@ -1,7 +1,8 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.archive_entry_type import ArchiveEntryType
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class ArchiveFilterBar(QWidget):
@@ -11,8 +12,58 @@ class ArchiveFilterBar(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        layout = QHBoxLayout(self)
+        self.setObjectName("archiveFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#archiveFilterBar {{
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #D8E3EE;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#archiveFilterBar QLineEdit,
+            QWidget#archiveFilterBar QComboBox {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #C8D6E5;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#archiveFilterBar QLineEdit:focus,
+            QWidget#archiveFilterBar QComboBox:focus {{
+                border: 1px solid {COLOR['accent']};
+                background: #FCFEFF;
+            }}
+            QWidget#archiveFilterBar QComboBox::drop-down {{
+                width: 32px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#archiveFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#archiveFilterBar QLabel#filterState {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
+
+        layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SPACING["sm"])
+        outer.addLayout(layout)
 
         self._type_filter = QComboBox()
         self._type_filter.addItem("Усі типи", "")
@@ -32,9 +83,10 @@ class ArchiveFilterBar(QWidget):
         layout.addWidget(reset_button)
 
         self._active_label = QLabel("Фільтри не активні")
+        self._active_label.setObjectName("filterState")
         layout.addWidget(self._active_label)
+        layout.addStretch(1)
 
-    # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def _reset_filters(self) -> None:
         """Resets archive filters to defaults."""
 
@@ -43,7 +95,6 @@ class ArchiveFilterBar(QWidget):
         self._update_indicator()
         self.filters_changed.emit()
 
-    # ###### ЧИТАННЯ СТАНУ ФІЛЬТРІВ / READ FILTER VALUES ######
     def values(self) -> dict[str, str]:
         """Returns current archive filters."""
 
@@ -54,7 +105,6 @@ class ArchiveFilterBar(QWidget):
         self._update_indicator()
         return values
 
-    # ###### ІНДИКАТОР АКТИВНИХ ФІЛЬТРІВ / ACTIVE FILTERS INDICATOR ######
     def _update_indicator(self) -> None:
         """Updates active filters indicator."""
 

@@ -19,7 +19,34 @@ class ReportDeliveryPanel(QFrame):
     def __init__(self, read_only: bool) -> None:
         super().__init__()
         self._read_only = read_only
-        self.setProperty("card", "true")
+        self.setObjectName("reportDeliveryPanel")
+        self.setStyleSheet(
+            f"""
+            QFrame#reportDeliveryPanel {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 246),
+                        stop:0.55 rgba(244, 248, 252, 238),
+                        stop:1 rgba(232, 240, 248, 228));
+                border: 1px solid rgba(129, 163, 197, 0.55);
+                border-radius: 26px;
+            }}
+            QFrame#reportDeliveryPanel QLabel[role="section_title"] {{
+                color: {COLOR['text_primary']};
+                font-size: 22px;
+                font-weight: 800;
+            }}
+            QFrame#reportDeliveryPanel QLabel {{
+                font-size: 15px;
+            }}
+            QFrame#reportDeliveryPanel QPushButton {{
+                min-height: 42px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
@@ -39,8 +66,8 @@ class ReportDeliveryPanel(QFrame):
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         self.status_label.setStyleSheet(
-            f"background: {COLOR['bg_panel']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['md']}px; padding: {SPACING['md']}px;"
+            f"background: rgba(255, 255, 255, 0.9); border: 1px solid {COLOR['border_soft']}; "
+            f"border-radius: {RADIUS['lg']}px; padding: {SPACING['md']}px; font-size: 15px; color: {COLOR['text_secondary']};"
         )
         layout.addWidget(self.status_label)
 

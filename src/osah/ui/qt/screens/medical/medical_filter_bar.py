@@ -5,21 +5,67 @@ from osah.domain.entities.medical_status import MedicalStatus
 from osah.domain.entities.medical_workspace import MedicalWorkspace
 from osah.domain.entities.medical_workspace_mode import MedicalWorkspaceMode
 from osah.domain.services.format_medical_status_label import format_medical_status_label
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class MedicalFilterBar(QWidget):
-    """Панель пошуку, фільтрів і режимів перегляду медицини.
-    Search, filter and view-mode bar for medical records.
-    """
+    """Search, filter and view-mode bar for medical records. / Панель фільтрів медичних записів."""
 
     filters_changed = Signal()
 
     def __init__(self, workspace: MedicalWorkspace) -> None:
         super().__init__()
+        self.setObjectName("medicalFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#medicalFilterBar {{
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#medicalFilterBar QComboBox,
+            QWidget#medicalFilterBar QLineEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#medicalFilterBar QComboBox::drop-down {{
+                width: 30px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#medicalFilterBar QCheckBox {{
+                color: {COLOR['text_primary']};
+                font-size: 14px;
+                font-weight: 600;
+                spacing: 8px;
+            }}
+            QWidget#medicalFilterBar QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+            QWidget#medicalFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#medicalFilterBar QLabel {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(SPACING["xs"])
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
         row = QHBoxLayout()
         outer.addLayout(row)
 
@@ -83,10 +129,6 @@ class MedicalFilterBar(QWidget):
         second.addWidget(self.active_filters_label)
 
     def reset_filters(self) -> None:
-        """Скидає всі фільтри модуля медицини.
-        Resets all medical module filters.
-        """
-
         self.search_input.clear()
         for combo in (self.mode_filter, self.department_filter, self.status_filter, self.site_filter, self.position_filter, self.employee_filter):
             combo.setCurrentIndex(0)
@@ -95,28 +137,16 @@ class MedicalFilterBar(QWidget):
         self.filters_changed.emit()
 
     def set_status_filter(self, status: MedicalStatus) -> None:
-        """Активує фільтр статусу з navigation intent.
-        Activates status filter from navigation intent.
-        """
-
         index = self.status_filter.findData(status.value)
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
     def set_employee_filter(self, personnel_number: str) -> None:
-        """Активує фільтр працівника з navigation intent.
-        Activates employee filter from navigation intent.
-        """
-
         index = self.employee_filter.findData(personnel_number)
         if index >= 0:
             self.employee_filter.setCurrentIndex(index)
 
     def values(self) -> dict[str, str | bool]:
-        """Повертає поточний стан фільтрів.
-        Returns the current filter state.
-        """
-
         values: dict[str, str | bool] = {
             "mode": self.mode_filter.currentData() or MedicalWorkspaceMode.BY_RECORDS.value,
             "search": self.search_input.text().strip().lower(),
@@ -131,10 +161,6 @@ class MedicalFilterBar(QWidget):
         return values
 
     def _update_active_filters_label(self) -> None:
-        """Оновлює текстовий індикатор активних фільтрів.
-        Updates textual indicator of active filters.
-        """
-
         active_count = sum(
             1
             for value in (

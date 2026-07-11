@@ -1,23 +1,21 @@
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class ReissueWorkPermitDialog(QDialog):
-    """Модальне вікно причини перевипуску наряду-допуску.
-    Modal dialog for entering the work-permit reissue reason.
-    """
+    """Modal dialog for entering reissue reason. / Діалог причини перевипуску наряду."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Перевипустити наряд")
         self.setModal(True)
-        self.resize(460, 220)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.resize(480, 240)
+        self.setStyleSheet(_dialog_stylesheet())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["xl"], SPACING["xl"], SPACING["xl"], SPACING["xl"])
         layout.setSpacing(SPACING["md"])
 
         hint = QLabel("Вкажіть, чому поточний наряд потрібно перевипустити як новий запис.")
@@ -25,7 +23,7 @@ class ReissueWorkPermitDialog(QDialog):
         layout.addWidget(hint)
 
         self._reason_input = QTextEdit()
-        self._reason_input.setMaximumHeight(88)
+        self._reason_input.setMaximumHeight(96)
         self._reason_input.setPlaceholderText("Наприклад: змінено місце виконання або вид робіт.")
         layout.addWidget(self._reason_input)
 
@@ -46,18 +44,38 @@ class ReissueWorkPermitDialog(QDialog):
         layout.addLayout(buttons_row)
 
     def reissue_reason_text(self) -> str:
-        """Повертає введену причину перевипуску.
-        Returns the entered reissue reason.
-        """
-
         return self._reason_input.toPlainText().strip()
 
     def _accept_if_valid(self) -> None:
-        """Перевіряє, що причина перевипуску вказана.
-        Validates that the reissue reason is provided.
-        """
-
         if not self.reissue_reason_text():
             self._feedback_label.show_error("Потрібно вказати причину перевипуску наряду.")
             return
         self.accept()
+
+
+def _dialog_stylesheet() -> str:
+    return f"""
+    QDialog {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F8FBFD, stop:1 #EFF4F9);
+    }}
+    QLabel {{
+        color: {COLOR['text_primary']};
+        font-size: 14px;
+        font-weight: 700;
+    }}
+    QTextEdit {{
+        background: #FFFFFF;
+        border: 1px solid #CBD6E2;
+        border-radius: {RADIUS['lg']}px;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }}
+    QPushButton {{
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 800;
+    }}
+    """

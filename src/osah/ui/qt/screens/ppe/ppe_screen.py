@@ -10,6 +10,7 @@ from osah.domain.entities.ppe_workspace import PpeWorkspace
 from osah.domain.entities.ppe_workspace_mode import PpeWorkspaceMode
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
 from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.screen_states import EmptyStateWidget, ErrorStateWidget, LoadingStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
@@ -50,6 +51,16 @@ class PpeScreen(QWidget):
         self._reload_task_controller.success.connect(self._on_reload_success)
         self._reload_task_controller.error.connect(self._on_reload_error)
         self._reload_task_controller.finished.connect(self._on_reload_finished)
+
+        install_ambient_background(
+            self,
+            "ppeScreen",
+            theme="ppe",
+            extra_rules="""
+            QWidget#ppeScreen QSplitter::handle { background: transparent; }
+            QWidget#ppeScreen QSplitter::handle:horizontal { width: 10px; }
+            """,
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])

@@ -499,12 +499,12 @@ QLabel[role="metric_subtitle"] {{
 /* ── AlertCard ── */
 QLabel[role="alert_title"] {{
     color: {c["text_primary"]};
-    font-size: {s(13)}px;
+    font-size: {s(18)}px;
     font-weight: bold;
 }}
 QLabel[role="alert_body"] {{
     color: {c["text_secondary"]};
-    font-size: {s(10)}px;
+    font-size: {s(15)}px;
 }}
 QLabel[role="empty_state"] {{
     color: {c["status_ok_text"]};

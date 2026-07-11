@@ -41,6 +41,25 @@ class PortSitePassportsTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
         self.horizontalHeader().setStretchLastSection(False)
+        self.setStyleSheet(
+            """
+            QTableWidget {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #D6E1EC;
+                border-radius: 18px;
+                gridline-color: #E2EAF2;
+                font-size: 14px;
+            }
+            QHeaderView::section {
+                background: #EAF1F7;
+                color: #17365D;
+                padding: 11px 8px;
+                border: none;
+                font-size: 13px;
+                font-weight: 800;
+            }
+            """
+        )
         self.setSortingEnabled(True)
         self.horizontalHeader().setSortIndicatorShown(True)
         self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.DescendingOrder)

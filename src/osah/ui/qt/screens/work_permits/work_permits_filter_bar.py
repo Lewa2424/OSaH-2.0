@@ -5,21 +5,67 @@ from osah.domain.entities.work_permit_status import WorkPermitStatus
 from osah.domain.entities.work_permit_workspace import WorkPermitWorkspace
 from osah.domain.entities.work_permit_workspace_mode import WorkPermitWorkspaceMode
 from osah.domain.services.format_work_permit_status_label import format_work_permit_status_label
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class WorkPermitsFilterBar(QWidget):
-    """Панель пошуку, фільтрів і режимів перегляду нарядів.
-    Search, filters and view modes bar for work permits.
-    """
+    """Search, filters and view modes bar for work permits. / Панель фільтрів нарядів-допусків."""
 
     filters_changed = Signal()
 
     def __init__(self, workspace: WorkPermitWorkspace) -> None:
         super().__init__()
+        self.setObjectName("workPermitsFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#workPermitsFilterBar {{
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#workPermitsFilterBar QComboBox,
+            QWidget#workPermitsFilterBar QLineEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#workPermitsFilterBar QComboBox::drop-down {{
+                width: 30px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#workPermitsFilterBar QCheckBox {{
+                color: {COLOR['text_primary']};
+                font-size: 14px;
+                font-weight: 600;
+                spacing: 8px;
+            }}
+            QWidget#workPermitsFilterBar QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+            QWidget#workPermitsFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#workPermitsFilterBar QLabel {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(SPACING["xs"])
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
 
         row = QHBoxLayout()
         outer.addLayout(row)
@@ -79,12 +125,7 @@ class WorkPermitsFilterBar(QWidget):
         self.active_filters_label = QLabel("Фільтри не активні")
         second.addWidget(self.active_filters_label)
 
-    # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def reset_filters(self) -> None:
-        """Скидає всі фільтри модуля нарядів.
-        Resets all work permit module filters.
-        """
-
         self.search_input.clear()
         for combo in (self.mode_filter, self.status_filter, self.work_kind_filter, self.department_filter, self.employee_filter):
             combo.setCurrentIndex(0)
@@ -93,31 +134,17 @@ class WorkPermitsFilterBar(QWidget):
         self._update_active_filters_label()
         self.filters_changed.emit()
 
-    # ###### СТАРТОВИЙ СТАТУС / INITIAL STATUS ######
     def set_status_filter(self, status: WorkPermitStatus) -> None:
-        """Активує фільтр статусу з navigation intent.
-        Activates status filter from navigation intent.
-        """
-
         index = self.status_filter.findData(status.value)
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
     def set_employee_filter(self, personnel_number: str) -> None:
-        """Активує фільтр працівника з navigation intent.
-        Activates employee filter from navigation intent.
-        """
-
         index = self.employee_filter.findData(personnel_number)
         if index >= 0:
             self.employee_filter.setCurrentIndex(index)
 
-    # ###### ЗНАЧЕННЯ ФІЛЬТРІВ / FILTER VALUES ######
     def values(self) -> dict[str, str | bool]:
-        """Повертає поточний стан фільтрів.
-        Returns the current filter state.
-        """
-
         values: dict[str, str | bool] = {
             "mode": self.mode_filter.currentData() or WorkPermitWorkspaceMode.BY_PERMITS.value,
             "search": self.search_input.text().strip().lower(),
@@ -131,12 +158,7 @@ class WorkPermitsFilterBar(QWidget):
         self._update_active_filters_label()
         return values
 
-    # ###### ІНДИКАТОР ФІЛЬТРІВ / FILTER INDICATOR ######
     def _update_active_filters_label(self) -> None:
-        """Оновлює текстовий індикатор активних фільтрів.
-        Updates textual indicator of active filters.
-        """
-
         active_count = sum(
             1
             for value in (

@@ -6,21 +6,30 @@ from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class PermitParticipantsPanel(QWidget):
-    """Панель учасників і конфліктів наряду.
-    Panel with work permit participants and conflicts.
-    """
+    """Panel with work permit participants and conflicts. / Панель учасників і конфліктів наряду."""
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("permitParticipantsPanel")
+        self.setStyleSheet(
+            f"""
+            QWidget#permitParticipantsPanel {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(250,252,254,0.98),
+                    stop:1 rgba(243,247,251,0.98));
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xl']}px;
+            }}
+            QLabel {{
+                font-size: 14px;
+            }}
+            """
+        )
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(SPACING["xs"])
+        self._layout.setContentsMargins(SPACING["lg"], SPACING["md"], SPACING["lg"], SPACING["md"])
+        self._layout.setSpacing(SPACING["sm"])
 
     def set_row(self, row: WorkPermitWorkspaceRow | None) -> None:
-        """Показує учасників і причини конфліктів вибраного наряду.
-        Shows participants and conflict reasons for the selected work permit.
-        """
-
         while self._layout.count():
             item = self._layout.takeAt(0)
             if widget := item.widget():
@@ -31,9 +40,7 @@ class PermitParticipantsPanel(QWidget):
 
         self._layout.addWidget(_workflow_label())
         if row.participant_count > 0:
-            self._layout.addWidget(
-                _label(f"Бригада ({row.participant_count}): {row.participant_names}", COLOR["text_secondary"], bold=True)
-            )
+            self._layout.addWidget(_label(f"Бригада ({row.participant_count}): {row.participant_names}", COLOR["text_secondary"], bold=True))
         else:
             self._layout.addWidget(_label("Бригада: ще не задана", COLOR["warning"], bold=True))
 
@@ -49,42 +56,27 @@ class PermitParticipantsPanel(QWidget):
 
 
 def _workflow_label() -> QLabel:
-    """Короткий порядок дій для інспектора.
-    Short workflow reminder for the inspector.
-    """
-
     label = QLabel(
-        "Порядок: 1) бригада → 2) цільовий інструктаж → 3) «Зберегти зміни» → "
-        "4) щоденна перевірка (якщо роботи кілька днів)."
+        "Порядок: 1) бригада -> 2) цільовий інструктаж -> 3) зберегти зміни -> 4) щоденна перевірка, якщо роботи тривають кілька днів."
     )
     label.setWordWrap(True)
     label.setStyleSheet(
-        f"color: {COLOR['text_secondary']}; background: {COLOR['bg_workspace']}; "
-        f"border-radius: {RADIUS['md']}px; padding: 8px 10px;"
+        f"color: {COLOR['text_secondary']}; background: #F5F8FC; border-radius: {RADIUS['md']}px; padding: 10px 12px; font-weight: 700;"
     )
     return label
 
 
 def _guidance_box(text: str) -> QLabel:
-    """Підказка «що зробити далі».
-    Next-step guidance box.
-    """
-
     label = QLabel(f"Що зробити: {text}")
     label.setWordWrap(True)
     label.setStyleSheet(
-        f"color: {COLOR['text_primary']}; background: {COLOR['warning_subtle']}; "
-        f"border: 1px solid {COLOR['warning']}; border-radius: {RADIUS['md']}px; "
-        f"padding: 8px 10px; font-weight: 700;"
+        f"color: {COLOR['text_primary']}; background: {COLOR['warning_subtle']}; border: 1px solid {COLOR['warning']}; "
+        f"border-radius: {RADIUS['md']}px; padding: 10px 12px; font-weight: 800;"
     )
     return label
 
 
 def _label(text: str, color: str, *, bold: bool) -> QLabel:
-    """Створює службовий текстовий рядок панелі.
-    Creates a helper text line for the panel.
-    """
-
     label = QLabel(text)
     label.setWordWrap(True)
     weight = "800" if bold else "500"

@@ -10,6 +10,7 @@ from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.contractor_workspace_row import ContractorWorkspaceRow
 from osah.domain.services.build_contractor_workspace_rows import build_contractor_workspace_rows
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.screen_states import EmptyStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
@@ -32,6 +33,16 @@ class ContractorsScreen(QWidget):
         self._workspace = load_contractor_workspace(database_path)
         self._rows = build_contractor_workspace_rows(self._workspace.records)
         self._read_only = access_role != AccessRole.INSPECTOR
+
+        install_ambient_background(
+            self,
+            "contractorsScreen",
+            theme="contractors",
+            extra_rules="""
+            QWidget#contractorsScreen QSplitter::handle { background: transparent; }
+            QWidget#contractorsScreen QSplitter::handle:horizontal { width: 10px; }
+            """,
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])

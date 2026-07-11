@@ -7,22 +7,79 @@ from osah.domain.entities.training_workspace import TrainingWorkspace
 from osah.domain.entities.training_workspace_mode import TrainingWorkspaceMode
 from osah.domain.services.format_training_type_label import format_training_type_label
 from osah.domain.services.parse_ui_date_text import parse_ui_date_text
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.components.date_line_edit import DateLineEdit
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class TrainingsFilterBar(QWidget):
-    """Панель пошуку, фільтрів і режимів перегляду інструктажів.
-    Search, filter and view-mode bar for trainings.
-    """
+    """Search, filter and view-mode bar for trainings. / Панель пошуку, фільтрів і режимів інструктажів."""
 
     filters_changed = Signal()
 
     def __init__(self, workspace: TrainingWorkspace) -> None:
         super().__init__()
         self._validation_error_text = ""
+        self.setObjectName("trainingsFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#trainingsFilterBar {{
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#trainingsFilterBar QComboBox,
+            QWidget#trainingsFilterBar QLineEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#trainingsFilterBar QComboBox:focus,
+            QWidget#trainingsFilterBar QLineEdit:focus {{
+                border: 1px solid {COLOR['accent']};
+                background: #FCFEFF;
+            }}
+            QWidget#trainingsFilterBar QComboBox::drop-down {{
+                width: 32px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#trainingsFilterBar QComboBox QAbstractItemView {{
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['md']}px;
+                selection-background-color: #EAF1F8;
+                selection-color: {COLOR['text_primary']};
+                outline: none;
+            }}
+            QWidget#trainingsFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#trainingsFilterBar QLabel#filterCaption {{
+                color: {COLOR['text_secondary']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            QWidget#trainingsFilterBar QLabel#filterState {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
+
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(SPACING["xs"])
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
 
         first_row = QHBoxLayout()
         first_row.setContentsMargins(0, 0, 0, 0)
@@ -34,9 +91,7 @@ class TrainingsFilterBar(QWidget):
         self.mode_filter.addItem("По працівниках", TrainingWorkspaceMode.BY_EMPLOYEES.value)
         self.mode_filter.currentIndexChanged.connect(lambda _index: self.filters_changed.emit())
         first_row.addWidget(self.mode_filter)
-        self.mode_filter.setCurrentIndex(
-            max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value))
-        )
+        self.mode_filter.setCurrentIndex(max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value)))
 
         self.employee_filter = QComboBox()
         self.employee_filter.addItem("Усі працівники", "")
@@ -101,6 +156,7 @@ class TrainingsFilterBar(QWidget):
         second_row.addWidget(reset_button)
 
         self.active_filters_label = QLabel("Фільтри не активні")
+        self.active_filters_label.setObjectName("filterState")
         second_row.addWidget(self.active_filters_label)
         second_row.addStretch(1)
 
@@ -114,21 +170,17 @@ class TrainingsFilterBar(QWidget):
         self.search_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         third_row.addWidget(self.search_input, stretch=3)
 
-        self.date_from_input = QLineEdit()
-        self.date_from_input.setPlaceholderText("Період з: ДД.ММ.РРРР")
+        self.date_from_input = DateLineEdit()
+        self.date_from_input.setPlaceholderText("Період з")
         self.date_from_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         third_row.addWidget(self.date_from_input)
 
-        self.date_to_input = QLineEdit()
-        self.date_to_input.setPlaceholderText("Період до: ДД.ММ.РРРР")
+        self.date_to_input = DateLineEdit()
+        self.date_to_input.setPlaceholderText("Період до")
         self.date_to_input.textChanged.connect(lambda _text: self.filters_changed.emit())
         third_row.addWidget(self.date_to_input)
 
     def reset_filters(self) -> None:
-        """Скидає всі фільтри модуля інструктажів.
-        Resets all trainings module filters.
-        """
-
         self.search_input.clear()
         for combo in (
             self.type_filter,
@@ -140,37 +192,23 @@ class TrainingsFilterBar(QWidget):
             self.employee_filter,
         ):
             combo.setCurrentIndex(0)
-        self.mode_filter.setCurrentIndex(
-            max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value))
-        )
+        self.mode_filter.setCurrentIndex(max(0, self.mode_filter.findData(TrainingWorkspaceMode.BY_EMPLOYEES.value)))
         self.date_from_input.clear()
         self.date_to_input.clear()
         self._update_active_filters_label()
         self.filters_changed.emit()
 
     def set_status_filter(self, status_filter: TrainingRegistryFilter) -> None:
-        """Активує фільтр статусу з navigation intent.
-        Activates status filter from navigation intent.
-        """
-
         index = self.status_filter.findData(status_filter.value)
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
     def set_employee_filter(self, personnel_number: str) -> None:
-        """Активує фільтр працівника з navigation intent.
-        Activates employee filter from navigation intent.
-        """
-
         index = self.employee_filter.findData(personnel_number)
         if index >= 0:
             self.employee_filter.setCurrentIndex(index)
 
     def values(self) -> dict[str, str]:
-        """Повертає поточний стан фільтрів.
-        Returns the current filter state.
-        """
-
         date_from, date_from_error = _normalize_filter_date(self.date_from_input.text())
         date_to, date_to_error = _normalize_filter_date(self.date_to_input.text())
         self._validation_error_text = date_from_error or date_to_error
@@ -192,10 +230,6 @@ class TrainingsFilterBar(QWidget):
         return values
 
     def _update_active_filters_label(self) -> None:
-        """Оновлює текстовий індикатор активних фільтрів.
-        Updates textual indicator of active filters.
-        """
-
         active_count = sum(
             1
             for value in (
@@ -215,12 +249,7 @@ class TrainingsFilterBar(QWidget):
         self.active_filters_label.setText("Фільтри не активні" if active_count == 0 else f"Активних фільтрів: {active_count}")
 
 
-# ###### НОРМАЛІЗАЦІЯ ДАТИ ФІЛЬТРА / NORMALIZE FILTER DATE ######
 def _normalize_filter_date(date_text: str) -> tuple[str, str]:
-    """Нормалізує дату фільтра до ISO для внутрішнього порівняння.
-    Normalizes filter date to ISO for internal comparison.
-    """
-
     normalized_date_text = date_text.strip()
     if not normalized_date_text:
         return "", ""

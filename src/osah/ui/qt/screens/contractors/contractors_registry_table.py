@@ -21,6 +21,27 @@ class ContractorsRegistryTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.verticalHeader().setVisible(False)
         self.horizontalHeader().setStretchLastSection(True)
+        self.setStyleSheet(
+            """
+            QTableWidget {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #D6E1EC;
+                border-radius: 18px;
+                gridline-color: #E2EAF2;
+                font-size: 14px;
+                selection-background-color: rgba(76, 121, 173, 0.16);
+                selection-color: #102846;
+            }
+            QHeaderView::section {
+                background: #EAF1F7;
+                color: #17365D;
+                padding: 11px 8px;
+                border: none;
+                font-size: 13px;
+                font-weight: 800;
+            }
+            """
+        )
         self.setSortingEnabled(True)
         self.horizontalHeader().setSortIndicatorShown(True)
         self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.AscendingOrder)
@@ -48,6 +69,7 @@ class ContractorsRegistryTable(QTableWidget):
             for column_index, (text, sort_value) in enumerate(cell_specs):
                 item = SortableTableWidgetItem(text, row_key=row.record.contractor_id, sort_value=sort_value)
                 self.setItem(row_index, column_index, item)
+            self.setRowHeight(row_index, 44)
 
         self.resizeColumnsToContents()
         self.setSortingEnabled(True)

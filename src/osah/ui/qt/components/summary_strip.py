@@ -12,10 +12,16 @@ class SummaryStrip(QFrame):
         super().__init__()
         self.setObjectName("summaryStrip")
         self.setStyleSheet(
-            f"QFrame#summaryStrip {{ "
-            f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['xl']}px; "
-            f"}}"
+            f"""
+            QFrame#summaryStrip {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 255, 255, 0.97),
+                    stop:0.55 rgba(246, 249, 252, 0.98),
+                    stop:1 rgba(239, 244, 249, 0.98));
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            """
         )
         self._metric_labels: list[QLabel] = []
         self._layout = QHBoxLayout(self)
@@ -74,15 +80,15 @@ def _build_metric_segment(title: str, value: int, color: str) -> tuple[QWidget, 
 
     title_label = QLabel(title)
     title_label.setStyleSheet(
-        f"color: {COLOR['text_secondary']}; font-size: 15px; font-weight: 700;"
+        f"color: {COLOR['text_secondary']}; font-size: 16px; font-weight: 800;"
     )
     dash_label = QLabel(" - ")
     dash_label.setStyleSheet(
-        f"color: {COLOR['text_muted']}; font-size: 15px; font-weight: 700;"
+        f"color: {COLOR['text_muted']}; font-size: 16px; font-weight: 700;"
     )
     value_label = QLabel(str(value))
     value_label.setStyleSheet(
-        f"color: {color}; font-size: 24px; font-weight: 900;"
+        f"color: {color}; font-size: 22px; font-weight: 900;"
     )
 
     layout.addWidget(title_label)

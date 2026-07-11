@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QAbstractItemView, QTableWidget
 
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
@@ -11,7 +11,7 @@ from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowSta
 
 
 class EmployeeRegistryTable(QTableWidget):
-    """Central compact employee registry."""
+    """Central compact employee registry. / Центральный реестр работников."""
 
     employee_selected = Signal(str)
 
@@ -32,9 +32,41 @@ class EmployeeRegistryTable(QTableWidget):
         self.horizontalHeader().setSortIndicatorShown(True)
         self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.AscendingOrder)
         self.itemSelectionChanged.connect(self._emit_selected_employee)
+        self.setShowGrid(True)
+        self.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background: {COLOR['bg_card']};
+                alternate-background-color: #F8FBFD;
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: 18px;
+                gridline-color: {COLOR['border_soft']};
+                selection-background-color: {COLOR['selection_bg']};
+                selection-color: {COLOR['text_primary']};
+                font-size: 13px;
+            }}
+            QHeaderView::section {{
+                background: #EEF3F8;
+                color: {COLOR['text_primary']};
+                border: none;
+                border-bottom: 1px solid {COLOR['border_soft']};
+                padding: 10px 10px;
+                font-size: 13px;
+                font-weight: 800;
+            }}
+            QTableWidget::item {{
+                padding: 8px 10px;
+                border: none;
+            }}
+            QTableWidget::item:selected {{
+                background: #E7EFF8;
+                color: {COLOR['text_primary']};
+            }}
+            """
+        )
 
     def set_rows(self, rows: tuple[EmployeeWorkspaceRow, ...]) -> None:
-        """###### ЗАПОВНЕННЯ РЕЄСТРУ / POPULATE REGISTRY ######"""
+        """Populates the registry. / Заполняет реестр."""
 
         sort_column = self.horizontalHeader().sortIndicatorSection()
         sort_order = self.horizontalHeader().sortIndicatorOrder()
@@ -54,7 +86,7 @@ class EmployeeRegistryTable(QTableWidget):
             for module_index, summary in enumerate(row.module_summaries):
                 self._set_text_item(row_index, 5 + module_index, f"{summary.label}: {summary.reason}", row)
 
-            self.setRowHeight(row_index, 38)
+            self.setRowHeight(row_index, 44)
 
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 4)
@@ -62,7 +94,7 @@ class EmployeeRegistryTable(QTableWidget):
         self.sortItems(sort_column if sort_column >= 0 else self._default_sort_column, sort_order)
 
     def select_employee(self, personnel_number: str) -> None:
-        """###### ВИБІР ПРАЦІВНИКА / SELECT EMPLOYEE ######"""
+        """Selects employee in registry. / Выбирает работника в реестре."""
 
         for row_index in range(self.rowCount()):
             item = self.item(row_index, 1)
@@ -72,7 +104,7 @@ class EmployeeRegistryTable(QTableWidget):
                 return
 
     def current_employee_row(self) -> EmployeeWorkspaceRow | None:
-        """###### ПОТОЧНИЙ РЯДОК / CURRENT ROW MODEL ######"""
+        """Returns current selected model row. / Возвращает текущую выбранную модель строки."""
 
         selected = self.selectedItems()
         if not selected:
@@ -81,8 +113,6 @@ class EmployeeRegistryTable(QTableWidget):
         return self._rows_by_personnel_number.get(personnel_number)
 
     def _set_text_item(self, row_index: int, column_index: int, text: str, row: EmployeeWorkspaceRow) -> None:
-        """###### ТЕКСТОВА КОМІРКА / TEXT CELL ######"""
-
         item = SortableTableWidgetItem(
             text,
             row_key=row.employee.personnel_number,
@@ -98,8 +128,6 @@ class EmployeeRegistryTable(QTableWidget):
         self.setItem(row_index, column_index, item)
 
     def _emit_selected_employee(self) -> None:
-        """###### СИГНАЛ ВИБОРУ / SELECTION SIGNAL ######"""
-
         selected_row = self.current_employee_row()
         if selected_row:
             self.employee_selected.emit(selected_row.employee.personnel_number)

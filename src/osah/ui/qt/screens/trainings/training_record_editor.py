@@ -40,7 +40,7 @@ from osah.ui.qt.components.basis_note_panel import BasisNotePanel
 from osah.ui.qt.components.date_line_edit import DateLineEdit
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.info_tooltip_icon import InfoTooltipIcon
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.hints.normative_hints import (
     TRAINING_KNOWLEDGE_CHECK_HINT,
     TRAINING_REPEAT_PERIOD_HINT,
@@ -64,6 +64,51 @@ class TrainingRecordEditor(QWidget):
         self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
         self._is_updating = False
+        self.setStyleSheet(
+            f"""
+            QComboBox, QLineEdit, QTextEdit {{
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QComboBox, QLineEdit {{
+                min-height: 40px;
+                padding: 0 14px;
+            }}
+            QTextEdit {{
+                padding: 10px 12px;
+            }}
+            QComboBox:focus, QLineEdit:focus, QTextEdit:focus {{
+                border: 1px solid {COLOR['accent']};
+                background: #FCFEFF;
+            }}
+            QLabel {{
+                color: {COLOR['text_secondary']};
+                font-size: 14px;
+                font-weight: 700;
+            }}
+            QCheckBox {{
+                color: {COLOR['text_primary']};
+                font-size: 14px;
+                font-weight: 600;
+                spacing: 8px;
+            }}
+            QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+            QPushButton {{
+                min-height: 42px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

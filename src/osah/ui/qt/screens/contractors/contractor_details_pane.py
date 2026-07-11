@@ -33,8 +33,63 @@ class ContractorDetailsPane(QWidget):
         super().__init__()
         self._read_only = read_only
         self._current_id = ""
+        self.setObjectName("contractorDetailsPane")
+        self.setStyleSheet(
+            """
+            QWidget#contractorDetailsPane {
+                background: rgba(255, 255, 255, 0.94);
+                border: 1px solid #D6E1EC;
+                border-radius: 26px;
+            }
+            QWidget#contractorDetailsPane QLabel[role="section_title"] {
+                color: #102846;
+                font-size: 24px;
+                font-weight: 800;
+            }
+            QWidget#contractorDetailsPane QLabel {
+                color: #1D3557;
+                font-size: 15px;
+            }
+            QWidget#contractorDetailsPane QLineEdit,
+            QWidget#contractorDetailsPane QTextEdit,
+            QWidget#contractorDetailsPane QComboBox {
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #C8D6E5;
+                border-radius: 14px;
+                padding: 0 12px;
+                font-size: 14px;
+            }
+            QWidget#contractorDetailsPane QGroupBox {
+                margin-top: 12px;
+                padding-top: 12px;
+                border: 1px solid #D6E1EC;
+                border-radius: 18px;
+                font-size: 16px;
+                font-weight: 700;
+                color: #17365D;
+            }
+            QWidget#contractorDetailsPane QTableWidget {
+                background: rgba(255, 255, 255, 0.88);
+                border: 1px solid #D6E1EC;
+                border-radius: 16px;
+                gridline-color: #E2EAF2;
+                font-size: 14px;
+            }
+            QWidget#contractorDetailsPane QHeaderView::section {
+                background: #EAF1F7;
+                color: #17365D;
+                padding: 10px 8px;
+                border: none;
+                font-size: 13px;
+                font-weight: 800;
+            }
+            """
+        )
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
 
         title = QLabel("Картка підрядника")
         title.setProperty("role", "section_title")
@@ -197,7 +252,7 @@ class ContractorDetailsPane(QWidget):
         checkbox = QCheckBox()
         checkbox.setChecked(value)
         checkbox.setEnabled(not self._read_only)
-        checkbox.setFixedSize(22, 22)
+        checkbox.setFixedSize(18, 18)
         container = QWidget()
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)

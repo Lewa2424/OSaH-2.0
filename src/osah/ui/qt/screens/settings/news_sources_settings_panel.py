@@ -236,7 +236,35 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         dialog.setWindowTitle("Налаштувати розклад перевірки")
         dialog.setModal(True)
         dialog.setFixedWidth(360)
-        dialog.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        dialog.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                color: {COLOR['text_primary']};
+                font-size: 15px;
+            }}
+            QTimeEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #C8D6E5;
+                border-radius: 14px;
+                padding: 0 12px;
+                font-size: 15px;
+                font-weight: 600;
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         dlg_layout = QVBoxLayout(dialog)
         dlg_layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -248,6 +276,7 @@ class NewsSourcesSettingsPanel(SettingsSectionCard):
         time_edit = QTimeEdit()
         time_edit.setDisplayFormat("HH:mm")
         time_edit.setTime(QTime.fromString(self._news_refresh_time, "HH:mm"))
+        time_edit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
         dlg_layout.addWidget(time_edit)
 
         buttons_row = QHBoxLayout()

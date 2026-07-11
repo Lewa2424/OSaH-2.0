@@ -19,25 +19,27 @@ class _CalendarPopup(QFrame):
         self.setStyleSheet(
             f"""
             QFrame {{
-                background: {COLOR["bg_card"]};
-                border: 1px solid {COLOR["border_default"]};
-                border-radius: {RADIUS["md"]}px;
+                background: rgba(255, 255, 255, 0.98);
+                border: 1px solid #D8E1EB;
+                border-radius: {RADIUS["lg"]}px;
             }}
             QCalendarWidget {{
                 background: {COLOR["bg_card"]};
                 color: {COLOR["text_primary"]};
                 border: none;
+                font-size: 13px;
             }}
             QCalendarWidget QWidget#qt_calendar_navigationbar {{
-                background: {COLOR["bg_panel"]};
-                border-bottom: 1px solid {COLOR["border_soft"]};
+                background: #EEF4F9;
+                border-bottom: 1px solid #DCE5EE;
             }}
             QCalendarWidget QToolButton {{
                 background: transparent;
                 color: {COLOR["text_primary"]};
                 border: none;
-                padding: 6px 10px;
-                font-weight: 700;
+                padding: 8px 12px;
+                font-size: 13px;
+                font-weight: 800;
             }}
             QCalendarWidget QToolButton:hover {{
                 background: {COLOR["hover_bg"]};
@@ -46,7 +48,8 @@ class _CalendarPopup(QFrame):
             QCalendarWidget QMenu {{
                 background: {COLOR["bg_card"]};
                 color: {COLOR["text_primary"]};
-                border: 1px solid {COLOR["border_default"]};
+                border: 1px solid #D8E1EB;
+                border-radius: {RADIUS["md"]}px;
             }}
             QCalendarWidget QSpinBox {{
                 background: {COLOR["bg_card"]};
@@ -58,9 +61,10 @@ class _CalendarPopup(QFrame):
             QCalendarWidget QAbstractItemView:enabled {{
                 background: {COLOR["bg_card"]};
                 color: {COLOR["text_primary"]};
-                selection-background-color: {COLOR["accent_soft"]};
+                selection-background-color: #DDE8F4;
                 selection-color: {COLOR["text_primary"]};
                 alternate-background-color: {COLOR["table_row_alt_bg"]};
+                font-size: 13px;
             }}
             QCalendarWidget QAbstractItemView:disabled {{
                 color: {COLOR["text_muted"]};
@@ -114,12 +118,17 @@ class DateLineEdit(QLineEdit):
             f"""
             QLineEdit {{
                 padding-right: 28px;
+                min-height: 40px;
+                border-radius: {RADIUS["lg"]}px;
+                font-size: 14px;
+                font-weight: 600;
             }}
             QToolButton {{
                 border: none;
                 background: transparent;
                 color: {COLOR["accent"]};
                 font-weight: 700;
+                font-size: 15px;
             }}
             QToolButton:hover {{
                 color: {COLOR["accent_hover"]};

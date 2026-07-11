@@ -33,6 +33,31 @@ class WorkPermitsRegistryTable(QTableWidget):
         self.horizontalHeader().setSortIndicatorShown(True)
         self.horizontalHeader().setSortIndicator(self._default_sort_column, Qt.SortOrder.AscendingOrder)
         self.itemSelectionChanged.connect(self._emit_selected_row)
+        self.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background: rgba(255, 255, 255, 0.97);
+                border: 1px solid #D9E2EC;
+                border-radius: 22px;
+                gridline-color: #E5ECF2;
+                font-size: 13px;
+                color: {COLOR['text_primary']};
+            }}
+            QHeaderView::section {{
+                background: #EEF4F9;
+                color: {COLOR['text_secondary']};
+                border: none;
+                border-bottom: 1px solid #D9E2EC;
+                padding: 10px 12px;
+                font-size: 12px;
+                font-weight: 900;
+            }}
+            QTableWidget::item:selected {{
+                background: #E7F0F8;
+                color: {COLOR['text_primary']};
+            }}
+            """
+        )
 
     def set_rows(self, rows: tuple[WorkPermitWorkspaceRow, ...]) -> None:
         """Redraws the table with prepared rows."""
@@ -66,7 +91,7 @@ class WorkPermitsRegistryTable(QTableWidget):
                     match_value=match_value,
                 )
             self.setCellWidget(row_index, 5, WorkPermitStatusBadge(row.status, row.status_label))
-            self.setRowHeight(row_index, 38)
+            self.setRowHeight(row_index, 44)
 
         self.resizeColumnsToContents()
         ensure_table_column_width(self, 5)

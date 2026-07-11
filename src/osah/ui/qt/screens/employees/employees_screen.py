@@ -3,8 +3,6 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QPushButton, QSplitter, QVBoxLayout, QWidget
 
-from osah.ui.qt.components.app_dialog import show_app_confirm_dialog
-
 from osah.application.services.archive_employee import archive_employee
 from osah.application.services.load_employee_workspace import load_employee_workspace
 from osah.domain.entities.access_role import AccessRole
@@ -13,10 +11,11 @@ from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
 from osah.domain.entities.employee_workspace_row import EmployeeWorkspaceRow
 from osah.domain.services.build_employee_topbar_summary import build_employee_topbar_summary
+from osah.ui.qt.components.app_dialog import show_app_confirm_dialog
 from osah.ui.qt.components.screen_states import EmptyStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, SPACING
 from osah.ui.qt.screens.employees.create_employee_dialog import CreateEmployeeDialog
 from osah.ui.qt.screens.employees.edit_employee_dialog import EditEmployeeDialog
 from osah.ui.qt.screens.employees.employee_details_pane import EmployeeDetailsPane
@@ -26,7 +25,7 @@ from osah.ui.qt.screens.employees.structure_tree_panel import StructureTreePanel
 
 
 class EmployeesScreen(QWidget):
-    """Full Qt screen for employees module."""
+    """Full Qt screen for employees module. / Полный экран модуля работников."""
 
     module_navigation_requested = Signal(AppSection, str)
     module_record_navigation_requested = Signal(AppSection, str, int)
@@ -47,6 +46,31 @@ class EmployeesScreen(QWidget):
         self._initial_personnel_number = initial_personnel_number
         self._initial_problem_key = initial_problem_key
         self._visible_rows: tuple[EmployeeWorkspaceRow, ...] = workspace.rows
+
+        self.setObjectName("employeesScreen")
+        self.setStyleSheet(
+            f"""
+            QWidget#employeesScreen {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #F4F7FB, stop:0.45 #EDF2F7, stop:1 #F8FBFD);
+            }}
+            QWidget#employeesScreen QSplitter::handle {{
+                background: transparent;
+            }}
+            QWidget#employeesScreen QSplitter::handle:horizontal {{
+                width: 10px;
+            }}
+            QWidget#employeesScreen QPushButton#employeesPrimaryAction {{
+                min-height: 46px;
+                border-radius: 16px;
+                font-size: 15px;
+                font-weight: 800;
+            }}
+            QWidget#employeesScreen QWidget#employeesRightPanel {{
+                background: transparent;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -75,24 +99,27 @@ class EmployeesScreen(QWidget):
         splitter.addWidget(ScrollableTableFrame(self.registry_table))
 
         right_panel = QWidget()
+        right_panel.setObjectName("employeesRightPanel")
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(SPACING["sm"], 0, 0, 0)
         right_layout.setSpacing(SPACING["sm"])
 
         self._create_button = QPushButton("Додати працівника")
+        self._create_button.setObjectName("employeesPrimaryAction")
         self._create_button.setProperty("variant", "accent")
         self._create_button.clicked.connect(self._open_create_employee_dialog)
         self._create_button.setVisible(not self._read_only)
         self._create_button.setEnabled(not self._read_only)
         right_layout.addWidget(self._create_button)
 
-        self.details_pane = EmployeeDetailsPane(read_only=self._read_only)
+        self.details_pane = EmployeeDetailsPane(database_path=self._database_path, read_only=self._read_only)
         self.details_pane.edit_requested.connect(self._open_edit_employee_dialog)
         self.details_pane.archive_requested.connect(self._archive_employee)
         self.details_pane.module_navigation_requested.connect(self.module_navigation_requested.emit)
         self.details_pane.module_record_navigation_requested.connect(self.module_record_navigation_requested.emit)
         right_layout.addWidget(self.details_pane, stretch=1)
         splitter.addWidget(right_panel)
+
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
@@ -104,25 +131,16 @@ class EmployeesScreen(QWidget):
         self._apply_filters()
         self._focus_initial_employee()
 
-    # ###### ФОКУС НА ПРАЦІВНИКУ / FOCUS EMPLOYEE ######
     def focus_employee(self, personnel_number: str, problem_key: str | None = None) -> None:
-        """Opens employee card from dashboard navigation intent."""
-
         self._initial_personnel_number = personnel_number
         self._initial_problem_key = problem_key
         self.filter_bar.reset_filters()
         self.registry_table.select_employee(personnel_number)
 
-    # ###### KPI ДЛЯ ВЕРХНЬОЇ ПАНЕЛІ / TOPBAR KPI ######
     def topbar_summary(self):
-        """Returns compact employee KPI summary for the shell topbar."""
-
         return build_employee_topbar_summary(self._workspace)
 
-    # ###### ЗАСТОСУВАННЯ ФІЛЬТРІВ / APPLY FILTERS ######
     def _apply_filters(self) -> None:
-        """Combines search, tree and filters without domain recalculations."""
-
         values = self.filter_bar.values()
         rows = tuple(row for row in self._workspace.rows if _row_matches_filters(row, values))
         self._visible_rows = rows
@@ -137,10 +155,7 @@ class EmployeesScreen(QWidget):
             )
             self.details_pane.show_empty_state()
 
-    # ###### НАМІР З ДЕРЕВА / APPLY TREE INTENT ######
     def _apply_tree_intent(self, node_kind: str, node_value: str) -> None:
-        """Converts structure tree selection into registry filters."""
-
         if node_kind == "enterprise":
             self.filter_bar.reset_filters()
         elif node_kind == "department":
@@ -148,47 +163,30 @@ class EmployeesScreen(QWidget):
         elif node_kind == "position":
             self.filter_bar.set_position_filter(node_value)
 
-    # ###### ПОКАЗ ПРАЦІВНИКА / SHOW EMPLOYEE ######
     def _show_employee(self, personnel_number: str) -> None:
-        """Shows selected employee in right details pane."""
-
         row = next((item for item in self._workspace.rows if item.employee.personnel_number == personnel_number), None)
         if row:
             self.details_pane.show_employee(row)
 
-    # ###### ПОЧАТКОВИЙ ФОКУС / INITIAL FOCUS ######
     def _focus_initial_employee(self) -> None:
-        """Applies initial focus from navigation intent when provided."""
-
         if self._initial_personnel_number:
             self.registry_table.select_employee(self._initial_personnel_number)
 
-    # ###### ДІАЛОГ СТВОРЕННЯ ПРАЦІВНИКА / CREATE EMPLOYEE DIALOG ######
     def _open_create_employee_dialog(self) -> None:
-        """Відкриває модальне вікно додавання нового працівника.
-        Opens modal dialog for adding a new employee.
-        """
-
         if self._read_only:
             return
         dialog = CreateEmployeeDialog(self._database_path, self._workspace, self._access_role, self)
         dialog.employee_created.connect(self._reload_workspace_after_create)
         dialog.exec()
 
-    # ###### ДІАЛОГ РЕДАГУВАННЯ / EDIT EMPLOYEE DIALOG ######
     def _open_edit_employee_dialog(self, row: EmployeeWorkspaceRow) -> None:
-        """Відкриває модальне вікно редагування працівника."""
-
         if self._read_only:
             return
         dialog = EditEmployeeDialog(self._database_path, self._workspace, row, self._access_role, self)
         dialog.employee_updated.connect(self._reload_workspace_after_create)
         dialog.exec()
 
-    # ###### АРХІВУВАННЯ ПРАЦІВНИКА / ARCHIVE EMPLOYEE ######
     def _archive_employee(self, row: EmployeeWorkspaceRow) -> None:
-        """Переміщує працівника в архів з підтвердженням."""
-
         if show_app_confirm_dialog(
             self,
             "Підтвердження",
@@ -203,12 +201,7 @@ class EmployeesScreen(QWidget):
             )
             self._reload_workspace_after_create("")
 
-    # ###### ОНОВЛЕННЯ ПІСЛЯ СТВОРЕННЯ / RELOAD AFTER CREATE ######
     def _reload_workspace_after_create(self, personnel_number: str) -> None:
-        """Оновлює workspace після збереження нового працівника.
-        Reloads workspace after a new employee is saved.
-        """
-
         self._workspace = load_employee_workspace(self._database_path)
         self.filter_bar.set_workspace(self._workspace)
         self.structure_tree.set_workspace(self._workspace)
@@ -217,10 +210,7 @@ class EmployeesScreen(QWidget):
             self.registry_table.select_employee(personnel_number)
 
 
-# ###### ПЕРЕВІРКА ФІЛЬТРІВ / FILTER MATCH ######
 def _row_matches_filters(row: EmployeeWorkspaceRow, values: dict[str, object]) -> bool:
-    """Checks whether employee row matches active filters."""
-
     search = str(values["search"])
     haystack = " ".join(
         [

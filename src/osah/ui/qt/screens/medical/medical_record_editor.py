@@ -17,7 +17,7 @@ from osah.ui.qt.components.checkable_options_menu_button import CheckableOptions
 from osah.ui.qt.components.date_line_edit import DateLineEdit
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
 from osah.ui.qt.components.info_tooltip_icon import InfoTooltipIcon
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.hints.normative_hints import MEDICAL_BASIS_HINT, MEDICAL_DECISION_HINT, MEDICAL_RESTRICTIONS_HINT
 
 
@@ -34,6 +34,37 @@ class MedicalRecordEditor(QWidget):
         self._access_role = access_role
         self._read_only = access_role != AccessRole.INSPECTOR
         self._current_record_id: int | None = None
+        self.setStyleSheet(
+            f"""
+            QComboBox, QLineEdit, QTextEdit {{
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QComboBox, QLineEdit {{
+                min-height: 40px;
+                padding: 0 14px;
+            }}
+            QTextEdit {{
+                padding: 10px 12px;
+            }}
+            QLabel {{
+                color: {COLOR['text_secondary']};
+                font-size: 14px;
+                font-weight: 700;
+            }}
+            QPushButton {{
+                min-height: 42px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

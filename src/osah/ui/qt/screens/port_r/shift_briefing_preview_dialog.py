@@ -34,14 +34,33 @@ class ShiftBriefingPreviewDialog(QDialog):
         self.setWindowTitle("Оперативний лист зміни")
         self.setModal(True)
         self.setMinimumWidth(560)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["md"])
 
         title_label = QLabel("Оперативний лист зміни створено")
-        title_label.setStyleSheet("font-weight: bold; font-size: 13px;")
+        title_label.setStyleSheet("font-weight: 800; font-size: 22px; color: #102846;")
         layout.addWidget(title_label)
 
         summary_lines = (

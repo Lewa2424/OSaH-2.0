@@ -2,18 +2,18 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QLineEdit, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class StructureTreePanel(QWidget):
-    """Ліва панель ієрархії підприємства для модуля працівників.
-    Left enterprise hierarchy panel for the employees module.
-    """
+    """Left enterprise hierarchy panel for the employees module. / Левая панель организационной структуры."""
 
     node_selected = Signal(str, str)
+
     def __init__(self, workspace: EmployeeWorkspace) -> None:
         super().__init__()
         self._workspace = workspace
+        self.setObjectName("structureTreePanel")
         self.setMinimumWidth(250)
         self.setMaximumWidth(320)
 
@@ -21,12 +21,60 @@ class StructureTreePanel(QWidget):
         layout.setContentsMargins(0, 0, SPACING["md"], 0)
         layout.setSpacing(SPACING["sm"])
 
+        self.setStyleSheet(
+            f"""
+            QWidget#structureTreePanel {{
+                background: transparent;
+            }}
+            QWidget#structureTreePanel QLabel#treeTitle {{
+                color: {COLOR['text_primary']};
+                font-size: 21px;
+                font-weight: 900;
+            }}
+            QWidget#structureTreePanel QLabel#treeSummary {{
+                color: {COLOR['accent']};
+                font-size: 13px;
+                font-weight: 800;
+            }}
+            QWidget#structureTreePanel QLineEdit {{
+                min-height: 40px;
+                background: {COLOR['bg_card']};
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+            }}
+            QWidget#structureTreePanel QTreeWidget {{
+                background: {COLOR['bg_card']};
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['xl']}px;
+                padding: 10px 8px;
+            }}
+            QWidget#structureTreePanel QTreeWidget::item {{
+                height: 34px;
+                padding: 4px 8px;
+                margin: 1px 0;
+                border-radius: 10px;
+                color: {COLOR['text_primary']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            QWidget#structureTreePanel QTreeWidget::item:hover {{
+                background: {COLOR['hover_bg']};
+            }}
+            QWidget#structureTreePanel QTreeWidget::item:selected {{
+                background: {COLOR['selection_bg']};
+                color: {COLOR['text_primary']};
+                border: 1px solid {COLOR['accent_soft']};
+            }}
+            """
+        )
+
         title = QLabel("Організаційна структура")
-        title.setStyleSheet("font-size: 14px; font-weight: 900;")
+        title.setObjectName("treeTitle")
         layout.addWidget(title)
 
         self._summary_label = QLabel()
-        self._summary_label.setStyleSheet(f"color: {COLOR['text_secondary']}; font-size: 10px; font-weight: 700;")
+        self._summary_label.setObjectName("treeSummary")
         layout.addWidget(self._summary_label)
 
         self._search_input = QLineEdit()
@@ -41,30 +89,17 @@ class StructureTreePanel(QWidget):
         self.tree.setIndentation(18)
         self.tree.setUniformRowHeights(False)
         self.tree.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.tree.setStyleSheet(
-            f"QTreeWidget {{ padding: 6px 0; }}"
-            f"QTreeWidget::item {{ height: 30px; padding: 4px 6px; }}"
-            f"QTreeWidget::item:hover {{ background: {COLOR['hover_bg']}; }}"
-            f"QTreeWidget::item:selected {{ background: {COLOR['selection_bg']}; color: {COLOR['text_primary']}; }}"
-        )
         self.tree.itemSelectionChanged.connect(self._emit_selected_node)
         layout.addWidget(self.tree)
         self.refresh()
 
-    # ###### ОНОВЛЕННЯ WORKSPACE / UPDATE WORKSPACE ######
     def set_workspace(self, workspace: EmployeeWorkspace) -> None:
-        """Оновлює джерело даних дерева і перебудовує вузли.
-        Updates tree data source and rebuilds nodes.
-        """
-
+        """Updates tree data source and rebuilds nodes. / Обновляет источник данных дерева."""
         self._workspace = workspace
         self.refresh()
 
-    # ###### ОНОВЛЕННЯ ДЕРЕВА / REFRESH TREE ######
     def refresh(self) -> None:
-        """Будує дерево підприємство-підрозділ-посада з проблемними лічильниками.
-        Builds the enterprise-department-position tree with problem counters.
-        """
+        """Builds the enterprise-department-position tree. / Строит дерево предприятие-подразделение-должность."""
 
         self.tree.clear()
         root = self._build_tree_item(self._workspace.enterprise_name, self._workspace.rows)
@@ -85,16 +120,11 @@ class StructureTreePanel(QWidget):
                 department_item.addChild(position_item)
 
         self.tree.expandItem(root)
-        self._summary_label.setText(
-            f"{len(self._workspace.rows)} працівників • {len(departments)} підрозділів"
-        )
+        self._summary_label.setText(f"{len(self._workspace.rows)} працівників • {len(departments)} підрозділів")
         self._apply_search_filter(self._search_input.text())
 
-    # ###### ВИБІР ВУЗЛА / SELECT NODE ######
     def _emit_selected_node(self) -> None:
-        """Передає вибраний вузол екрана як тип і значення фільтра.
-        Emits selected node as filter type and value.
-        """
+        """Emits selected node as a filter intent. / Передает выбранный узел как намерение фильтра."""
 
         selected = self.tree.selectedItems()
         if not selected:
@@ -102,30 +132,15 @@ class StructureTreePanel(QWidget):
         node_kind, node_value = selected[0].data(0, 256)
         self.node_selected.emit(node_kind, node_value)
 
-    # ###### ПІДПИС ВУЗЛА / NODE LABEL ######
     def _format_node(self, name: str, rows: tuple) -> str:
-        """Формує текст вузла з кількістю працівників.
-        Builds node text with employee count.
-        """
-
         return f"{name} ({len(rows)})"
 
-    # ###### ПОБУДОВА ВУЗЛА / BUILD TREE ITEM ######
     def _build_tree_item(self, name: str, rows: tuple) -> QTreeWidgetItem:
-        """Створює вузол дерева з окремим лічильником і маркером стану.
-        Builds tree item with separate count and status marker.
-        """
-
         item = QTreeWidgetItem([self._format_node(name, rows)])
         item.setToolTip(0, f"{name}\nПрацівників: {len(rows)}")
         return item
 
-    # ###### ПОШУК ПО ДЕРЕВУ / TREE SEARCH FILTER ######
     def _apply_search_filter(self, search_text: str) -> None:
-        """Фільтрує дерево по назві підрозділу або посади.
-        Filters tree by department or position name.
-        """
-
         if self.tree.topLevelItemCount() == 0:
             return
         root = self.tree.topLevelItem(0)
@@ -137,12 +152,7 @@ class StructureTreePanel(QWidget):
             self.tree.collapseAll()
             self.tree.expandItem(root)
 
-    # ###### РЕКУРСИВНИЙ ФІЛЬТР ДЕРЕВА / RECURSIVE TREE FILTER ######
     def _filter_item_recursive(self, item: QTreeWidgetItem, normalized_search_text: str) -> bool:
-        """Повертає True, якщо вузол або дочірні вузли проходять фільтр.
-        Returns True when item or descendants match the filter.
-        """
-
         own_match = not normalized_search_text or normalized_search_text in item.text(0).lower()
         child_match = False
         for child_index in range(item.childCount()):

@@ -1,29 +1,27 @@
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class CancelWorkPermitDialog(QDialog):
-    """Діалог скасування наряду-допуску з обов'язковою причиною.
-    Dialog for canceling a work permit with a required reason.
-    """
+    """Dialog for canceling a work permit with a required reason. / Діалог скасування наряду."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Скасувати наряд")
         self.setModal(True)
-        self.resize(520, 260)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.resize(520, 280)
+        self.setStyleSheet(_dialog_stylesheet())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["xl"], SPACING["xl"], SPACING["xl"], SPACING["xl"])
         layout.setSpacing(SPACING["md"])
 
         layout.addWidget(QLabel("Вкажіть причину скасування поточного наряду."))
 
         self._reason_input = QTextEdit()
-        self._reason_input.setMinimumHeight(110)
+        self._reason_input.setMinimumHeight(120)
         layout.addWidget(self._reason_input)
 
         self._feedback_label = FormFeedbackLabel()
@@ -43,10 +41,6 @@ class CancelWorkPermitDialog(QDialog):
         layout.addLayout(buttons_row)
 
     def reason_text(self) -> str:
-        """Повертає нормалізовану причину скасування.
-        Returns the normalized cancellation reason.
-        """
-
         return self._reason_input.toPlainText().strip()
 
     def _accept_if_valid(self) -> None:
@@ -54,3 +48,31 @@ class CancelWorkPermitDialog(QDialog):
             self._feedback_label.show_error("Потрібно вказати причину скасування наряду.")
             return
         self.accept()
+
+
+def _dialog_stylesheet() -> str:
+    return f"""
+    QDialog {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F8FBFD, stop:1 #EFF4F9);
+    }}
+    QLabel {{
+        color: {COLOR['text_primary']};
+        font-size: 14px;
+        font-weight: 700;
+    }}
+    QTextEdit {{
+        background: #FFFFFF;
+        border: 1px solid #CBD6E2;
+        border-radius: {RADIUS['lg']}px;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }}
+    QPushButton {{
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 800;
+    }}
+    """

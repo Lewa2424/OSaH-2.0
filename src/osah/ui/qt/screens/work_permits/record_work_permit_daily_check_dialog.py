@@ -4,33 +4,29 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QPushButt
 
 from osah.domain.services.normalize_ui_datetime_text import normalize_ui_datetime_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class RecordWorkPermitDailyCheckDialog(QDialog):
-    """Модальне вікно фіксації щоденної перевірки місця робіт.
-    Modal dialog for recording a daily work-area check.
-    """
+    """Modal dialog for recording a daily work-area check. / Діалог щоденної перевірки."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Щоденна перевірка")
         self.setModal(True)
-        self.resize(460, 280)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.resize(500, 320)
+        self.setStyleSheet(_dialog_stylesheet())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["xl"], SPACING["xl"], SPACING["xl"], SPACING["xl"])
         layout.setSpacing(SPACING["md"])
 
         current_moment_text = datetime.now().strftime("%d.%m.%Y %H:%M")
         self._checked_at_input = QLineEdit(current_moment_text)
         self._checked_at_input.editingFinished.connect(self._normalize_checked_at_text)
         self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
-        self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM або YYYY-MM-DD HH:MM")
         layout.addWidget(QLabel("Дата та час перевірки"))
         layout.addWidget(self._checked_at_input)
-        self._checked_at_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
 
         self._checked_by_input = QLineEdit()
         self._checked_by_input.setPlaceholderText("Хто виконав перевірку місця робіт")
@@ -60,24 +56,12 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
         layout.addLayout(buttons_row)
 
     def checked_at_text(self) -> str:
-        """Повертає введені дату та час перевірки.
-        Returns the entered daily-check datetime.
-        """
-
         return self._checked_at_input.text().strip()
 
     def checked_by_text(self) -> str:
-        """Повертає введене ім'я відповідального за перевірку.
-        Returns the entered check operator name.
-        """
-
         return self._checked_by_input.text().strip()
 
     def note_text(self) -> str:
-        """Повертає введену примітку до перевірки.
-        Returns the entered daily-check note.
-        """
-
         return self._note_input.toPlainText().strip()
 
     def _normalize_checked_at_text(self) -> None:
@@ -91,10 +75,6 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
             self._feedback_label.show_error(str(error))
 
     def _accept_if_valid(self) -> None:
-        """Перевіряє обов'язкові поля перед збереженням.
-        Validates required fields before saving.
-        """
-
         if not self.checked_at_text():
             self._feedback_label.show_error("Потрібно вказати дату та час щоденної перевірки.")
             return
@@ -107,3 +87,37 @@ class RecordWorkPermitDailyCheckDialog(QDialog):
             self._feedback_label.show_error("Потрібно вказати, хто виконав щоденну перевірку.")
             return
         self.accept()
+
+
+def _dialog_stylesheet() -> str:
+    return f"""
+    QDialog {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F8FBFD, stop:1 #EFF4F9);
+    }}
+    QLabel {{
+        color: {COLOR['text_primary']};
+        font-size: 14px;
+        font-weight: 700;
+    }}
+    QLineEdit, QTextEdit {{
+        background: #FFFFFF;
+        border: 1px solid #CBD6E2;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 600;
+    }}
+    QLineEdit {{
+        min-height: 40px;
+        padding: 0 14px;
+    }}
+    QTextEdit {{
+        padding: 10px 12px;
+    }}
+    QPushButton {{
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 800;
+    }}
+    """

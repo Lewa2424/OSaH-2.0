@@ -73,8 +73,8 @@ powershell -ExecutionPolicy Bypass -File installer_DEMO\build_clearwork.ps1
 
 Outputs (local, not committed — `*.exe` in `.gitignore`):
 
-- `installer\ClearWork-Setup-0.8.3.exe`
-- `installer_DEMO\ClearWork-Demo-Setup-0.8.3.exe`
+- `installer\ClearWork-Setup-1.1.3.exe`
+- `installer_DEMO\ClearWork-Demo-Setup-1.1.3.exe`
 
 The build scripts also generate `installer\ClearWork_швидкий_старт.pdf` (client quick-start, bundled into installers).
 

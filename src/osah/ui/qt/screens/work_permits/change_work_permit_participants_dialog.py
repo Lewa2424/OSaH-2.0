@@ -1,13 +1,5 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.employee import Employee
 from osah.domain.entities.work_permit_participant import WorkPermitParticipant
@@ -15,13 +7,11 @@ from osah.domain.entities.work_permit_participant_role import WorkPermitParticip
 from osah.domain.services.format_work_permit_participant_role_label import format_work_permit_participant_role_label
 from osah.domain.services.validate_work_permit_participant_change import validate_work_permit_participant_change
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class ChangeWorkPermitParticipantsDialog(QDialog):
-    """Модальне вікно керування складом бригади наряду-допуску.
-    Modal dialog for editing the work-permit brigade composition.
-    """
+    """Modal dialog for editing brigade composition. / Діалог керування складом бригади."""
 
     def __init__(
         self,
@@ -34,24 +24,20 @@ class ChangeWorkPermitParticipantsDialog(QDialog):
         self._employees = employees
         self._initial_participants = participants
         self._enforce_change_rules = enforce_change_rules
-        self._employee_by_number = {
-            employee.personnel_number.strip(): employee
-            for employee in employees
-        }
+        self._employee_by_number = {employee.personnel_number.strip(): employee for employee in employees}
         self._rows: list[_ParticipantRow] = []
 
         self.setWindowTitle("Склад бригади")
         self.setModal(True)
-        self.resize(680, 420)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.resize(720, 460)
+        self.setStyleSheet(_dialog_stylesheet())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["xl"], SPACING["xl"], SPACING["xl"], SPACING["xl"])
         layout.setSpacing(SPACING["md"])
 
         title = QLabel(
-            "Змініть склад бригади окремою процедурою. "
-            "Якщо вибуває більше 50% учасників, потрібен новий наряд-допуск."
+            "Змініть склад бригади окремою процедурою. Якщо вибуває більше 50% учасників, потрібен новий наряд-допуск."
         )
         title.setWordWrap(True)
         layout.addWidget(title)
@@ -85,18 +71,11 @@ class ChangeWorkPermitParticipantsDialog(QDialog):
 
         seed_participants = participants or self._default_participants()
         for participant in seed_participants:
-            self._append_row(
-                participant.employee_personnel_number,
-                participant.participant_role,
-            )
+            self._append_row(participant.employee_personnel_number, participant.participant_role)
         if not self._rows:
             self._add_empty_row()
 
     def participants(self) -> tuple[WorkPermitParticipant, ...]:
-        """Повертає склад бригади, обраний у діалозі.
-        Returns the brigade composition selected in the dialog.
-        """
-
         result: list[WorkPermitParticipant] = []
         for row in self._rows:
             personnel_number = row.personnel_number().strip()
@@ -163,30 +142,23 @@ class ChangeWorkPermitParticipantsDialog(QDialog):
 
 
 class _ParticipantRow(QWidget):
-    """Рядок редагування одного учасника бригади.
-    Single editable brigade participant row.
-    """
+    """Single editable brigade participant row. / Рядок одного учасника бригади."""
 
     remove_requested = Signal()
 
-    def __init__(
-        self,
-        employees: tuple[Employee, ...],
-        personnel_number: str,
-        participant_role: WorkPermitParticipantRole,
-    ) -> None:
+    def __init__(self, employees: tuple[Employee, ...], personnel_number: str, participant_role: WorkPermitParticipantRole) -> None:
         super().__init__()
+        self.setStyleSheet(
+            f"background: #F7FAFD; border: 1px solid #E1E8EF; border-radius: {RADIUS['lg']}px;"
+        )
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(SPACING["sm"], SPACING["sm"], SPACING["sm"], SPACING["sm"])
         layout.setSpacing(SPACING["sm"])
 
         self._employee_input = QComboBox()
         self._employee_input.addItem("Оберіть працівника", "")
         for employee in employees:
-            self._employee_input.addItem(
-                f"{employee.full_name} ({employee.personnel_number})",
-                employee.personnel_number,
-            )
+            self._employee_input.addItem(f"{employee.full_name} ({employee.personnel_number})", employee.personnel_number)
         self._employee_input.setCurrentIndex(max(0, self._employee_input.findData(personnel_number.strip())))
         layout.addWidget(self._employee_input, stretch=1)
 
@@ -202,18 +174,39 @@ class _ParticipantRow(QWidget):
         layout.addWidget(remove_button)
 
     def personnel_number(self) -> str:
-        """Повертає вибраний табельний номер.
-        Returns the selected personnel number.
-        """
-
         return str(self._employee_input.currentData() or "")
 
     def role(self) -> WorkPermitParticipantRole:
-        """Повертає обрану роль учасника.
-        Returns the selected participant role.
-        """
-
         return WorkPermitParticipantRole(str(self._role_input.currentData() or WorkPermitParticipantRole.TEAM_MEMBER.value))
 
     def _emit_remove_requested(self) -> None:
         self.remove_requested.emit()
+
+
+def _dialog_stylesheet() -> str:
+    return f"""
+    QDialog {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F8FBFD, stop:1 #EFF4F9);
+    }}
+    QLabel {{
+        color: {COLOR['text_primary']};
+        font-size: 14px;
+        font-weight: 700;
+    }}
+    QComboBox {{
+        min-height: 40px;
+        background: #FFFFFF;
+        border: 1px solid #CBD6E2;
+        border-radius: {RADIUS['lg']}px;
+        padding: 0 14px;
+        font-size: 14px;
+        font-weight: 600;
+    }}
+    QPushButton {{
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 800;
+    }}
+    """

@@ -54,7 +54,26 @@ class PortShiftRecordDialog(QDialog):
         self.setWindowTitle(f"Оцінка зміни — {row.shift_date} ({row.passport_code})")
         self.setModal(True)
         self.resize(620, 640)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         root = QVBoxLayout(self)
         root.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -149,8 +168,8 @@ class PortShiftRecordDialog(QDialog):
         frame = QFrame()
         border = COLOR["status_critical"] if item.is_stop_trigger else COLOR["border_soft"]
         frame.setStyleSheet(
-            f"QFrame {{ background: {COLOR['bg_workspace']}; border: 1px solid {border};"
-            f" border-radius: 6px; }}"
+            f"QFrame {{ background: rgba(255, 255, 255, 0.88); border: 1px solid {border};"
+            f" border-radius: 16px; }}"
         )
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(SPACING["sm"], SPACING["xs"], SPACING["sm"], SPACING["xs"])

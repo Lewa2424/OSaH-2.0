@@ -6,21 +6,57 @@ from osah.domain.entities.ppe_workspace import PpeWorkspace
 from osah.domain.entities.ppe_workspace_mode import PpeWorkspaceMode
 from osah.domain.services.build_default_ppe_names import build_default_ppe_names
 from osah.domain.services.format_ppe_status_label import format_ppe_status_label
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class PpeFilterBar(QWidget):
-    """Панель пошуку, фільтрів і режимів перегляду ЗІЗ.
-    Search, filter and view-mode bar for PPE.
-    """
+    """Search, filter and view-mode bar for PPE. / Панель пошуку і фільтрів ЗІЗ."""
 
     filters_changed = Signal()
 
     def __init__(self, workspace: PpeWorkspace) -> None:
         super().__init__()
+        self.setObjectName("ppeFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#ppeFilterBar {{
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#ppeFilterBar QComboBox,
+            QWidget#ppeFilterBar QLineEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#ppeFilterBar QComboBox::drop-down {{
+                width: 30px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#ppeFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#ppeFilterBar QLabel {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(SPACING["xs"])
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
         row = QHBoxLayout()
         outer.addLayout(row)
 
@@ -89,10 +125,6 @@ class PpeFilterBar(QWidget):
         second.addWidget(self.active_filters_label)
 
     def reset_filters(self) -> None:
-        """Скидає всі фільтри модуля ЗІЗ.
-        Resets all PPE module filters.
-        """
-
         self.search_input.clear()
         for combo in (
             self.ppe_filter,
@@ -108,28 +140,16 @@ class PpeFilterBar(QWidget):
         self.filters_changed.emit()
 
     def set_status_filter(self, status: PpeStatus) -> None:
-        """Активує фільтр статусу з navigation intent.
-        Activates status filter from navigation intent.
-        """
-
         index = self.status_filter.findData(status.value)
         if index >= 0:
             self.status_filter.setCurrentIndex(index)
 
     def set_employee_filter(self, personnel_number: str) -> None:
-        """Активує фільтр працівника з navigation intent.
-        Activates employee filter from navigation intent.
-        """
-
         index = self.employee_filter.findData(personnel_number)
         if index >= 0:
             self.employee_filter.setCurrentIndex(index)
 
     def values(self) -> dict[str, str]:
-        """Повертає поточний стан фільтрів.
-        Returns the current filter state.
-        """
-
         values = {
             "mode": self.mode_filter.currentData() or PpeWorkspaceMode.BY_EMPLOYEES.value,
             "search": self.search_input.text().strip().lower(),
@@ -144,10 +164,6 @@ class PpeFilterBar(QWidget):
         return values
 
     def _update_active_filters_label(self) -> None:
-        """Оновлює текстовий індикатор активних фільтрів.
-        Updates textual indicator of active filters.
-        """
-
         active_count = sum(
             1
             for value in (

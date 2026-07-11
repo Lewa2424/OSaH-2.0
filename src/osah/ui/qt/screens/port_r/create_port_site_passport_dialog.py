@@ -59,7 +59,64 @@ class CreatePortSitePassportDialog(QDialog):
         self.setWindowTitle("Редагування паспорта ділянки" if passport_id is not None else "Створення паспорта ділянки")
         self.setModal(True)
         self.resize(760, 760)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QLineEdit,
+            QTextEdit,
+            QComboBox {{
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #C8D6E5;
+                border-radius: 14px;
+                padding: 0 12px;
+                font-size: 14px;
+            }}
+            QCheckBox {{
+                font-size: 14px;
+                color: {COLOR['text_primary']};
+                spacing: 10px;
+            }}
+            QTabWidget::pane {{
+                border: 1px solid #D6E1EC;
+                border-radius: 22px;
+                background: rgba(255, 255, 255, 0.9);
+                top: -1px;
+            }}
+            QTabBar::tab {{
+                min-height: 38px;
+                padding: 0 16px;
+                margin-right: 8px;
+                border: 1px solid #D6E1EC;
+                border-bottom: none;
+                border-top-left-radius: 16px;
+                border-top-right-radius: 16px;
+                background: rgba(232, 239, 246, 0.96);
+                font-size: 14px;
+                font-weight: 700;
+                color: #36557A;
+            }}
+            QTabBar::tab:selected {{
+                background: rgba(255, 255, 255, 0.98);
+                color: #102846;
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])

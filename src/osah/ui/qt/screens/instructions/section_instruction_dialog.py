@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.version import __version__
 
 
 class SectionInstructionDialog(QDialog):
@@ -60,7 +61,7 @@ class SectionInstructionDialog(QDialog):
         scroll.setWidget(content)
         root.addWidget(scroll, stretch=1)
 
-        footer = QLabel("Матеріали за станом ClearWork 0.8.3")
+        footer = QLabel(f"Матеріали за станом ClearWork {__version__}")
         footer.setStyleSheet(f"color: {COLOR['text_muted']}; font-size: 11px;")
         root.addWidget(footer)
 

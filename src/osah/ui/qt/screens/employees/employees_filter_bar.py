@@ -3,21 +3,58 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLineEdit, QPus
 
 from osah.domain.entities.employee_status_level import EmployeeStatusLevel
 from osah.domain.entities.employee_workspace import EmployeeWorkspace
-from osah.ui.qt.design.tokens import SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class EmployeesFilterBar(QWidget):
-    """Верхня панель пошуку і фільтрів модуля працівників.
-    Top search and filter bar for the employees module.
-    """
+    """Top search and filter bar for the employees module. / Верхняя панель поиска и фильтров модуля работников."""
 
     filters_changed = Signal()
 
     def __init__(self, workspace: EmployeeWorkspace) -> None:
         super().__init__()
+        self.setObjectName("employeesFilterBar")
+
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])
         layout.setSpacing(SPACING["sm"])
+
+        self.setStyleSheet(
+            f"""
+            QWidget#employeesFilterBar {{
+                background: {COLOR['bg_card']};
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['xl']}px;
+            }}
+            QWidget#employeesFilterBar QLineEdit,
+            QWidget#employeesFilterBar QComboBox {{
+                min-height: 40px;
+                padding: 0 14px;
+                border-radius: 14px;
+            }}
+            QWidget#employeesFilterBar QCheckBox {{
+                font-size: 13px;
+                font-weight: 700;
+                color: {COLOR['text_secondary']};
+                spacing: 8px;
+            }}
+            QWidget#employeesFilterBar QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+                border-radius: 5px;
+                border: 1px solid {COLOR['input_border']};
+                background: {COLOR['bg_card']};
+            }}
+            QWidget#employeesFilterBar QCheckBox::indicator:checked {{
+                background: {COLOR['accent']};
+                border: 1px solid {COLOR['accent']};
+            }}
+            QWidget#employeesFilterBar QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+            }}
+            """
+        )
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Пошук: ПІБ, табельний, посада, підрозділ, участок")
@@ -59,16 +96,13 @@ class EmployeesFilterBar(QWidget):
         self.warning_only.stateChanged.connect(lambda _state: self.filters_changed.emit())
         layout.addWidget(self.warning_only)
 
-        reset_button = QPushButton("Скинути")
-        reset_button.setProperty("variant", "secondary")
-        reset_button.clicked.connect(self.reset_filters)
-        layout.addWidget(reset_button)
+        self._reset_button = QPushButton("Скинути")
+        self._reset_button.setProperty("variant", "secondary")
+        self._reset_button.clicked.connect(self.reset_filters)
+        layout.addWidget(self._reset_button)
 
-    # ###### ОНОВЛЕННЯ WORKSPACE / UPDATE WORKSPACE ######
     def set_workspace(self, workspace: EmployeeWorkspace) -> None:
-        """Оновлює списки фільтрів підрозділів і посад із нового workspace.
-        Updates department and position filter choices from a new workspace.
-        """
+        """Updates department and position filter choices from a new workspace. / Обновляет списки подразделений и должностей."""
 
         current_search = self.search_input.text()
         current_department = self.department_filter.currentData() or ""
@@ -97,11 +131,8 @@ class EmployeesFilterBar(QWidget):
         self.position_filter.blockSignals(False)
         self.search_input.setText(current_search)
 
-    # ###### СКИДАННЯ ФІЛЬТРІВ / RESET FILTERS ######
     def reset_filters(self) -> None:
-        """Повертає всі фільтри до початкового стану.
-        Returns all filters to the initial state.
-        """
+        """Returns all filters to the initial state. / Сбрасывает все фильтры в исходное состояние."""
 
         self.search_input.clear()
         self.department_filter.setCurrentIndex(0)
@@ -111,31 +142,22 @@ class EmployeesFilterBar(QWidget):
         self.warning_only.setChecked(False)
         self.filters_changed.emit()
 
-    # ###### ВСТАНОВЛЕННЯ ПІДРОЗДІЛУ / SET DEPARTMENT ######
     def set_department_filter(self, department_name: str) -> None:
-        """Активує фільтр підрозділу з дерева структури.
-        Activates the department filter from the structure tree.
-        """
+        """Activates the department filter from the structure tree. / Активирует фильтр подразделения из дерева."""
 
         index = self.department_filter.findData(department_name)
         if index >= 0:
             self.department_filter.setCurrentIndex(index)
 
-    # ###### ВСТАНОВЛЕННЯ ПОСАДИ / SET POSITION ######
     def set_position_filter(self, position_name: str) -> None:
-        """Активує фільтр посади з дерева структури.
-        Activates the position filter from the structure tree.
-        """
+        """Activates the position filter from the structure tree. / Активирует фильтр должности из дерева."""
 
         index = self.position_filter.findData(position_name)
         if index >= 0:
             self.position_filter.setCurrentIndex(index)
 
-    # ###### ЗНАЧЕННЯ ФІЛЬТРІВ / FILTER VALUES ######
     def values(self) -> dict[str, object]:
-        """Повертає поточний стан фільтрів як простий словник.
-        Returns current filter state as a simple dictionary.
-        """
+        """Returns current filter state as a dictionary. / Возвращает текущее состояние фильтров."""
 
         return {
             "search": self.search_input.text().strip().lower(),

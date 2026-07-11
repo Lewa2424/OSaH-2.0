@@ -9,6 +9,7 @@ from osah.application.services.mark_news_item_as_read import mark_news_item_as_r
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.news_item_read_state import NewsItemReadState
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
 from osah.ui.qt.screens.news.news_item_detail_panel import NewsItemDetailPanel
@@ -23,6 +24,8 @@ class NewsScreen(QWidget):
         self._database_path = database_path
         self._access_role = access_role
         self._read_only = access_role != AccessRole.INSPECTOR
+
+        install_ambient_background(self, "newsScreen", theme="news")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -48,6 +51,7 @@ class NewsScreen(QWidget):
         filters_row.setSpacing(SPACING["md"])
 
         self.unread_only = QCheckBox("Показувати тільки нові")
+        self.unread_only.setStyleSheet("font-size: 15px; font-weight: 600; color: #17365D; spacing: 10px;")
         self.unread_only.stateChanged.connect(lambda _: self._reload_state())
         filters_row.addWidget(self.unread_only)
         filters_row.addStretch()

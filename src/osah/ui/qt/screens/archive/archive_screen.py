@@ -8,6 +8,7 @@ from osah.application.services.reactivate_archived_employee import reactivate_ar
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.entities.archive_entry import ArchiveEntry
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.screen_states import EmptyStateWidget
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
@@ -26,6 +27,16 @@ class ArchiveScreen(QWidget):
         self._database_path = database_path
         self._access_role = access_role
         self._workspace = load_archive_workspace(database_path)
+
+        install_ambient_background(
+            self,
+            "archiveScreen",
+            theme="archive",
+            extra_rules="""
+            QWidget#archiveScreen QSplitter::handle { background: transparent; }
+            QWidget#archiveScreen QSplitter::handle:horizontal { width: 10px; }
+            """,
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])

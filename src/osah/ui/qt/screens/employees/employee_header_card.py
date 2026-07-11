@@ -6,18 +6,35 @@ from osah.ui.qt.screens.employees.employee_photo_widget import EmployeePhotoWidg
 
 
 class EmployeeHeaderCard(QFrame):
-    """Шапка картки працівника з фото, даними і статусами.
-    Employee card header with photo, identity data and statuses.
-    """
+    """Employee card header with photo and identity data. / Шапка карточки работника с фото и идентификацией."""
 
     def __init__(self, row: EmployeeWorkspaceRow) -> None:
         super().__init__()
         self.setObjectName("employeeHeaderCard")
         self.setStyleSheet(
-            f"QFrame#employeeHeaderCard {{ "
-            f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['xl']}px; "
-            f"}}"
+            f"""
+            QFrame#employeeHeaderCard {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #FFFFFF, stop:0.55 #F7FAFD, stop:1 #ECF3FA);
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QLabel#employeeHeaderName {{
+                color: {COLOR['text_primary']};
+                font-size: 22px;
+                font-weight: 900;
+            }}
+            QLabel[role="employeeHeaderTitle"] {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 800;
+            }}
+            QLabel[role="employeeHeaderValue"] {{
+                color: {COLOR['text_primary']};
+                font-size: 15px;
+                font-weight: 700;
+            }}
+            """
         )
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -27,12 +44,13 @@ class EmployeeHeaderCard(QFrame):
 
         info_layout = QVBoxLayout()
         info_layout.setSpacing(SPACING["sm"])
+
         name = QLabel(row.employee.full_name)
-        name.setStyleSheet("font-size: 19px; font-weight: 900;")
+        name.setObjectName("employeeHeaderName")
         info_layout.addWidget(name)
 
         grid = QGridLayout()
-        grid.setHorizontalSpacing(SPACING["lg"])
+        grid.setHorizontalSpacing(SPACING["xl"])
         grid.setVerticalSpacing(SPACING["xs"])
         _add_pair(grid, 0, "Табельний номер", row.employee.personnel_number)
         _add_pair(grid, 1, "Посада", row.position_name)
@@ -42,16 +60,12 @@ class EmployeeHeaderCard(QFrame):
         layout.addLayout(info_layout, stretch=1)
 
 
-
-# ###### ПАРА ПОЛІВ ШАПКИ / HEADER FIELD PAIR ######
 def _add_pair(grid: QGridLayout, row_index: int, title: str, value: str) -> None:
-    """Додає одну пару 'назва-значення' в шапку картки.
-    Adds one title-value pair into the card header.
-    """
+    """Adds title/value pair to the header. / Добавляет пару заголовок/значение в шапку."""
 
     title_label = QLabel(title)
-    title_label.setStyleSheet(f"color: {COLOR['text_muted']}; font-weight: 700;")
+    title_label.setProperty("role", "employeeHeaderTitle")
     value_label = QLabel(value)
-    value_label.setStyleSheet(f"color: {COLOR['text_primary']};")
+    value_label.setProperty("role", "employeeHeaderValue")
     grid.addWidget(title_label, row_index, 0)
     grid.addWidget(value_label, row_index, 1)

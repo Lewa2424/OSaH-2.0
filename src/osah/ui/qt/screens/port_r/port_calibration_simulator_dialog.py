@@ -61,7 +61,31 @@ class PortCalibrationSimulatorDialog(QDialog):
         self.setWindowTitle(f"Симулятор калібрування{title_suffix}")
         self.setModal(True)
         self.resize(620, 640)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QCheckBox {{
+                font-size: 14px;
+                color: {COLOR['text_primary']};
+                spacing: 10px;
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         try:
             self._calibration = load_port_calibration_for_passport(database_path, passport_id)
@@ -166,8 +190,8 @@ class PortCalibrationSimulatorDialog(QDialog):
     def _build_result_panel(self) -> QFrame:
         frame = QFrame()
         frame.setStyleSheet(
-            f"QFrame {{ background: {COLOR['bg_workspace']}; border: 1px solid {COLOR['border_soft']};"
-            f" border-radius: 6px; }}"
+            f"QFrame {{ background: rgba(255, 255, 255, 0.9); border: 1px solid {COLOR['border_soft']};"
+            f" border-radius: 18px; }}"
         )
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(SPACING["md"], SPACING["sm"], SPACING["md"], SPACING["sm"])

@@ -12,7 +12,6 @@ from osah.ui.qt.screens.employees.employee_row_state_badge import EmployeeRowSta
 
 
 def _map_module_name_to_section(name: str) -> AppSection | None:
-    """Мапує локалізовану назву модуля на AppSection."""
     name_lower = name.lower()
     if "інструктаж" in name_lower:
         return AppSection.TRAININGS
@@ -26,9 +25,7 @@ def _map_module_name_to_section(name: str) -> AppSection | None:
 
 
 class EmployeeOverviewTab(QWidget):
-    """Вкладка огляду ОП-стану працівника.
-    Overview tab for an employee safety state.
-    """
+    """Overview tab for employee safety state. / Вкладка обзора состояния допусков работника."""
 
     module_clicked = Signal(AppSection)
 
@@ -38,10 +35,31 @@ class EmployeeOverviewTab(QWidget):
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
+        headline = QFrame()
+        headline.setObjectName("employeeOverviewHeadline")
+        headline.setStyleSheet(
+            f"""
+            QFrame#employeeOverviewHeadline {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #FFFFFF, stop:1 #F5F8FC);
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['xl']}px;
+            }}
+            QLabel#employeeOverviewAnswer {{
+                color: {COLOR['text_primary']};
+                font-size: 16px;
+                font-weight: 900;
+                line-height: 1.35;
+            }}
+            """
+        )
+        headline_layout = QVBoxLayout(headline)
+        headline_layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
         answer = QLabel(_build_admission_headline(row))
+        answer.setObjectName("employeeOverviewAnswer")
         answer.setWordWrap(True)
-        answer.setStyleSheet("font-size: 14px; font-weight: 800;")
-        layout.addWidget(answer)
+        headline_layout.addWidget(answer)
+        layout.addWidget(headline)
 
         layout.addWidget(EmployeeProblemSummary(row.problems))
 
@@ -59,10 +77,6 @@ class _ModuleSummaryCard(QFrame):
     clicked = Signal(AppSection)
 
     def __init__(self, summary: EmployeeModuleStatusSummary) -> None:
-        """Створює картку короткого стану одного ОП-модуля.
-        Creates a compact status card for one safety module.
-        """
-
         super().__init__()
         self.setObjectName("employeeModuleSummaryCard")
         self._target_section = _map_module_name_to_section(summary.module_name)
@@ -70,38 +84,44 @@ class _ModuleSummaryCard(QFrame):
             self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.setStyleSheet(
-            f"QFrame#employeeModuleSummaryCard {{ "
-            f"background: {COLOR['bg_card']}; border: 1px solid {COLOR['border_soft']}; "
-            f"border-radius: {RADIUS['lg']}px; "
-            f"}}"
-            f"QFrame#employeeModuleSummaryCard:hover {{ "
-            f"border: 1px solid {COLOR['accent']}; background: #f8f9fa; "
-            f"}}"
+            f"""
+            QFrame#employeeModuleSummaryCard {{
+                background: #FFFFFF;
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: {RADIUS['xl']}px;
+            }}
+            QFrame#employeeModuleSummaryCard:hover {{
+                border: 1px solid {COLOR['accent']};
+                background: #F8FBFD;
+            }}
+            QLabel#employeeModuleTitle {{
+                color: {COLOR['text_primary']};
+                font-size: 15px;
+                font-weight: 900;
+            }}
+            """
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["md"], SPACING["md"], SPACING["md"], SPACING["md"])
         layout.setSpacing(SPACING["sm"])
 
         title = QLabel(summary.module_name)
-        title.setStyleSheet("font-size: 12px; font-weight: 800;")
+        title.setObjectName("employeeModuleTitle")
         layout.addWidget(title)
         layout.addWidget(EmployeeRowStateBadge(summary.level, summary.label))
+
         reason = QLabel(summary.reason)
         reason.setWordWrap(True)
-        reason.setStyleSheet(f"color: {COLOR['text_secondary']};")
+        reason.setStyleSheet(f"color: {COLOR['text_secondary']}; font-size: 14px; font-weight: 600;")
         layout.addWidget(reason)
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.LeftButton and self._target_section:
             self.clicked.emit(self._target_section)
         super().mousePressEvent(event)
 
 
 def _build_admission_headline(row: EmployeeWorkspaceRow) -> str:
-    """Будує короткий дворядковий висновок для вкладки огляду працівника.
-    Builds a short two-line admission summary for the employee overview tab.
-    """
-
     if row.status_level == EmployeeStatusLevel.NORMAL:
         return "Зауважень не виявлено\nДопуск: до робіт допущений."
     return f"Увага! Немає допуску до робіт\nПричина: {row.status_reason}."

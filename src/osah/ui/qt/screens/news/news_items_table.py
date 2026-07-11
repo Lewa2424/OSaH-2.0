@@ -29,6 +29,24 @@ class NewsItemsTable(QTableWidget):
         self.setSortingEnabled(True)
         self.setShowGrid(False)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setStyleSheet(
+            """
+            QTableWidget {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #D6E1EC;
+                border-radius: 18px;
+                font-size: 14px;
+            }
+            QHeaderView::section {
+                background: #EAF1F7;
+                color: #17365D;
+                padding: 11px 8px;
+                border: none;
+                font-size: 13px;
+                font-weight: 800;
+            }
+            """
+        )
         header = self.horizontalHeader()
         header.setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         header.setStretchLastSection(False)

@@ -2,23 +2,21 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QPushButt
 
 from osah.domain.services.normalize_ui_datetime_text import normalize_ui_datetime_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class ExtendWorkPermitDialog(QDialog):
-    """Модальне вікно одноразового продовження наряду-допуску.
-    Modal dialog for one-time work permit extension.
-    """
+    """Modal dialog for one-time work permit extension. / Модальне вікно продовження наряду."""
 
     def __init__(self, current_ends_at_text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Продовжити наряд")
         self.setModal(True)
-        self.resize(460, 280)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.resize(500, 320)
+        self.setStyleSheet(_dialog_stylesheet())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(SPACING["xl"], SPACING["xl"], SPACING["xl"], SPACING["xl"])
         layout.setSpacing(SPACING["md"])
 
         current_label = QLabel(f"Поточний строк дії: {current_ends_at_text}")
@@ -28,10 +26,8 @@ class ExtendWorkPermitDialog(QDialog):
         self._extended_until_input = QLineEdit()
         self._extended_until_input.editingFinished.connect(self._normalize_extended_until_text)
         self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
-        self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM або YYYY-MM-DD HH:MM")
         layout.addWidget(QLabel("Нова дата та час завершення"))
         layout.addWidget(self._extended_until_input)
-        self._extended_until_input.setPlaceholderText("ДД.ММ.РРРР HH:MM")
 
         self._reason_input = QTextEdit()
         self._reason_input.setMaximumHeight(88)
@@ -56,17 +52,9 @@ class ExtendWorkPermitDialog(QDialog):
         layout.addLayout(buttons_row)
 
     def extended_until_text(self) -> str:
-        """Повертає введений новий строк завершення наряду.
-        Returns the entered new permit end term.
-        """
-
         return self._extended_until_input.text().strip()
 
     def extension_reason_text(self) -> str:
-        """Повертає введену причину продовження.
-        Returns the entered extension reason.
-        """
-
         return self._reason_input.toPlainText().strip()
 
     def _normalize_extended_until_text(self) -> None:
@@ -80,10 +68,6 @@ class ExtendWorkPermitDialog(QDialog):
             self._feedback_label.show_error(str(error))
 
     def _accept_if_valid(self) -> None:
-        """Перевіряє обов'язкові поля діалогу перед закриттям.
-        Validates required dialog fields before closing.
-        """
-
         if not self.extended_until_text():
             self._feedback_label.show_error("Потрібно вказати нову дату та час завершення.")
             return
@@ -96,3 +80,37 @@ class ExtendWorkPermitDialog(QDialog):
             self._feedback_label.show_error("Потрібно вказати причину продовження.")
             return
         self.accept()
+
+
+def _dialog_stylesheet() -> str:
+    return f"""
+    QDialog {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F8FBFD, stop:1 #EFF4F9);
+    }}
+    QLabel {{
+        color: {COLOR['text_primary']};
+        font-size: 14px;
+        font-weight: 700;
+    }}
+    QLineEdit, QTextEdit {{
+        background: #FFFFFF;
+        border: 1px solid #CBD6E2;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 600;
+    }}
+    QLineEdit {{
+        min-height: 40px;
+        padding: 0 14px;
+    }}
+    QTextEdit {{
+        padding: 10px 12px;
+    }}
+    QPushButton {{
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: {RADIUS['lg']}px;
+        font-size: 14px;
+        font-weight: 800;
+    }}
+    """

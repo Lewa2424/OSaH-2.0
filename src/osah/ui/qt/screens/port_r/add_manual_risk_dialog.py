@@ -21,7 +21,33 @@ class AddManualRiskDialog(QDialog):
         self.setWindowTitle("Додати ризик вручну")
         self.setModal(True)
         self.setMinimumWidth(540)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QTextEdit {{
+                background: #FFFFFF;
+                border: 1px solid #C8D6E5;
+                border-radius: 14px;
+                padding: 10px 12px;
+                font-size: 14px;
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])

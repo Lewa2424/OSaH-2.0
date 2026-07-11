@@ -11,6 +11,7 @@ from osah.application.services.load_manual_report_settings import load_manual_re
 from osah.domain.entities.access_role import AccessRole
 from osah.domain.services.build_manual_report_last_action_text import build_manual_report_last_action_text
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
@@ -31,6 +32,8 @@ class ReportsScreen(QWidget):
         self._access_role = access_role
         self._read_only = access_role != AccessRole.INSPECTOR
         self._last_report_path: Path | None = None
+
+        install_ambient_background(self, "reportsScreen", theme="reports")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -57,11 +60,12 @@ class ReportsScreen(QWidget):
             "Натисніть рядок, щоб побачити подробиці."
         )
         history_hint.setWordWrap(True)
-        history_hint.setStyleSheet("font-style: italic;")
+        history_hint.setStyleSheet("font-style: italic; font-size: 15px; color: #4F6480;")
         layout.addWidget(history_hint)
 
         history_title = QLabel("Історія сформованих звітів")
         history_title.setProperty("role", "section_title")
+        history_title.setStyleSheet("font-size: 22px; font-weight: 800; color: #0F2747;")
         layout.addWidget(history_title)
 
         self.history_table = ReportHistoryTable()

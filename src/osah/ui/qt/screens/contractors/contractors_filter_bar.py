@@ -1,7 +1,8 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from osah.domain.entities.contractor_readiness_status import ContractorReadinessStatus
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 
 
 class ContractorsFilterBar(QWidget):
@@ -13,8 +14,58 @@ class ContractorsFilterBar(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        layout = QHBoxLayout(self)
+        self.setObjectName("contractorsFilterBar")
+        self.setStyleSheet(
+            f"""
+            QWidget#contractorsFilterBar {{
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #D8E3EE;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#contractorsFilterBar QLineEdit,
+            QWidget#contractorsFilterBar QComboBox {{
+                min-height: 40px;
+                background: #FFFFFF;
+                color: {COLOR['text_primary']};
+                border: 1px solid #C8D6E5;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QWidget#contractorsFilterBar QLineEdit:focus,
+            QWidget#contractorsFilterBar QComboBox:focus {{
+                border: 1px solid {COLOR['accent']};
+                background: #FCFEFF;
+            }}
+            QWidget#contractorsFilterBar QComboBox::drop-down {{
+                width: 32px;
+                border: none;
+                background: transparent;
+            }}
+            QWidget#contractorsFilterBar QPushButton {{
+                min-height: 40px;
+                padding: 0 18px;
+                border-radius: {RADIUS['lg']}px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            QWidget#contractorsFilterBar QLabel#filterState {{
+                color: {COLOR['text_muted']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        outer.setSpacing(SPACING["sm"])
+
+        layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SPACING["sm"])
+        outer.addLayout(layout)
 
         self._search = QLineEdit()
         self._search.setPlaceholderText("Пошук: організація, контакт, телефон, email, робота")
@@ -37,7 +88,9 @@ class ContractorsFilterBar(QWidget):
         layout.addWidget(reset_button)
 
         self._active_label = QLabel("Фільтри не активні")
+        self._active_label.setObjectName("filterState")
         layout.addWidget(self._active_label)
+        layout.addStretch(1)
 
     def _reset(self) -> None:
         """Скидає активні фільтри підрядників.

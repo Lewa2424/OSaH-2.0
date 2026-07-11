@@ -75,8 +75,8 @@ class AlertCard(QWidget):
         badge.setStyleSheet(
             f"background: {badge_bg}; color: {accent_color};"
             f"border: 1px solid {accent_color};"
-            "border-radius: 10px; padding: 3px 10px;"
-            "font-size: 10px; font-weight: 700;"
+            "border-radius: 12px; padding: 4px 12px;"
+            "font-size: 12px; font-weight: 700;"
         )
         v.addWidget(badge, alignment=Qt.AlignmentFlag.AlignLeft)
 

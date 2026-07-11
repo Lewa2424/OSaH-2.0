@@ -13,7 +13,7 @@ class PpeStatusBadge(QLabel):
     def __init__(self, status: PpeStatus, text: str) -> None:
         super().__init__(text)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setMinimumHeight(24)
+        self.setMinimumHeight(28)
         self.setStyleSheet(_build_badge_style(status))
 
 
@@ -31,5 +31,5 @@ def _build_badge_style(status: PpeStatus) -> str:
     background, foreground = palette[status]
     return (
         f"background: {background}; color: {foreground}; border: 1px solid {foreground};"
-        "border-radius: 12px; padding: 3px 10px; font-size: 10px; font-weight: 800;"
+        "border-radius: 14px; padding: 4px 12px; font-size: 12px; font-weight: 800;"
     )

@@ -13,8 +13,35 @@ class ArchiveDetailsPane(QWidget):
         super().__init__()
         self._allow_reactivation = allow_reactivation
         self._entry_key: str | None = None
+        self.setObjectName("archiveDetailsPane")
+        self.setStyleSheet(
+            """
+            QWidget#archiveDetailsPane {
+                background: rgba(255, 255, 255, 0.94);
+                border: 1px solid #D6E1EC;
+                border-radius: 24px;
+            }
+            QWidget#archiveDetailsPane QLabel[role="section_title"] {
+                color: #102846;
+                font-size: 24px;
+                font-weight: 800;
+            }
+            QWidget#archiveDetailsPane QLabel {
+                color: #1D3557;
+                font-size: 15px;
+            }
+            QWidget#archiveDetailsPane QPushButton {
+                min-height: 40px;
+                font-size: 14px;
+                font-weight: 800;
+                border-radius: 14px;
+            }
+            """
+        )
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
         title = QLabel("Деталі архіву")
         title.setProperty("role", "section_title")
         layout.addWidget(title)

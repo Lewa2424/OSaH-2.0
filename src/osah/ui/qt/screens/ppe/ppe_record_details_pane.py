@@ -10,14 +10,12 @@ from osah.domain.entities.employee import Employee
 from osah.domain.entities.ppe_workspace_row import PpeWorkspaceRow
 from osah.domain.services.build_ppe_workspace_rows import build_ppe_workspace_rows
 from osah.domain.services.format_ui_date import format_ui_date
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.screens.ppe.ppe_record_editor import PpeRecordEditor
 
 
 class PpeRecordDetailsPane(QScrollArea):
-    """Права панель картки ЗІЗ працівника.
-    Right employee PPE-card pane.
-    """
+    """Right employee PPE-card pane. / Права панель картки ЗІЗ працівника."""
 
     employee_requested = Signal(str)
 
@@ -31,7 +29,8 @@ class PpeRecordDetailsPane(QScrollArea):
         super().__init__()
         self._read_only = access_role != AccessRole.INSPECTOR
         self.setWidgetResizable(True)
-        self.setMinimumWidth(360)
+        self.setMinimumWidth(420)
+        self.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         self._database_path = database_path
         self._employees_by_number = {employee.personnel_number: employee for employee in employees}
         self._current_personnel_number: str | None = None
@@ -41,24 +40,56 @@ class PpeRecordDetailsPane(QScrollArea):
         self.open_employee_button.setProperty("variant", "secondary")
         self.open_employee_button.clicked.connect(self._emit_employee_request)
 
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        self._container = QWidget()
+        self._container.setObjectName("ppeDetailsContainer")
+        self._container.setStyleSheet(
+            f"""
+            QWidget#ppeDetailsContainer {{
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #D9E2EC;
+                border-radius: {RADIUS['xxl']}px;
+            }}
+            QWidget#ppeDetailsContainer QComboBox {{
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #CBD6E2;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QLabel#detailsTitle {{
+                color: {COLOR['text_primary']};
+                font-size: 22px;
+                font-weight: 900;
+            }}
+            QLabel#detailsLead {{
+                color: {COLOR['text_secondary']};
+                font-size: 16px;
+                font-weight: 800;
+            }}
+            QLabel#detailsCaption {{
+                color: {COLOR['text_secondary']};
+                font-size: 13px;
+                font-weight: 700;
+            }}
+            """
+        )
+        layout = QVBoxLayout(self._container)
+        layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["md"])
 
         self.title = QLabel("Картка ЗІЗ")
-        self.title.setStyleSheet("font-size: 15px; font-weight: 900;")
+        self.title.setObjectName("detailsTitle")
         layout.addWidget(self.title)
 
         self.employee_name_label = QLabel("Оберіть працівника у реєстрі.")
         self.employee_name_label.setWordWrap(True)
-        self.employee_name_label.setStyleSheet(
-            f"color: {COLOR['text_secondary']}; font-size: 15px; font-weight: 900;"
-        )
+        self.employee_name_label.setObjectName("detailsLead")
         layout.addWidget(self.employee_name_label)
 
-        self.selector_label = QLabel("Виберіть відображувану позицію ЗІЗ")
-        self.selector_label.setStyleSheet("font-weight: 800;")
+        self.selector_label = QLabel("Відображувана позиція ЗІЗ")
+        self.selector_label.setObjectName("detailsCaption")
         layout.addWidget(self.selector_label)
 
         self.ppe_selector = QComboBox()
@@ -66,20 +97,16 @@ class PpeRecordDetailsPane(QScrollArea):
         layout.addWidget(self.ppe_selector)
 
         self.editor_section_label = QLabel("Дані ЗІЗ та редагування")
-        self.editor_section_label.setStyleSheet("font-weight: 800;")
+        self.editor_section_label.setObjectName("detailsCaption")
         layout.addWidget(self.editor_section_label)
 
         layout.addWidget(self.editor)
         layout.addWidget(self.open_employee_button)
         layout.addStretch()
-        self.setWidget(container)
+        self.setWidget(self._container)
         self.show_empty_state()
 
     def show_empty_state(self) -> None:
-        """Показує порожній стан картки без вибраного працівника.
-        Shows the empty card state without a selected employee.
-        """
-
         self._current_personnel_number = None
         self._row_lookup = {}
         self.employee_name_label.setText("Оберіть працівника у реєстрі.")
@@ -92,10 +119,6 @@ class PpeRecordDetailsPane(QScrollArea):
         self.editor.clear_form()
 
     def show_row(self, row: PpeWorkspaceRow) -> None:
-        """Відкриває картку ЗІЗ вибраного працівника.
-        Opens the employee PPE card for the selected row.
-        """
-
         employee = self._employees_by_number.get(row.employee_personnel_number)
         if employee is None:
             self.show_empty_state()
@@ -113,22 +136,16 @@ class PpeRecordDetailsPane(QScrollArea):
             if item.employee_personnel_number == employee.personnel_number
         )
         self._row_lookup = {
-            int(employee_row.record_id): employee_row
-            for employee_row in employee_rows
-            if employee_row.record_id is not None
+            int(employee_row.record_id): employee_row for employee_row in employee_rows if employee_row.record_id is not None
         }
         self._rebuild_selector(employee_rows, row)
 
-    def _rebuild_selector(
-        self,
-        employee_rows: tuple[PpeWorkspaceRow, ...],
-        selected_row: PpeWorkspaceRow,
-    ) -> None:
+    def _rebuild_selector(self, employee_rows: tuple[PpeWorkspaceRow, ...], selected_row: PpeWorkspaceRow) -> None:
         self.ppe_selector.blockSignals(True)
         self.ppe_selector.clear()
         for employee_row in sorted(employee_rows, key=lambda item: (item.ppe_name.lower(), item.record_id or 0)):
             self.ppe_selector.addItem(
-                f"{employee_row.ppe_name} — {format_ui_date(employee_row.replacement_date)}",
+                f"{employee_row.ppe_name} - {format_ui_date(employee_row.replacement_date)}",
                 ("existing", int(employee_row.record_id)),
             )
         if not self._read_only:
@@ -169,18 +186,10 @@ class PpeRecordDetailsPane(QScrollArea):
         self.editor.prepare_card_create_mode(self._current_personnel_number)
 
     def _emit_employee_request(self) -> None:
-        """Передає запит відкрити картку працівника.
-        Emits a request to open the employee card.
-        """
-
         if self._current_personnel_number:
             self.employee_requested.emit(self._current_personnel_number)
 
     def _style_action_item(self, combo_box: QComboBox, index: int) -> None:
-        """Виділяє сервісний пункт вибору як дію створення.
-        Highlights the service selector item as a creation action.
-        """
-
         combo_box.setItemData(index, QColor(COLOR["accent"]), Qt.ItemDataRole.ForegroundRole)
         action_font = QFont()
         action_font.setBold(True)

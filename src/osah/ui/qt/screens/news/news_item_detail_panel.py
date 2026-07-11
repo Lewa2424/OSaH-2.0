@@ -25,22 +25,22 @@ class NewsItemDetailPanel(QFrame):
             }}
             QLabel#newsDetailMeta {{
                 color: {COLOR['text_secondary']};
-                font-size: 12px;
+                font-size: 13px;
                 font-weight: 600;
             }}
             QLabel#newsDetailTitle {{
                 color: {COLOR['text_primary']};
-                font-size: 16px;
+                font-size: 20px;
                 font-weight: 700;
             }}
             QLabel#newsDetailBody {{
                 color: {COLOR['text_secondary']};
-                font-size: 13px;
+                font-size: 15px;
                 line-height: 1.35em;
             }}
             QLabel#newsDetailLink {{
                 color: {COLOR['status_info']};
-                font-size: 13px;
+                font-size: 15px;
                 font-weight: 600;
             }}
             """

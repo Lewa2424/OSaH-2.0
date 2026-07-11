@@ -2,7 +2,7 @@ from PySide6.QtCore import QTime, Signal
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QPushButton, QTimeEdit, QVBoxLayout
 
 from osah.domain.entities.manual_report_settings import ManualReportSettings
-from osah.ui.qt.design.tokens import COLOR, SPACING
+from osah.ui.qt.design.tokens import COLOR, RADIUS, SPACING
 from osah.ui.qt.screens.settings.settings_section_card import SettingsSectionCard
 
 
@@ -43,7 +43,36 @@ class ManualReportSettingsPanel(SettingsSectionCard):
         self._time.setDisplayFormat("HH:mm")
         parsed_time = QTime.fromString(manual_report_settings.manual_reminder_time or "08:00", "HH:mm")
         self._time.setTime(parsed_time if parsed_time.isValid() else QTime(8, 0))
-        self._time.setFixedWidth(120)
+        self._time.setFixedWidth(140)
+        self._time.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
+        self._time.setStyleSheet(
+            f"""
+            QTimeEdit {{
+                min-height: 40px;
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 250),
+                        stop:1 rgba(241, 246, 251, 242));
+                color: {COLOR['text_primary']};
+                border: 1px solid #C8D6E5;
+                border-radius: {RADIUS['lg']}px;
+                padding: 0 14px;
+                font-size: 15px;
+                font-weight: 700;
+                selection-background-color: {COLOR['accent_soft']};
+                selection-color: {COLOR['text_primary']};
+            }}
+            QTimeEdit:focus {{
+                border: 1px solid {COLOR['accent']};
+                background: #FCFEFF;
+            }}
+            QTimeEdit:disabled {{
+                background: {COLOR['input_disabled_bg']};
+                color: {COLOR['input_disabled_text']};
+                border: 1px solid {COLOR['input_disabled_border']};
+            }}
+            """
+        )
         time_row.addWidget(self._time)
 
         time_hint = QLabel("У цей час ClearWork покаже запит на формування файла звіту.")

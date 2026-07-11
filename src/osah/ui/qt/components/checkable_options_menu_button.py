@@ -89,18 +89,19 @@ def _build_menu_stylesheet() -> str:
     r = RADIUS
     return f"""
 QMenu {{
-    background: {c["bg_card"]};
+    background: rgba(255, 255, 255, 0.98);
     color: {c["text_primary"]};
-    border: 1px solid {c["border_default"]};
-    border-radius: {r["md"]}px;
-    padding: 6px 0px;
+    border: 1px solid #D8E1EB;
+    border-radius: {r["lg"]}px;
+    padding: 8px 0px;
 }}
 QMenu::item {{
     background: transparent;
     color: {c["text_primary"]};
-    padding: 8px 14px 8px 14px;
-    margin: 0px 4px;
-    border-radius: {r["sm"]}px;
+    padding: 10px 16px 10px 16px;
+    margin: 0px 6px;
+    border-radius: {r["md"]}px;
+    font-size: 13px;
 }}
 QMenu::item:selected {{
     background: {c["selection_bg"]};

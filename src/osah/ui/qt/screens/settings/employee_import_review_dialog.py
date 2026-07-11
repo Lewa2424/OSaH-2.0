@@ -39,7 +39,45 @@ class EmployeeImportReviewDialog(QDialog):
         self.setModal(True)
         self.resize(1180, 720)
         self.setMinimumSize(SIZE["window_min_w"], 640)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; color: {COLOR['text_primary']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+                color: {COLOR['text_primary']};
+            }}
+            QLabel {{
+                font-size: 14px;
+            }}
+            QLabel[role="section_title"] {{
+                font-size: 24px;
+                font-weight: 800;
+            }}
+            QTableWidget {{
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid {COLOR['border_soft']};
+                border-radius: 18px;
+                gridline-color: #E2EAF2;
+                font-size: 14px;
+            }}
+            QHeaderView::section {{
+                background: #EAF1F7;
+                color: #17365D;
+                padding: 11px 8px;
+                border: none;
+                font-size: 13px;
+                font-weight: 800;
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
@@ -148,6 +186,7 @@ class EmployeeImportReviewDialog(QDialog):
                 if column_index == 6:
                     self._apply_status_color(item, draft.resolution_status)
                 self._table.setItem(row_index, column_index, item)
+            self._table.setRowHeight(row_index, 44)
         if self._employee_import_drafts:
             self._table.selectRow(0)
 

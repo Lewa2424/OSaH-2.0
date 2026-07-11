@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QPushButton, QVBoxLay
 
 from osah.domain.entities.about_snapshot import AboutSnapshot
 from osah.domain.entities.access_role import AccessRole
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.section_container import SectionContainer
 from osah.ui.qt.components.section_header import SectionHeader
 from osah.ui.qt.design.tokens import SPACING
@@ -27,16 +28,32 @@ class AboutScreen(QWidget):
         self._snapshot = snapshot
         self._access_role = access_role
 
+        install_ambient_background(
+            self,
+            "aboutScreen",
+            theme="about",
+            extra_rules="""
+            QWidget[role="section_bg"] {
+                background: transparent;
+            }
+            """,
+        )
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])
         layout.setSpacing(SPACING["lg"])
 
-        layout.addWidget(
-            SectionHeader(
-                "Про програму",
-                "Розгорнутий опис призначення, можливостей і практичної цінності системи ClearWork.",
-            )
+        header = SectionHeader(
+            "Про програму",
+            "Розгорнутий опис призначення, можливостей і практичної цінності системи ClearWork.",
         )
+        header.setStyleSheet(
+            """
+            QLabel[role="section_header_title"] { font-size: 23px; }
+            QLabel[role="section_header_subtitle"] { font-size: 12px; }
+            """
+        )
+        layout.addWidget(header)
 
         container = SectionContainer()
         content_layout = container.content_layout()
@@ -182,6 +199,7 @@ class AboutScreen(QWidget):
         for index, section in enumerate(list_instruction_sections_for_role(self._access_role)):
             button = QPushButton(section.value)
             button.setProperty("variant", "secondary")
+            button.setFont(QFont("Segoe UI", 13))
             entry = get_instruction_entry(section)
             if entry is not None:
                 button.setToolTip(
@@ -259,9 +277,22 @@ class AboutScreen(QWidget):
         """
 
         card = QFrame()
-        card.setProperty("card", "true")
+        card.setFrameShape(QFrame.Shape.NoFrame)
+        card.setStyleSheet(
+            """
+            QFrame {
+                background: transparent;
+                border: none;
+            }
+            QLabel {
+                background: transparent;
+                border: none;
+                padding: 0px;
+            }
+            """
+        )
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING["sm"])
         return card
 
@@ -272,7 +303,7 @@ class AboutScreen(QWidget):
 
         label = QLabel(text)
         label.setWordWrap(True)
-        font = QFont("Segoe UI", 16)
+        font = QFont("Segoe UI", 21)
         font.setBold(True)
         label.setFont(font)
         return label
@@ -284,7 +315,7 @@ class AboutScreen(QWidget):
 
         label = QLabel(text)
         label.setWordWrap(True)
-        label.setFont(QFont("Segoe UI", 13))
+        label.setFont(QFont("Segoe UI", 16))
         return label
 
     def _build_rich_text_label(self, text: str) -> QLabel:
@@ -294,5 +325,5 @@ class AboutScreen(QWidget):
 
         label = QLabel(text)
         label.setWordWrap(True)
-        label.setStyleSheet("font-size: 13px;")
+        label.setStyleSheet("font-size: 16px;")
         return label

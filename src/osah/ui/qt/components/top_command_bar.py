@@ -67,7 +67,7 @@ class TopCommandBar(QWidget):
             f"border-radius: 14px; "
             f"padding: 9px 18px; "
             f"font-weight: 800; "
-            f"font-size: 13px;"
+            f"font-size: 16px;"
         )
         self._layout.addWidget(self._role_label)
         self._layout.setAlignment(self._role_label, Qt.AlignmentFlag.AlignVCenter)

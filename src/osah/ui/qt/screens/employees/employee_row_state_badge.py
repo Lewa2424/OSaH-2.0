@@ -6,18 +6,16 @@ from osah.ui.qt.design.tokens import COLOR
 
 
 class EmployeeRowStateBadge(QLabel):
-    """Compact employee status badge for table and card."""
+    """Compact employee status badge for table and card. / Компактный статусный бейдж работника."""
 
     def __init__(self, level: EmployeeStatusLevel, text: str) -> None:
         super().__init__(text)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setMinimumHeight(24)
+        self.setMinimumHeight(28)
         self.setStyleSheet(_build_badge_stylesheet(level))
 
 
 def _build_badge_stylesheet(level: EmployeeStatusLevel) -> str:
-    """###### СТИЛЬ БЕЙДЖА СТАТУСУ / STATUS BADGE STYLE ######"""
-
     palette = {
         EmployeeStatusLevel.NORMAL: (COLOR["success_subtle"], COLOR["success"], COLOR["success"]),
         EmployeeStatusLevel.WARNING: (COLOR["warning_subtle"], COLOR["warning"], COLOR["warning"]),
@@ -30,8 +28,8 @@ def _build_badge_stylesheet(level: EmployeeStatusLevel) -> str:
         f"background: {background};"
         f"color: {foreground};"
         f"border: 1px solid {border};"
-        "border-radius: 12px;"
-        "padding: 3px 10px;"
-        "font-size: 10px;"
-        "font-weight: 700;"
+        "border-radius: 14px;"
+        "padding: 4px 12px;"
+        "font-size: 12px;"
+        "font-weight: 800;"
     )

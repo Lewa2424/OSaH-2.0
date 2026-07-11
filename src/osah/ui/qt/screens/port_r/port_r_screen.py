@@ -36,6 +36,7 @@ from osah.domain.entities.port_site_passport_row import PortSitePassportRow
 from osah.domain.entities.port_site_risk import PortSiteRisk
 from osah.ui.qt.components.configure_detail_splitter import configure_detail_splitter
 from osah.ui.qt.components.form_feedback_label import FormFeedbackLabel
+from osah.ui.qt.components.install_ambient_background import install_ambient_background
 from osah.ui.qt.components.read_only_banner import ReadOnlyBanner
 from osah.ui.qt.components.scrollable_table_frame import ScrollableTableFrame
 from osah.ui.qt.components.screen_states import EmptyStateWidget
@@ -69,6 +70,47 @@ class PortRScreen(QWidget):
         self._rows = load_port_site_passport_rows(database_path, include_archived=self._include_archived)
         self._table: PortSitePassportsTable | None = None
         self._selected_passport_row: PortSitePassportRow | None = None
+
+        install_ambient_background(
+            self,
+            "portRScreen",
+            theme="port",
+            extra_rules="""
+            QWidget#portRScreen QSplitter::handle { background: transparent; }
+            QWidget#portRScreen QSplitter::handle:horizontal { width: 10px; }
+            QWidget#portRScreen QTabWidget::pane {
+                border: 1px solid #D4E0EC;
+                border-radius: 24px;
+                background: rgba(255, 255, 255, 0.92);
+                top: -1px;
+            }
+            QWidget#portRScreen QTabBar::tab {
+                min-height: 40px;
+                padding: 0 18px;
+                margin-right: 8px;
+                border: 1px solid #D4E0EC;
+                border-bottom: none;
+                border-top-left-radius: 18px;
+                border-top-right-radius: 18px;
+                background: rgba(232, 239, 246, 0.96);
+                color: #36557A;
+                font-size: 14px;
+                font-weight: 700;
+            }
+            QWidget#portRScreen QTabBar::tab:selected {
+                background: rgba(255, 255, 255, 0.98);
+                color: #102846;
+            }
+            QWidget#portRScreen QComboBox,
+            QWidget#portRScreen QLineEdit,
+            QWidget#portRScreen QTextEdit {
+                min-height: 40px;
+                border-radius: 14px;
+                padding: 0 12px;
+                font-size: 14px;
+            }
+            """,
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING["xl"], SPACING["lg"], SPACING["xl"], SPACING["lg"])

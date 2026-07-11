@@ -69,7 +69,40 @@ class ShiftChecklistDialog(QDialog):
         self.setWindowTitle(f"Оцінка зміни — {passport_row.site_name}")
         self.setModal(True)
         self.resize(720, 760)
-        self.setStyleSheet(f"QDialog {{ background: {COLOR['bg_card']}; }}")
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background:
+                    qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 rgba(255, 255, 255, 248),
+                        stop:1 rgba(232, 240, 248, 234));
+            }}
+            QLabel {{
+                font-size: 15px;
+                color: {COLOR['text_primary']};
+            }}
+            QLineEdit,
+            QTextEdit {{
+                min-height: 40px;
+                background: #FFFFFF;
+                border: 1px solid #C8D6E5;
+                border-radius: 14px;
+                padding: 0 12px;
+                font-size: 14px;
+            }}
+            QCheckBox {{
+                font-size: 14px;
+                color: {COLOR['text_primary']};
+                spacing: 10px;
+            }}
+            QPushButton {{
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
+            }}
+            """
+        )
 
         root = QVBoxLayout(self)
         root.setContentsMargins(SPACING["lg"], SPACING["lg"], SPACING["lg"], SPACING["lg"])
@@ -153,7 +186,7 @@ class ShiftChecklistDialog(QDialog):
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.StyledPanel)
         frame.setStyleSheet(
-            f"QFrame {{ background: {COLOR['bg_workspace']}; border: 1px solid {COLOR['border_soft']}; border-radius: 6px; }}"
+            f"QFrame {{ background: rgba(255, 255, 255, 0.9); border: 1px solid {COLOR['border_soft']}; border-radius: 18px; }}"
         )
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(SPACING["md"], SPACING["sm"], SPACING["md"], SPACING["sm"])

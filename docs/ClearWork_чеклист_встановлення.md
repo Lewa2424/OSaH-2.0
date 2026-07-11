@@ -2,7 +2,7 @@
 
 Коротка інструкція для розробника та довірених продажів перед передачею програми клієнту.
 
-Версія поставки: **0.8.3**
+Версія поставки: **1.1.3**
 
 ---
 
@@ -13,8 +13,8 @@
 - [ ] Зібрати exe: `powershell -ExecutionPolicy Bypass -File installer\build_clearwork.ps1`
 - [ ] Зібрати demo: `powershell -ExecutionPolicy Bypass -File installer_DEMO\build_clearwork.ps1`
 - [ ] Перевірити наявність файлів:
-  - `installer\ClearWork-Setup-0.8.3.exe`
-  - `installer_DEMO\ClearWork-Demo-Setup-0.8.3.exe`
+  - `installer\ClearWork-Setup-1.1.3.exe`
+  - `installer_DEMO\ClearWork-Demo-Setup-1.1.3.exe`
   - `installer\ClearWork_швидкий_старт.pdf` (генерується під час збірки)
 - [ ] Key Admin готовий: `tools\clearwork_key_admin\ClearWorkKeyAdmin.exe` (або запуск з Python)
 
@@ -22,8 +22,8 @@
 
 | Сценарій | Файл | Ключ установки |
 |----------|------|----------------|
-| Ознайомлення (48 год) | `ClearWork-Demo-Setup-0.8.3.exe` | Не потрібен |
-| Пілот / робота | `ClearWork-Setup-0.8.3.exe` | Потрібен після отримання ID |
+| Ознайомлення (48 год) | `ClearWork-Demo-Setup-1.1.3.exe` | Не потрібен |
+| Пілот / робота | `ClearWork-Setup-1.1.3.exe` | Потрібен після отримання ID |
 | Документація | У комплекті з установщиком: `ClearWork_швидкий_старт.pdf`, `ClearWork_користувач.md` | — |
 
 ### Попередження для клієнта (обов'язково озвучити)
@@ -40,7 +40,7 @@
 
 ### Установка
 
-- [ ] Запустити `ClearWork-Demo-Setup-0.8.3.exe`
+- [ ] Запустити `ClearWork-Demo-Setup-1.1.3.exe`
 - [ ] При SmartScreen: `Докладніше` → `Все одно запустити`
 - [ ] Обрати каталог (можна диск D:, E: — не лише C:)
 - [ ] На фінальному кроці: «Відкрити інструкцію» (увімкнено за замовчуванням), «Запустити ClearWork Demo» — за бажанням
@@ -75,7 +75,7 @@
 
 ### Установка
 
-- [ ] Запустити `ClearWork-Setup-0.8.3.exe`
+- [ ] Запустити `ClearWork-Setup-1.1.3.exe`
 - [ ] **Не** вмикати галочку «Демонстраційний режим» (для робочої бази)
 - [ ] Обрати каталог установки
 - [ ] На фінальному кроці відкрити `ClearWork_швидкий_старт.pdf` перед першим запуском
